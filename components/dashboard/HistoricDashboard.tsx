@@ -208,7 +208,7 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                     <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={40}
                       tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)} />
                     <Tooltip contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb' }}
-                      formatter={(v: number) => [v >= 1000 ? v.toLocaleString() : v.toFixed(2), MARKET_LABELS[marketKey]]} />
+                      formatter={(v: number | undefined) => [(v ?? 0) >= 1000 ? (v ?? 0).toLocaleString() : (v ?? 0).toFixed(2), MARKET_LABELS[marketKey]]} />
                     <Line type="monotone" dataKey={marketKey} stroke={MARKET_COLORS[marketKey]}
                       strokeWidth={2} dot={{ r: 3 }} connectNulls />
                   </LineChart>
