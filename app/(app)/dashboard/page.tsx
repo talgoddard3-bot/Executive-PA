@@ -34,7 +34,7 @@ export default async function DashboardPage() {
     .order('week_of', { ascending: true })
     .limit(16)
 
-  const aggregates: BriefAggregate[] = (briefs ?? []).map((b: Brief) => {
+  const aggregates: BriefAggregate[] = (briefs ?? []).map((b) => {
     const c = b.content as BriefContent
 
     const risks = c.risk_summary ?? []
