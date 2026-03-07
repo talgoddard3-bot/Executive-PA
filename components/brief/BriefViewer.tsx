@@ -249,7 +249,7 @@ function SWOTPanel({ swot, brandColor }: { swot: BriefContent['swot']; brandColo
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(v: number, name: string) => [`${v} signal${v !== 1 ? 's' : ''}`, name]}
+                  formatter={(v: number | undefined, name: string | undefined) => [`${v ?? 0} signal${(v ?? 0) !== 1 ? 's' : ''}`, name ?? '']}
                   contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb', padding: '4px 10px' }}
                 />
               </PieChart>
