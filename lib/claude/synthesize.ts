@@ -5,11 +5,10 @@ import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { createClient } from '@supabase/supabase-js'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
 export async function synthesizeBrief(
   company: Company,
-  profile: CompanyProfile
+  profile: CompanyProfile,
+  userId?: string
 ): Promise<BriefContent> {
   // Fetch live signals, market data, and user language preference in parallel
   const revenueCountries = profile.revenue_countries.map(r => r.country)
@@ -30,7 +29,9 @@ export async function synthesizeBrief(
       console.error('[market-data] failed, using empty snapshots:', err)
       return {} as Record<string, import('@/lib/types').StoredSparkline>
     }),
-    supabase.from('user_profiles').select('language').eq('user_id', DEV_USER_ID).single(),
+    userId
+      ? supabase.from('user_profiles').select('language').eq('user_id', userId).single()
+      : Promise.resolve({ data: null }),
   ])
 
   const language = userProfileResult.data?.language ?? 'English'

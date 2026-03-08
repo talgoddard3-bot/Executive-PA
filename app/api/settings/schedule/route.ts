@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 function db() {
   return createClient(
@@ -10,13 +9,8 @@ function db() {
   )
 }
 
-async function getCompanyId() {
-  const { data } = await db().from('companies').select('id').eq('user_id', DEV_USER_ID).single()
-  return data?.id ?? null
-}
-
 export async function GET() {
-  const companyId = await getCompanyId()
+  const companyId = await getSessionCompanyId()
   if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
 
   const { data } = await db()
@@ -42,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  const companyId = await getCompanyId()
+  const companyId = await getSessionCompanyId()
   if (!companyId) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
 
   const { data, error } = await db()

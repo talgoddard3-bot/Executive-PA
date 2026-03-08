@@ -1,8 +1,7 @@
 import { anthropic } from '@/lib/claude/client'
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import type { BriefContent } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 function supabase() {
   return createClient(
@@ -53,12 +52,12 @@ function compressBrief(c: BriefContent): string {
   ].filter(Boolean).join('\n')
 }
 
-async function buildContext(briefId?: string): Promise<{ context: string; companyName: string; industry: string }> {
+async function buildContext(companyId: string, briefId?: string): Promise<{ context: string; companyName: string; industry: string }> {
   const db = supabase()
   const { data: company } = await db
     .from('companies')
     .select('id, name, industry, company_type')
-    .eq('user_id', DEV_USER_ID)
+    .eq('id', companyId)
     .single()
 
   const companyCtx = company
@@ -88,12 +87,17 @@ export const runtime = 'nodejs'
 
 export async function POST(request: Request) {
   try {
+    const companyId = await getSessionCompanyId()
+    if (!companyId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+
     const { message, briefId } = await request.json()
     if (!message?.trim()) {
       return new Response(JSON.stringify({ error: 'No message provided' }), { status: 400 })
     }
 
-    const { context, companyName, industry } = await buildContext(briefId)
+    const { context, companyName, industry } = await buildContext(companyId, briefId)
 
     const systemPrompt = `You are an intelligent strategic assistant embedded in an Executive Intelligence Brief platform for ${companyName} (${industry}).
 

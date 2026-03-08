@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import Link from 'next/link'
 import MarketMiniChart from '@/components/brief/MarketMiniChart'
 import type { BriefContent, StoredSparkline } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 // ── Section metadata ──────────────────────────────────────────────────────────
 
@@ -210,17 +209,22 @@ export default async function ArticlePage({
   const meta = SECTION_META[section]
   if (!meta) notFound()
 
+  const companyId = await getSessionCompanyId()
+  if (!companyId) notFound()
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const [{ data: company }, { data: brief }] = await Promise.all([
-    supabase.from('companies').select('id, name').eq('user_id', DEV_USER_ID).single(),
-    supabase.from('briefs').select('id, week_of, content').eq('id', id).single(),
-  ])
+  const { data: brief } = await supabase
+    .from('briefs')
+    .select('id, week_of, content')
+    .eq('id', id)
+    .eq('company_id', companyId)
+    .single()
 
-  if (!company || !brief?.content) notFound()
+  if (!brief?.content) notFound()
 
   const content = brief.content as BriefContent
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

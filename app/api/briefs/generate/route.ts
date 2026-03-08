@@ -1,10 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { synthesizeBrief } from '@/lib/claude/synthesize'
 import { generateTrendInsights } from '@/lib/claude/trend-insights'
+import { getSessionUser } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
 import type { Company, CompanyProfile } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 function getMondayOfWeek(date: Date): string {
   const d = new Date(date)
@@ -19,6 +18,12 @@ export const maxDuration = 120
 
 export async function POST() {
   try {
+    const session = await getSessionUser()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { userId, companyId } = session
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -28,7 +33,7 @@ export async function POST() {
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('*, company_profiles(*)')
-      .eq('user_id', DEV_USER_ID)
+      .eq('id', companyId)
       .single()
 
     if (companyError || !company) {
@@ -76,7 +81,7 @@ export async function POST() {
     const briefId = brief.id
     void (async () => {
       try {
-        const content = await synthesizeBrief(company as Company, profile as CompanyProfile)
+        const content = await synthesizeBrief(company as Company, profile as CompanyProfile, userId)
 
         // Generate trend insights via Haiku (cheap, stored once per brief)
         const trendInsights = await generateTrendInsights(company.id, content, weekOf)

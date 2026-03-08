@@ -1,12 +1,11 @@
 import { Resend } from 'resend'
 import { render } from '@react-email/components'
 import { createClient } from '@supabase/supabase-js'
+import { getSessionUser } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
 import { createElement } from 'react'
 import BriefEmail from '@/components/emails/BriefEmail'
 import type { BriefContent } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 export async function POST(
   _request: Request,
@@ -14,14 +13,18 @@ export async function POST(
 ) {
   const { id } = await params
 
+  const session = await getSessionUser()
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { userId, companyId } = session
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   const [{ data: company }, { data: userProfile }] = await Promise.all([
-    supabase.from('companies').select('id, name').eq('user_id', DEV_USER_ID).single(),
-    supabase.from('user_profiles').select('email, language').eq('user_id', DEV_USER_ID).single(),
+    supabase.from('companies').select('id, name').eq('id', companyId).single(),
+    supabase.from('user_profiles').select('email, language').eq('user_id', userId).single(),
   ])
 
   if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
@@ -30,7 +33,7 @@ export async function POST(
     .from('briefs')
     .select('content, week_of, status')
     .eq('id', id)
-    .eq('company_id', company.id)
+    .eq('company_id', companyId)
     .single()
 
   if (!brief || brief.status !== 'complete' || !brief.content) {

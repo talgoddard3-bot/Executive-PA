@@ -1,16 +1,27 @@
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET
+async function isAdmin(): Promise<boolean> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
 
-function isAuthorised(request: Request): boolean {
-  if (!ADMIN_SECRET) return true // dev: no secret set = open
-  const auth = request.headers.get('x-admin-secret')
-  return auth === ADMIN_SECRET
+  const service = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data } = await service
+    .from('user_profiles')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .single()
+
+  return data?.is_admin === true
 }
 
-export async function GET(request: Request) {
-  if (!isAuthorised(request)) {
+export async function GET() {
+  if (!await isAdmin()) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -21,20 +32,15 @@ export async function GET(request: Request) {
 
   const { data: profiles, error } = await supabase
     .from('user_profiles')
-    .select('user_id, full_name, email, position, language, avatar_url')
-    .order('full_name')
+    .select('user_id, full_name, email, position, language, avatar_url, status, company_name, requested_at, is_admin')
+    .order('requested_at', { ascending: false })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Attach company info from companies table (joined on user_id)
+  // Attach company row if linked
   const userIds = (profiles ?? []).map(p => p.user_id)
   const { data: companies } = userIds.length > 0
-    ? await supabase
-        .from('companies')
-        .select('user_id, name, industry')
-        .in('user_id', userIds)
+    ? await supabase.from('companies').select('user_id, name, industry').in('user_id', userIds)
     : { data: [] }
 
   const companyMap = Object.fromEntries(
@@ -50,13 +56,15 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!isAuthorised(request)) {
+  if (!await isAdmin()) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { user_id, position } = await request.json()
-  if (!user_id || !position) {
-    return NextResponse.json({ error: 'user_id and position are required' }, { status: 400 })
+  const body = await request.json()
+  const { user_id, position, status } = body
+
+  if (!user_id) {
+    return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
   }
 
   const supabase = createClient(
@@ -64,13 +72,16 @@ export async function PATCH(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  const update: Record<string, string> = {}
+  if (position) update.position = position
+  if (status) update.status = status
+
   const { error } = await supabase
     .from('user_profiles')
-    .upsert({ user_id, position }, { onConflict: 'user_id' })
+    .update(update)
+    .eq('user_id', user_id)
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

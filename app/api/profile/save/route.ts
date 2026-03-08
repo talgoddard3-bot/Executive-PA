@@ -1,11 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionUser } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
-
-// Dev mode: fixed user ID used when auth is disabled
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 export async function POST(request: Request) {
   try {
+    const session = await getSessionUser()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const { userId, companyId: sessionCompanyId } = session
+
     const body = await request.json()
     const { companyId, name, industry, company_type, stock_ticker, revenue_countries, supplier_countries, competitors, customers, keywords, commodities } = body
 
@@ -14,14 +18,14 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    let cId = companyId
+    let cId = companyId ?? sessionCompanyId
 
     if (!cId) {
       // Upsert on user_id to avoid duplicate constraint when a company already exists
       const { data: company, error: cErr } = await supabase
         .from('companies')
         .upsert(
-          { user_id: DEV_USER_ID, name, industry, company_type, stock_ticker: stock_ticker ?? null },
+          { user_id: userId, name, industry, company_type, stock_ticker: stock_ticker ?? null },
           { onConflict: 'user_id' }
         )
         .select()

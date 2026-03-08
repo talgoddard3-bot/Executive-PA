@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import BriefCard from '@/components/brief/BriefCard'
 import GenerateButton from '@/components/brief/GenerateButton'
 import type { Brief } from '@/lib/types'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
 async function getData() {
+  const companyId = await getSessionCompanyId()
+  if (!companyId) return { company: null, briefs: [] }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -13,7 +15,7 @@ async function getData() {
   const { data: company } = await supabase
     .from('companies')
     .select('id, name')
-    .eq('user_id', DEV_USER_ID)
+    .eq('id', companyId)
     .single()
 
   if (!company) return { company: null, briefs: [] }

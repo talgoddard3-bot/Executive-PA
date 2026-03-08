@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 export async function POST(request: Request) {
   try {
+    const companyId = await getSessionCompanyId()
+    if (!companyId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const brandColor = formData.get('brand_color') as string | null
@@ -23,15 +27,7 @@ export async function POST(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('user_id', DEV_USER_ID)
-      .single()
-
-    if (!company) {
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 })
-    }
+    const company = { id: companyId }
 
     const ext = file.name.split('.').pop() ?? 'png'
     const path = `${company.id}/logo.${ext}`

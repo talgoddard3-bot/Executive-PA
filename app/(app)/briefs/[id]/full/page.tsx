@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import BriefViewer from '@/components/brief/BriefViewer'
 import Link from 'next/link'
 import type { Brief } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 export default async function FullBriefPage({
   params,
@@ -12,6 +11,8 @@ export default async function FullBriefPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  const companyId = await getSessionCompanyId()
+  if (!companyId) notFound()
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +22,7 @@ export default async function FullBriefPage({
   const { data: company } = await supabase
     .from('companies')
     .select('id, name, logo_url, brand_color')
-    .eq('user_id', DEV_USER_ID)
+    .eq('id', companyId)
     .single()
 
   if (!company) notFound()
@@ -30,7 +31,7 @@ export default async function FullBriefPage({
     .from('briefs')
     .select('*')
     .eq('id', id)
-    .eq('company_id', company.id)
+    .eq('company_id', companyId)
     .single()
 
   if (!brief) notFound()
