@@ -1,7 +1,8 @@
-import type { Company, CompanyProfile } from './types'
+import type { Company, CompanyProfile, CompanyLocation } from './types'
 import { generateSimulatedSignals } from './claude/signals'
 import { fetchCompetitorSignals } from './finnhub'
 import { buildFREDMacroSignals } from './fred'
+import { buildCountrySignals } from './country-signals'
 
 const NEWS_API_BASE = 'https://newsapi.org/v2/everything'
 const NEWSDATA_BASE = 'https://newsdata.io/api/1/latest'
@@ -68,7 +69,7 @@ function fmt(a: Article): string {
   return `${a.source.name}: "${a.title}".${desc}`
 }
 
-export async function buildLiveSignals(company: Company, profile: CompanyProfile): Promise<string> {
+export async function buildLiveSignals(company: Company, profile: CompanyProfile, locations: CompanyLocation[] = []): Promise<string> {
   const key = process.env.NEWS_API_KEY
   if (!key) {
     console.log('[signals] NEWS_API_KEY not set — using simulated signals')
@@ -272,6 +273,12 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
     }
   }
   if (seenCompanyNews.size === 0) lines.push(`  No press coverage found for "${company.name}" this week.`)
+
+  // ── Operational country signals ──────────────────────────────────────────
+  if (locations.length > 0) {
+    const countrySignals = await buildCountrySignals(locations).catch(() => '')
+    if (countrySignals) lines.push('\n' + countrySignals)
+  }
 
   const result = lines.join('\n')
   console.log(`[signals] Fetched live signals: ${result.length} chars`)

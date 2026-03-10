@@ -1,3 +1,17 @@
+export type LocationType = 'hq' | 'manufacturing' | 'sales' | 'r&d' | 'office'
+
+export interface CompanyLocation {
+  id: string
+  company_id: string
+  country_code: string   // ISO 3166-1 alpha-2: 'IL', 'GB', 'FR'
+  country_name: string
+  city?: string | null
+  location_type: LocationType
+  headcount?: number | null
+  notes?: string | null
+  created_at: string
+}
+
 export interface RevenueCountry {
   country: string
   pct: number

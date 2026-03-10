@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getSessionCompanyId } from '@/lib/get-company'
 import ProfileForm from '@/components/profile/ProfileForm'
 import ProfileDisplay from '@/components/profile/ProfileDisplay'
+import LocationsManager from '@/components/profile/LocationsManager'
 import type { Company, CompanyProfile } from '@/lib/types'
 
 async function getCompanyData() {
@@ -48,10 +49,13 @@ export default async function ProfilePage({
         )}
 
         {company && profile ? (
-          <ProfileDisplay
-            company={company as Company}
-            profile={profile}
-          />
+          <>
+            <ProfileDisplay
+              company={company as Company}
+              profile={profile}
+            />
+            <LocationsManager />
+          </>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
             <div>

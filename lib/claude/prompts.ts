@@ -1,4 +1,4 @@
-import type { CompanyProfile, Company } from '@/lib/types'
+import type { CompanyProfile, Company, CompanyLocation } from '@/lib/types'
 
 export const SYSTEM_PROMPT = `You are a senior strategic intelligence editor producing a personalised executive briefing — think The Economist meets McKinsey, written specifically for one CEO.
 
@@ -25,7 +25,8 @@ export function buildUserPrompt(
   company: Company,
   profile: CompanyProfile,
   signals: string,
-  language = 'English'
+  language = 'English',
+  locations: CompanyLocation[] = []
 ): string {
   const revenueLines = profile.revenue_countries
     .map((r) => `  - ${r.country} (${r.pct}%, ${r.sector})`)
@@ -56,11 +57,23 @@ export function buildUserPrompt(
     ? `\nOUTPUT LANGUAGE: Generate ALL text fields in ${language}. The JSON keys must remain in English, but all values (headlines, summaries, details, impacts, notes, etc.) must be written in ${language}.\n`
     : ''
 
+  const locationLines = locations.length > 0
+    ? locations.map(l => {
+        const city = l.city ? `${l.city}, ` : ''
+        const head = l.headcount ? ` (${l.headcount.toLocaleString()} employees)` : ''
+        const note = l.notes ? ` — ${l.notes}` : ''
+        return `  - ${city}${l.country_name}: ${l.location_type.toUpperCase()}${head}${note}`
+      }).join('\n')
+    : '  (none specified)'
+
   return `${languageInstruction}COMPANY PROFILE
 Company: ${company.name}
 Industry: ${company.industry}
 Business Model: ${companyTypeLabel} — ${marketingContext}
 Keywords: ${profile.keywords.join(', ')}
+
+Operational Locations (physical sites — consider local labour, energy, regulation, and logistics impacts):
+${locationLines}
 
 Revenue Exposure:
 ${revenueLines}

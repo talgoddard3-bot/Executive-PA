@@ -18,8 +18,15 @@ export async function synthesizeBrief(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Fetch operational locations for country-level signals
+  const { data: locationsData } = await supabase
+    .from('company_locations')
+    .select('*')
+    .eq('company_id', company.id)
+  const locations = locationsData ?? []
+
   const [signals, marketSnapshots, userProfileResult] = await Promise.all([
-    buildLiveSignals(company, profile),
+    buildLiveSignals(company, profile, locations),
     fetchLiveMarketData(revenueCountries, {
       stockTicker: company.stock_ticker ?? undefined,
       companyName: company.name,
@@ -35,7 +42,7 @@ export async function synthesizeBrief(
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
-  const userPrompt = buildUserPrompt(company, profile, signals, language)
+  const userPrompt = buildUserPrompt(company, profile, signals, language, locations)
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
