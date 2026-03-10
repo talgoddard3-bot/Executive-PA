@@ -29,7 +29,7 @@ export function buildUserPrompt(
   locations: CompanyLocation[] = []
 ): string {
   const revenueLines = profile.revenue_countries
-    .map((r) => `  - ${r.country} (${r.pct}%, ${r.sector})`)
+    .map((r) => `  - ${r.country} (${r.sector})`)
     .join('\n')
 
   const supplierLines = profile.supplier_countries

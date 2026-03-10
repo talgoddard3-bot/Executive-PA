@@ -120,7 +120,6 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-2 font-medium text-gray-500">Country</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-500">Share</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-500">Sector</th>
               </tr>
             </thead>
@@ -128,7 +127,6 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
               {(profile.revenue_countries as RevenueCountry[]).map((r, i) => (
                 <tr key={i}>
                   <td className="px-4 py-2.5 text-gray-900">{r.country}</td>
-                  <td className="px-4 py-2.5 text-gray-700">{r.pct}%</td>
                   <td className="px-4 py-2.5 text-gray-500">{r.sector}</td>
                 </tr>
               ))}

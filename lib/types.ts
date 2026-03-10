@@ -14,7 +14,6 @@ export interface CompanyLocation {
 
 export interface RevenueCountry {
   country: string
-  pct: number
   sector: string
 }
 

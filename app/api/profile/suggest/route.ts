@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
-    system: `You are a business intelligence analyst. Given a company name and industry, suggest a realistic company profile for a mid-sized global manufacturer ($50M–$500M revenue). Be specific and realistic — use real country names, real competitor names, and realistic percentages.`,
+    system: `You are a business intelligence analyst. Given a company name and industry, suggest a realistic company profile for a mid-sized global manufacturer ($50M–$500M revenue). Be specific and realistic — use real country names and real competitor names.`,
     messages: [
       {
         role: 'user',
@@ -23,7 +23,7 @@ Suggest a realistic company profile. Return only a JSON object matching this exa
 
 {
   "revenue_countries": [
-    { "country": "string", "pct": number, "sector": "string" }
+    { "country": "string", "sector": "string" }
   ],
   "supplier_countries": [
     { "country": "string", "materials": "string" }
@@ -39,7 +39,7 @@ Suggest a realistic company profile. Return only a JSON object matching this exa
 }
 
 Rules:
-- revenue_countries: 3–5 countries, percentages must sum to 100, sector is the specific vertical within the industry for that market
+- revenue_countries: 3–5 countries where this company is most likely to sell, sector is the specific vertical within the industry for that market
 - supplier_countries: 2–4 countries with realistic materials or components sourced from there
 - competitors: 3–5 real company names that compete in this industry, with a one-line note on each
 - customers: 3–5 realistic example customers — real company names that would plausibly buy from a company like this, with a note on what they buy or why they're a customer
