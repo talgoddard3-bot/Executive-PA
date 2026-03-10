@@ -50,7 +50,7 @@ export async function POST() {
     // Check for existing brief this week
     const { data: existing } = await supabase
       .from('briefs')
-      .select('id, status')
+      .select('id, status, created_at')
       .eq('company_id', company.id)
       .eq('week_of', weekOf)
       .single()
@@ -60,9 +60,15 @@ export async function POST() {
         return NextResponse.json({ briefId: existing.id, status: 'complete', alreadyExists: true })
       }
       if (existing.status === 'generating') {
-        return NextResponse.json({ briefId: existing.id, status: 'generating', alreadyExists: true })
+        // If stuck generating for >10 min, treat as failed and regenerate
+        const createdAt = new Date((existing as { created_at?: string }).created_at ?? 0).getTime()
+        const stuckThreshold = 10 * 60 * 1000
+        if (Date.now() - createdAt < stuckThreshold) {
+          return NextResponse.json({ briefId: existing.id, status: 'generating', alreadyExists: true })
+        }
+        // Stuck — fall through to delete and recreate
       }
-      // failed or pending → delete and recreate
+      // failed, pending, or stuck generating → delete and recreate
       await supabase.from('briefs').delete().eq('id', existing.id)
     }
 
