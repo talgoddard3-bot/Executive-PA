@@ -33,9 +33,12 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-SUPABASE_URL = os.environ['SUPABASE_URL']
-SUPABASE_KEY = os.environ['SUPABASE_SERVICE_KEY']
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
 COMPANY_ID   = os.environ.get('COMPANY_ID')  # optional — omit to scrape ALL companies
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise SystemExit('ERROR: SUPABASE_URL and SUPABASE_SERVICE_KEY must be set as GitHub Secrets')
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; ExecutiveIntelBot/1.0)'}
 TIMEOUT = 12   # seconds per HTTP request
