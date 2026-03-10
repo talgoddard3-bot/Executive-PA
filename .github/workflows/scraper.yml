@@ -1,0 +1,43 @@
+name: Weekly News Scraper
+
+on:
+  # Every Monday at 05:00 UTC (before briefs are generated)
+  schedule:
+    - cron: '0 5 * * 1'
+
+  # Also allow manual trigger from GitHub UI (Actions → Run workflow)
+  workflow_dispatch:
+    inputs:
+      company_id:
+        description: 'Company ID to scrape (leave blank for default)'
+        required: false
+
+jobs:
+  scrape:
+    name: Fetch & store signals
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests supabase
+
+      - name: Run scraper
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          COMPANY_ID:           ${{ inputs.company_id || secrets.COMPANY_ID }}
+        run: python eib/scripts/scraper.py
+
+      - name: Summary
+        if: always()
+        run: echo "Scraper finished at $(date -u)"
