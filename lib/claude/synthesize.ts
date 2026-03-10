@@ -45,11 +45,13 @@ export async function synthesizeBrief(
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
-  const userPrompt = buildUserPrompt(company, profile, signals, language, locations)
+  // Cap signals at ~40k chars to stay within a sensible token budget
+  const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
+  const userPrompt = buildUserPrompt(company, profile, cappedSignals, language, locations)
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 16000,
+    max_tokens: 12000,
     messages: [{ role: 'user', content: userPrompt }],
     system: SYSTEM_PROMPT,
   })
