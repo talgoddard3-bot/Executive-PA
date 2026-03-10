@@ -26,11 +26,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'
-          cache-dependency-path: 'eib/scripts/requirements.txt'
 
       - name: Install dependencies
-        run: pip install -r eib/scripts/requirements.txt
+        run: pip install requests supabase
 
       - name: Run scraper
         env:
