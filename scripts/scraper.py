@@ -8,7 +8,7 @@ into the Supabase `raw_signals` table.
 Required environment variables:
   SUPABASE_URL          — e.g. https://xxxx.supabase.co
   SUPABASE_SERVICE_KEY  — service role key (bypasses RLS)
-  COMPANY_ID            — UUID of the company to scrape for
+  COMPANY_ID            — (optional) scrape only this company UUID; omit to scrape ALL companies
 
 Install dependencies:
   pip install requests supabase
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 # ── Config ────────────────────────────────────────────────────────────────────
 SUPABASE_URL = os.environ['SUPABASE_URL']
 SUPABASE_KEY = os.environ['SUPABASE_SERVICE_KEY']
-COMPANY_ID   = os.environ['COMPANY_ID']
+COMPANY_ID   = os.environ.get('COMPANY_ID')  # optional — omit to scrape ALL companies
 
 HEADERS = {'User-Agent': 'Mozilla/5.0 (compatible; ExecutiveIntelBot/1.0)'}
 TIMEOUT = 12   # seconds per HTTP request
@@ -216,31 +216,28 @@ COUNTRY_RSS = {
     ],
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Per-company scraper ────────────────────────────────────────────────────────
 
-def main():
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
+def scrape_company(supabase, company_id: str) -> int:
     # ── Load company profile ──────────────────────────────────────────────────
-    log.info(f'Loading profile for company {COMPANY_ID}')
-
-    company = supabase.table('companies').select('*').eq('id', COMPANY_ID).single().execute().data
+    company = supabase.table('companies').select('*').eq('id', company_id).single().execute().data
     if not company:
-        raise SystemExit(f'Company {COMPANY_ID} not found in database')
+        log.warning(f'Company {company_id} not found — skipping')
+        return 0
 
     profile_rows = (supabase.table('company_profiles')
-                    .select('*').eq('company_id', COMPANY_ID)
+                    .select('*').eq('company_id', company_id)
                     .order('updated_at', desc=True).limit(1).execute().data)
     profile = profile_rows[0] if profile_rows else {}
 
     locations = (supabase.table('company_locations')
-                 .select('*').eq('company_id', COMPANY_ID).execute().data or [])
+                 .select('*').eq('company_id', company_id).execute().data or [])
 
-    company_name = company['name']
-    industry     = company.get('industry', '')
-    competitors  = profile.get('competitors', [])   # list of {name, notes}
-    rev_countries = profile.get('revenue_countries', [])  # list of {country, sector}
-    keywords     = profile.get('keywords', [])
+    company_name  = company['name']
+    industry      = company.get('industry', '')
+    competitors   = profile.get('competitors', [])
+    rev_countries = profile.get('revenue_countries', [])
+    keywords      = profile.get('keywords', [])
 
     log.info(f'{company_name} | industry={industry} | '
              f'{len(competitors)} competitors | {len(rev_countries)} revenue countries | '
@@ -248,10 +245,10 @@ def main():
 
     total = 0
 
-    # ── 1. Company news (direct coverage) ────────────────────────────────────
+    # ── 1. Company news ───────────────────────────────────────────────────────
     log.info('\n── Company news ──────────────────────────────────')
     items = parse_rss(google_news_url(f'"{company_name}"'), is_google=True, max_items=10)
-    total += upsert(supabase, COMPANY_ID, 'company', company_name, '', items)
+    total += upsert(supabase, company_id, 'company', company_name, '', items)
     time.sleep(DELAY)
 
     # ── 2. Competitor news ────────────────────────────────────────────────────
@@ -262,7 +259,7 @@ def main():
             continue
         log.info(f'  Competitor: {name}')
         items = parse_rss(google_news_url(f'"{name}"'), is_google=True, max_items=6)
-        total += upsert(supabase, COMPANY_ID, 'competitor', name, '', items)
+        total += upsert(supabase, company_id, 'competitor', name, '', items)
         time.sleep(DELAY)
 
     # ── 3. Revenue country signals ────────────────────────────────────────────
@@ -276,7 +273,7 @@ def main():
         q = f'{country} {sector or industry} economy trade'
         items  = parse_rss(google_news_url(q, lang='en'), is_google=True, max_items=6)
         items += fetch_gdelt(q, max_items=3)
-        total += upsert(supabase, COMPANY_ID, 'country', country, country, items)
+        total += upsert(supabase, company_id, 'country', country, country, items)
         time.sleep(DELAY)
 
     # ── 4. Operational location signals ──────────────────────────────────────
@@ -295,14 +292,13 @@ def main():
         q = f'{cname} {topic}'
         items = parse_rss(google_news_url(q, country_code=ccode, lang='en'), is_google=True, max_items=6)
 
-        # Add authoritative country feeds if available
         for feed_url, feed_name, is_g in COUNTRY_RSS.get(ccode.upper(), []):
             log.info(f'    Feed: {feed_name}')
             items += parse_rss(feed_url, is_google=is_g, max_items=4)
             time.sleep(DELAY)
 
         items += fetch_gdelt(q, country_code=ccode, max_items=3)
-        total += upsert(supabase, COMPANY_ID, 'location', cname, cname, items)
+        total += upsert(supabase, company_id, 'location', cname, cname, items)
         time.sleep(DELAY)
 
     # ── 5. Industry / keyword signals ─────────────────────────────────────────
@@ -311,10 +307,37 @@ def main():
     log.info(f'  Query: {kw_query[:80]}')
     items  = parse_rss(google_news_url(kw_query), is_google=True, max_items=10)
     items += fetch_gdelt(kw_query, max_items=5)
-    total += upsert(supabase, COMPANY_ID, 'industry', industry, '', items)
+    total += upsert(supabase, company_id, 'industry', industry, '', items)
 
-    # ── Done ──────────────────────────────────────────────────────────────────
-    log.info(f'\n✅  Done. Total signals upserted: {total}')
+    return total
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+
+def main():
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    if COMPANY_ID:
+        # Single-company mode (env var set or manual workflow_dispatch input)
+        company_ids = [COMPANY_ID]
+        log.info(f'Single-company mode: {COMPANY_ID}')
+    else:
+        # Multi-company mode — scrape ALL companies in the database
+        rows = supabase.table('companies').select('id, name').execute().data or []
+        company_ids = [r['id'] for r in rows]
+        log.info(f'Multi-company mode: found {len(company_ids)} companies')
+
+    grand_total = 0
+    for idx, cid in enumerate(company_ids, 1):
+        log.info(f'\n{"="*60}')
+        log.info(f'Company {idx}/{len(company_ids)}: {cid}')
+        log.info(f'{"="*60}')
+        try:
+            grand_total += scrape_company(supabase, cid)
+        except Exception as e:
+            log.error(f'Error scraping company {cid}: {e}')
+
+    log.info(f'\n✅  Done. Grand total signals upserted: {grand_total}')
 
     # Clean up signals older than 14 days
     try:

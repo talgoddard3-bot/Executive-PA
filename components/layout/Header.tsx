@@ -62,8 +62,8 @@ export default function Header() {
 
   return (
     <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 flex items-center justify-between px-4 md:px-6 shrink-0 z-20">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5">
+      {/* Brand — click to go home */}
+      <Link href="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden"
           style={{ backgroundColor: brandColor }}>
           {company.logo_url ? (
@@ -91,7 +91,7 @@ export default function Header() {
             Executive Intelligence
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* Right controls */}
       <div className="flex items-center gap-1.5">

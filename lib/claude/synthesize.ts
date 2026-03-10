@@ -25,6 +25,8 @@ export async function synthesizeBrief(
     .eq('company_id', company.id)
   const locations = locationsData ?? []
 
+  const locationCountryNames = locations.map((l: { country_name: string }) => l.country_name)
+
   const [signals, marketSnapshots, userProfileResult] = await Promise.all([
     buildLiveSignals(company, profile, locations),
     fetchLiveMarketData(revenueCountries, {
@@ -32,6 +34,7 @@ export async function synthesizeBrief(
       companyName: company.name,
       competitors: profile.competitors,
       commodities: profile.commodities,
+      locationCountryNames,
     }).catch(err => {
       console.error('[market-data] failed, using empty snapshots:', err)
       return {} as Record<string, import('@/lib/types').StoredSparkline>

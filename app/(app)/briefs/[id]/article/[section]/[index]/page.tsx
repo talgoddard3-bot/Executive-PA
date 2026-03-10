@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getSessionCompanyId } from '@/lib/get-company'
 import Link from 'next/link'
 import MarketMiniChart from '@/components/brief/MarketMiniChart'
+import ShareButtons from '@/components/brief/ShareButtons'
 import type { BriefContent, StoredSparkline } from '@/lib/types'
 
 // ── Section metadata ──────────────────────────────────────────────────────────
@@ -271,15 +272,18 @@ export default async function ArticlePage({
   return (
     <div className="p-6 max-w-3xl space-y-5">
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
-        <Link href="/briefs" className="hover:text-gray-700 transition-colors">Intelligence Briefs</Link>
-        <span>/</span>
-        <Link href={`/briefs/${id}`} className="hover:text-gray-700 transition-colors">Week of {weekOf}</Link>
-        <span>/</span>
-        <Link href={backHref} className="hover:text-gray-700 transition-colors">{meta.label}</Link>
-        <span>/</span>
-        <span className="text-gray-600 truncate max-w-[260px]">{article.headline}</span>
+      {/* Breadcrumb + share */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+          <Link href="/briefs" className="hover:text-gray-700 transition-colors">Intelligence Briefs</Link>
+          <span>/</span>
+          <Link href={`/briefs/${id}`} className="hover:text-gray-700 transition-colors">Week of {weekOf}</Link>
+          <span>/</span>
+          <Link href={backHref} className="hover:text-gray-700 transition-colors">{meta.label}</Link>
+          <span>/</span>
+          <span className="text-gray-600 truncate max-w-[260px]">{article.headline}</span>
+        </div>
+        <ShareButtons title={article.headline} />
       </div>
 
       {/* Header card */}
@@ -366,6 +370,29 @@ export default async function ArticlePage({
         <div className="bg-blue-50 rounded-xl border border-blue-100 p-5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1.5">{article.actionLabel}</p>
           <p className="text-sm font-medium text-blue-900 leading-relaxed">{boldify(article.actionText)}</p>
+        </div>
+      )}
+
+      {/* What to Follow — decision support */}
+      {content.decision_framing && content.decision_framing.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">What to Follow</p>
+          {content.decision_framing.slice(0, 2).map((d, i) => (
+            <div key={i} className="border-l-2 border-blue-200 pl-4 space-y-2">
+              <p className="text-sm font-semibold text-gray-900">{d.question}</p>
+              <p className="text-xs text-gray-500 leading-relaxed">{d.context}</p>
+              {d.options.length > 0 && (
+                <ul className="space-y-1">
+                  {d.options.map((opt, j) => (
+                    <li key={j} className="flex items-start gap-2 text-xs text-gray-600">
+                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+                      {opt}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

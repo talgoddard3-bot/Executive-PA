@@ -425,11 +425,6 @@ export default function BriefViewer({
   function getChart(key: string): StoredSparkline | undefined {
     return (content.market_snapshots?.[key] ?? SPARKLINES[key]) as StoredSparkline | undefined
   }
-  const macroCharts = ['sp500', 'msci', 'dxy', 'gold']
-    .map(k => getChart(k))
-    .filter(Boolean) as StoredSparkline[]
-  const macroFallback = macroCharts.length === 0
-
   // Company stock + competitor stocks + commodity charts from market_snapshots
   const companyStockChart = content.market_snapshots?.['company_stock'] as StoredSparkline | undefined
   const competitorCharts = Object.entries(content.market_snapshots ?? {})
@@ -438,6 +433,21 @@ export default function BriefViewer({
   const commodityCharts = Object.entries(content.market_snapshots ?? {})
     .filter(([k]) => k.startsWith('commodity_'))
     .map(([, v]) => v as StoredSparkline)
+
+  // Build personalized masthead: profile FX pairs → company stock → macro context
+  const fxKeys = ['eurusd', 'gbpusd', 'usdjpy', 'usdcny', 'usdils']
+  const fxCharts = fxKeys
+    .map(k => content.market_snapshots?.[k] as StoredSparkline | undefined)
+    .filter(Boolean) as StoredSparkline[]
+  const macroFills = ['sp500', 'dxy', 'gold']
+    .map(k => getChart(k))
+    .filter(Boolean) as StoredSparkline[]
+  const mastheadCharts: StoredSparkline[] = [
+    ...fxCharts,
+    ...(companyStockChart ? [companyStockChart] : []),
+    ...macroFills,
+  ].slice(0, 8)
+  const mastheadFinal = mastheadCharts.length >= 2 ? mastheadCharts : MACRO_CHARTS
 
   const allowedAudiences = ROLE_MAP[roleFilter]
   const allTocSections: TOCSection[] = [
@@ -523,36 +533,28 @@ export default function BriefViewer({
           ))}
         </div>
 
-        {/* Macro market strip */}
+        {/* Market strip: FX pairs + company stock + macro context */}
         <div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(macroCharts.length > 0 ? macroCharts : MACRO_CHARTS).map((s) => (
+            {mastheadFinal.map((s: StoredSparkline) => (
               <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
             ))}
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5">
-            {macroFallback
-              ? '⚠ Simulated market data — live APIs will connect in Phase 2.'
-              : `✓ Live market data · fetched at brief generation`}
+            {content.market_snapshots
+              ? `✓ Live market data · fetched at brief generation`
+              : '⚠ Simulated market data — regenerate brief to fetch live data.'}
           </p>
         </div>
 
-        {/* Company / competitor / commodity charts */}
-        {(companyStockChart || competitorCharts.length > 0 || commodityCharts.length > 0) && (
+        {/* Competitor stocks + commodities */}
+        {(competitorCharts.length > 0 || commodityCharts.length > 0) && (
           <div className="space-y-2">
-            {companyStockChart && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Your Stock</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm">
-                  <MarketMiniChart sparkline={companyStockChart as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
-                </div>
-              </div>
-            )}
             {competitorCharts.length > 0 && (
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Competitor Stocks</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {competitorCharts.map(s => (
+                  {competitorCharts.map((s: StoredSparkline) => (
                     <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
                   ))}
                 </div>
@@ -562,7 +564,7 @@ export default function BriefViewer({
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Relevant Commodities</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {commodityCharts.map(s => (
+                  {commodityCharts.map((s: StoredSparkline) => (
                     <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
                   ))}
                 </div>

@@ -35,7 +35,8 @@ jobs:
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          COMPANY_ID:           ${{ inputs.company_id || secrets.COMPANY_ID }}
+          # COMPANY_ID is optional — if omitted the scraper loops ALL companies
+          COMPANY_ID:           ${{ inputs.company_id }}
         run: python eib/scripts/scraper.py
 
       - name: Summary

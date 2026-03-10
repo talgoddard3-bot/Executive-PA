@@ -10,7 +10,7 @@ Rules:
 - The brief headline is the single most consequential development of the week for this company — the one thing every executive must know. It must name a real event, a real number, or a real actor. It should feel like a front-page alert, not a theme statement. Bad: "Macroeconomic headwinds persist". Good: "German factory orders fall 8% MoM as key automotive clients delay Q2 procurement — direct revenue risk for [Company]". Always reference the company's specific exposure.
 - Section headlines must be specific and newsworthy — not generic ("Markets volatile") but precise ("German automotive PMI hits 3-year low as EV transition stalls")
 - Details must be 2–3 sentences maximum
-- Impact and relevance statements must reference the company's actual numbers (revenue %, supplier countries, competitors by name)
+- Impact and relevance statements must reference the company's exposure by country/sector — use approximate language like "a significant market", "roughly a quarter of revenue", "a key supply source" — never state exact revenue percentages (e.g. do NOT write "24% of revenue")
 - Scenarios must be genuinely plausible given the signals — not theoretical
 - Decision framing must present real options, not obvious platitudes
 - Do not repeat the same point across sections

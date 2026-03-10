@@ -163,16 +163,19 @@ interface MarketDataOptions {
   companyName?: string              // used as label if stockTicker provided
   competitors?: Array<{ name: string }>
   commodities?: string[]
+  locationCountryNames?: string[]   // operational location country names
 }
 
 export async function fetchLiveMarketData(
   revenueCountryNames: string[],
   options: MarketDataOptions = {}
 ): Promise<Record<string, StoredSparkline>> {
-  const lower    = revenueCountryNames.map(c => c.toLowerCase())
+  const allCountries = [...revenueCountryNames, ...(options.locationCountryNames ?? [])]
+  const lower    = allCountries.map(c => c.toLowerCase())
   const hasUK    = lower.some(c => c.includes('uk') || c.includes('united kingdom'))
   const hasJapan = lower.some(c => c.includes('japan'))
   const hasChina = lower.some(c => c.includes('china'))
+  const hasIsrael = lower.some(c => c.includes('israel'))
 
   // ── Wave 1: indices + USD ─────────────────────────────────────────────────
   // Finnhub primary (60/min), FMP/AV fallback
@@ -201,7 +204,7 @@ export async function fetchLiveMarketData(
   await new Promise(r => setTimeout(r, 1200))
 
   // ── Wave 2: MSCI, gold, FX optionals ─────────────────────────────────────
-  const [msci, gold, gbpusd, usdjpy, usdcny] = await Promise.all([
+  const [msci, gold, gbpusd, usdjpy, usdcny, usdils] = await Promise.all([
     firstOf(
       () => fetchStockCandle('URTH',     'MSCI World', 'MXWO'),
       () => fetchFMP('URTH',             'MSCI World', 'MXWO'),
@@ -225,10 +228,14 @@ export async function fetchLiveMarketData(
       () => fetchFREDSparkline('usdcny'),
       () => fetchAVFX('USD', 'CNY'),
     ) : Promise.resolve(null),
+    hasIsrael ? firstOf(
+      () => fetchForexCandle('OANDA:USD_ILS', 'USD/ILS', '$/₪'),
+      () => fetchAVFX('USD', 'ILS'),
+    ) : Promise.resolve(null),
   ])
 
-  const all  = [sp500, dxy, eurusd, oil, msci, gold, gbpusd, usdjpy, usdcny]
-  const keys = ['sp500', 'dxy', 'eurusd', 'oil', 'msci', 'gold', 'gbpusd', 'usdjpy', 'usdcny']
+  const all  = [sp500, dxy, eurusd, oil, msci, gold, gbpusd, usdjpy, usdcny, usdils]
+  const keys = ['sp500', 'dxy', 'eurusd', 'oil', 'msci', 'gold', 'gbpusd', 'usdjpy', 'usdcny', 'usdils']
 
   const snapshots: Record<string, StoredSparkline> = {}
   all.forEach((s, i) => { if (s) snapshots[keys[i]] = s })
