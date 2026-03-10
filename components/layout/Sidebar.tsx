@@ -148,7 +148,7 @@ export default function Sidebar() {
     const currentSegment = pathname.replace(briefBase, '').replace(/^\//, '') // e.g. "markets"
 
     return (
-      <aside className="w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 flex flex-col shrink-0 overflow-hidden">
+      <aside className="hidden md:flex w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 flex-col shrink-0 overflow-hidden">
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
           {/* Back to list */}
           <Link
@@ -197,7 +197,7 @@ export default function Sidebar() {
 
   // ── Default top-level nav ──────────────────────────────────────────────────
   return (
-    <aside className="w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 flex flex-col shrink-0">
+    <aside className="hidden md:flex w-56 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-white/10 flex-col shrink-0">
       <nav className="flex-1 py-4 px-3 space-y-0.5">
         <NavLink href="/dashboard"    label="Dashboard"            icon={<HomeIcon />}     active={pathname === '/dashboard'} />
         <NavLink href="/briefs"       label="Intelligence Briefs"  icon={<DocumentIcon />} active={pathname === '/briefs'} />

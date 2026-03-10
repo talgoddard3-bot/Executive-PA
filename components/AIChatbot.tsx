@@ -142,7 +142,7 @@ export default function AIChatbot() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className={`fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
+        className={`fixed bottom-[72px] right-4 md:bottom-6 md:right-6 z-50 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-200 ${
           open ? 'bg-gray-900 rotate-90' : 'bg-gray-900 hover:bg-gray-700'
         }`}
         title="Ask AI"
@@ -162,8 +162,9 @@ export default function AIChatbot() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-22 right-6 z-50 w-[380px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col overflow-hidden animate-fadeIn"
-          style={{ height: '520px', bottom: '80px' }}>
+        <div className="fixed z-50 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 flex flex-col overflow-hidden animate-fadeIn
+          inset-x-3 bottom-[140px] md:inset-x-auto md:bottom-[80px] md:right-6 md:w-[380px]"
+          style={{ height: '480px' }}>
 
           {/* Header */}
           <div className="flex items-center gap-2.5 px-4 py-3 bg-gray-900 shrink-0">

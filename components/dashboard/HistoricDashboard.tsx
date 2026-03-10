@@ -88,17 +88,17 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Intelligence Dashboard</h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
-            {companyName ?? 'Company'} · {aggregates.length} brief{aggregates.length !== 1 ? 's' : ''} · Last generated {latest?.weekOf ?? '—'}
+          <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500 mt-0.5">
+            {companyName ?? 'Company'} · {aggregates.length} brief{aggregates.length !== 1 ? 's' : ''} · Last {latest?.weekOf ?? '—'}
           </p>
         </div>
         {latestBriefId && (
           <Link
             href={`/briefs/${latestBriefId}`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-xl transition-colors"
+            className="shrink-0 text-xs md:text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-xl transition-colors whitespace-nowrap"
           >
             Latest Brief →
           </Link>
@@ -116,7 +116,7 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
           {aggregates.length >= 2 && latest && previous && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Week-over-Week Change</p>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <DeltaCard label="High Risks"         current={latest.riskHigh}         previous={previous.riskHigh}         invert />
                 <DeltaCard label="Competitor Moves"   current={latest.competitorCount}   previous={previous.competitorCount} />
                 <DeltaCard label="Opportunities"      current={latest.decisionCount}     previous={previous.decisionCount} />
@@ -135,7 +135,7 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                 </span>
               </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4">{trendInsights.summary}</p>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
                 {trendInsights.trends.map((t, i) => (
                   <div key={i} className="flex items-start gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50">
                     <span className={`text-sm font-bold shrink-0 ${DIRECTION_COLOR[t.direction] ?? 'text-gray-500'}`}>
@@ -166,7 +166,7 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
           )}
 
           {/* Trend Charts */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Risk Trend */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-5">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-4">Risk Trend</p>

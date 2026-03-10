@@ -61,7 +61,7 @@ export default function Header() {
     : (company.name ? company.name.slice(0, 2).toUpperCase() : 'EX')
 
   return (
-    <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 flex items-center justify-between px-6 shrink-0 z-20">
+    <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 flex items-center justify-between px-4 md:px-6 shrink-0 z-20">
       {/* Brand */}
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden"

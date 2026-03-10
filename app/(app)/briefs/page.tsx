@@ -33,7 +33,7 @@ export default async function BriefsPage() {
   const { company, briefs } = await getData()
 
   return (
-    <div className="p-6 max-w-3xl space-y-5">
+    <div className="p-4 md:p-6 max-w-3xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Intelligence Briefs</h1>
