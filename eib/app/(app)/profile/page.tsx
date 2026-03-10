@@ -1,0 +1,68 @@
+import { createClient } from '@supabase/supabase-js'
+import ProfileForm from '@/components/profile/ProfileForm'
+import ProfileDisplay from '@/components/profile/ProfileDisplay'
+import type { Company, CompanyProfile } from '@/lib/types'
+
+const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
+
+async function getCompanyData() {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data } = await supabase
+    .from('companies')
+    .select('*, company_profiles(*)')
+    .eq('user_id', DEV_USER_ID)
+    .single()
+
+  return data
+}
+
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>
+}) {
+  const params = await searchParams
+  const company = await getCompanyData()
+  const profile = company?.company_profiles?.[0] as CompanyProfile | undefined
+  const justSaved = params.saved === '1'
+
+  return (
+    <div className="p-6">
+      <div className="max-w-2xl space-y-5">
+
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Company Profile</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Manage your company details and intelligence preferences</p>
+        </div>
+
+        {justSaved && (
+          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800">
+            Profile saved successfully.
+          </div>
+        )}
+
+        {company && profile ? (
+          <ProfileDisplay
+            company={company as Company}
+            profile={profile}
+          />
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Set up your company profile</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                This information is used to personalise your intelligence brief.
+              </p>
+            </div>
+            <ProfileForm />
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
