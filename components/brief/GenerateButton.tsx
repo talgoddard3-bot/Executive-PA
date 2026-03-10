@@ -26,14 +26,14 @@ function GeneratingCard() {
       setPhaseIndex((i) => (i + 1) % PHASES.length)
     }, 4000)
 
-    // Smooth progress bar — fills to ~88% over 36 seconds, slows near the end
+    // Smooth progress bar — fills to ~85% over ~3 minutes, slows near the end
     const start = Date.now()
     const progressTimer = setInterval(() => {
       const elapsed = (Date.now() - start) / 1000
-      // Asymptotic curve: approaches 90% without reaching it
-      const p = 90 * (1 - Math.exp(-elapsed / 30))
-      setProgress(Math.min(p, 90))
-    }, 200)
+      // Asymptotic curve: approaches 85% without reaching it (time constant = 120s)
+      const p = 85 * (1 - Math.exp(-elapsed / 120))
+      setProgress(Math.min(p, 85))
+    }, 500)
 
     return () => {
       clearInterval(phaseTimer)
@@ -71,7 +71,7 @@ function GeneratingCard() {
           </div>
 
           <p className="mt-2 text-[10px] text-gray-400 uppercase tracking-wide">
-            Claude AI · typically 20–40 seconds
+            Claude AI · this may take a few minutes
           </p>
         </div>
       </div>
