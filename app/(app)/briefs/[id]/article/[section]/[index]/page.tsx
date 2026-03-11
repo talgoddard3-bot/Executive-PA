@@ -373,28 +373,6 @@ export default async function ArticlePage({
         </div>
       )}
 
-      {/* What to Follow — decision support */}
-      {content.decision_framing && content.decision_framing.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">What to Follow</p>
-          {content.decision_framing.slice(0, 2).map((d, i) => (
-            <div key={i} className="border-l-2 border-blue-200 pl-4 space-y-2">
-              <p className="text-sm font-semibold text-gray-900">{d.question}</p>
-              <p className="text-xs text-gray-500 leading-relaxed">{d.context}</p>
-              {d.options.length > 0 && (
-                <ul className="space-y-1">
-                  {d.options.map((opt, j) => (
-                    <li key={j} className="flex items-start gap-2 text-xs text-gray-600">
-                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                      {opt}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Related market charts */}
       {charts.length > 0 && (
