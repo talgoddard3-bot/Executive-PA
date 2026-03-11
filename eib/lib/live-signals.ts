@@ -1,7 +1,9 @@
-import type { Company, CompanyProfile } from './types'
+import type { Company, CompanyProfile, CompanyLocation } from './types'
 import { generateSimulatedSignals } from './claude/signals'
 import { fetchCompetitorSignals } from './finnhub'
 import { buildFREDMacroSignals } from './fred'
+import { buildCountrySignals } from './country-signals'
+import { createClient } from '@supabase/supabase-js'
 
 const NEWS_API_BASE = 'https://newsapi.org/v2/everything'
 const NEWSDATA_BASE = 'https://newsdata.io/api/1/latest'
@@ -68,7 +70,62 @@ function fmt(a: Article): string {
   return `${a.source.name}: "${a.title}".${desc}`
 }
 
-export async function buildLiveSignals(company: Company, profile: CompanyProfile): Promise<string> {
+async function fetchRawSignals(companyId: string): Promise<string> {
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { data } = await supabase
+      .from('raw_signals')
+      .select('signal_type, entity_name, title, summary, source_name')
+      .eq('company_id', companyId)
+      .gte('fetched_at', since)
+      .order('fetched_at', { ascending: false })
+      .limit(120)
+
+    if (!data || data.length === 0) return ''
+
+    // Group by signal_type → entity_name
+    const groups: Record<string, Record<string, string[]>> = {}
+    for (const row of data) {
+      const t = row.signal_type as string
+      const e = row.entity_name as string
+      groups[t] ??= {}
+      groups[t][e] ??= []
+      const desc = row.summary ? ` ${String(row.summary).slice(0, 120)}` : ''
+      groups[t][e].push(`  - ${row.source_name}: "${row.title}".${desc}`)
+    }
+
+    const lines: string[] = [
+      '[SCRAPED SIGNALS — pre-fetched by weekly Python scraper, covering company, competitors, countries, and industry]',
+    ]
+    const TYPE_LABELS: Record<string, string> = {
+      company:    'Company press coverage',
+      competitor: 'Competitor news',
+      country:    'Revenue country signals',
+      location:   'Operational location signals',
+      industry:   'Industry signals',
+    }
+    for (const [type, entities] of Object.entries(groups)) {
+      lines.push(`\n${TYPE_LABELS[type] ?? type}:`)
+      for (const [entity, items] of Object.entries(entities)) {
+        lines.push(`${entity}:`)
+        lines.push(...items.slice(0, 5))
+      }
+    }
+
+    const result = lines.join('\n')
+    console.log(`[signals] Raw signals from DB: ${data.length} rows, ${result.length} chars`)
+    return result
+  } catch (err) {
+    console.warn('[signals] Could not fetch raw_signals:', err)
+    return ''
+  }
+}
+
+export async function buildLiveSignals(company: Company, profile: CompanyProfile, locations: CompanyLocation[] = []): Promise<string> {
   const key = process.env.NEWS_API_KEY
   if (!key) {
     console.log('[signals] NEWS_API_KEY not set — using simulated signals')
@@ -76,6 +133,10 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
   }
 
   const lines: string[] = []
+
+  // ── Pre-fetched scraped signals (Python scraper → raw_signals table) ──────
+  const scraped = await fetchRawSignals(company.id)
+  if (scraped) lines.push(scraped, '')
 
   // ── Demand signals: news per revenue market ─────────────────────────────
   lines.push('[DEMAND SIGNALS — sourced from NewsAPI this week]')
@@ -272,6 +333,12 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
     }
   }
   if (seenCompanyNews.size === 0) lines.push(`  No press coverage found for "${company.name}" this week.`)
+
+  // ── Operational country signals ──────────────────────────────────────────
+  if (locations.length > 0) {
+    const countrySignals = await buildCountrySignals(locations).catch(() => '')
+    if (countrySignals) lines.push('\n' + countrySignals)
+  }
 
   const result = lines.join('\n')
   console.log(`[signals] Fetched live signals: ${result.length} chars`)

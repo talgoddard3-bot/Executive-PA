@@ -1,11 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import ProfileForm from '@/components/profile/ProfileForm'
 import ProfileDisplay from '@/components/profile/ProfileDisplay'
+import LocationsManager from '@/components/profile/LocationsManager'
 import type { Company, CompanyProfile } from '@/lib/types'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
 async function getCompanyData() {
+  const companyId = await getSessionCompanyId()
+  if (!companyId) return null
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -14,7 +17,7 @@ async function getCompanyData() {
   const { data } = await supabase
     .from('companies')
     .select('*, company_profiles(*)')
-    .eq('user_id', DEV_USER_ID)
+    .eq('id', companyId)
     .single()
 
   return data
@@ -46,10 +49,13 @@ export default async function ProfilePage({
         )}
 
         {company && profile ? (
-          <ProfileDisplay
-            company={company as Company}
-            profile={profile}
-          />
+          <>
+            <ProfileDisplay
+              company={company as Company}
+              profile={profile}
+            />
+            <LocationsManager />
+          </>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
             <div>

@@ -10,6 +10,7 @@ import { MACRO_CHARTS, SPARKLINES, CFO_CHART_MAP } from '@/lib/market-data'
 import type { StoredSparkline, SWOTItem } from '@/lib/types'
 import MarketMiniChart from './MarketMiniChart'
 import BriefTOC, { AUDIENCE_COLORS, type TOCSection } from './BriefTOC'
+import FeedbackButtons from '@/components/internal/FeedbackButtons'
 
 // ── Styling ──────────────────────────────────────────────────────────────────
 
@@ -249,7 +250,7 @@ function SWOTPanel({ swot, brandColor }: { swot: BriefContent['swot']; brandColo
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(v: number, name: string) => [`${v} signal${v !== 1 ? 's' : ''}`, name]}
+                  formatter={(v: number | undefined, name: string | undefined) => [`${v ?? 0} signal${(v ?? 0) !== 1 ? 's' : ''}`, name ?? '']}
                   contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid #e5e7eb', padding: '4px 10px' }}
                 />
               </PieChart>
@@ -425,11 +426,6 @@ export default function BriefViewer({
   function getChart(key: string): StoredSparkline | undefined {
     return (content.market_snapshots?.[key] ?? SPARKLINES[key]) as StoredSparkline | undefined
   }
-  const macroCharts = ['sp500', 'msci', 'dxy', 'gold']
-    .map(k => getChart(k))
-    .filter(Boolean) as StoredSparkline[]
-  const macroFallback = macroCharts.length === 0
-
   // Company stock + competitor stocks + commodity charts from market_snapshots
   const companyStockChart = content.market_snapshots?.['company_stock'] as StoredSparkline | undefined
   const competitorCharts = Object.entries(content.market_snapshots ?? {})
@@ -438,6 +434,24 @@ export default function BriefViewer({
   const commodityCharts = Object.entries(content.market_snapshots ?? {})
     .filter(([k]) => k.startsWith('commodity_'))
     .map(([, v]) => v as StoredSparkline)
+
+  // Build personalized masthead: show the most relevant charts for this week
+  // Priority: company stock > FX pairs with biggest moves > macro context
+  const fxKeys = ['eurusd', 'gbpusd', 'usdjpy', 'usdcny', 'usdils']
+  const fxCharts = fxKeys
+    .map(k => content.market_snapshots?.[k] as StoredSparkline | undefined)
+    .filter(Boolean) as StoredSparkline[]
+  // Sort FX by absolute % move so the most relevant ones appear first
+  const fxSorted = [...fxCharts].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
+  const macroFills = ['sp500', 'dxy', 'gold', 'oil']
+    .map(k => getChart(k))
+    .filter(Boolean) as StoredSparkline[]
+  const mastheadCharts: StoredSparkline[] = [
+    ...(companyStockChart ? [companyStockChart] : []),
+    ...fxSorted,
+    ...macroFills,
+  ].slice(0, 8)
+  const mastheadFinal = mastheadCharts.length >= 2 ? mastheadCharts : MACRO_CHARTS
 
   const allowedAudiences = ROLE_MAP[roleFilter]
   const allTocSections: TOCSection[] = [
@@ -523,36 +537,28 @@ export default function BriefViewer({
           ))}
         </div>
 
-        {/* Macro market strip */}
+        {/* Market strip: FX pairs + company stock + macro context */}
         <div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(macroCharts.length > 0 ? macroCharts : MACRO_CHARTS).map((s) => (
+            {mastheadFinal.map((s: StoredSparkline) => (
               <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
             ))}
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5">
-            {macroFallback
-              ? '⚠ Simulated market data — live APIs will connect in Phase 2.'
-              : `✓ Live market data · fetched at brief generation`}
+            {content.market_snapshots
+              ? `✓ Live market data · fetched at brief generation`
+              : '⚠ Simulated market data — regenerate brief to fetch live data.'}
           </p>
         </div>
 
-        {/* Company / competitor / commodity charts */}
-        {(companyStockChart || competitorCharts.length > 0 || commodityCharts.length > 0) && (
+        {/* Competitor stocks + commodities */}
+        {(competitorCharts.length > 0 || commodityCharts.length > 0) && (
           <div className="space-y-2">
-            {companyStockChart && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Your Stock</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-sm">
-                  <MarketMiniChart sparkline={companyStockChart as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
-                </div>
-              </div>
-            )}
             {competitorCharts.length > 0 && (
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Competitor Stocks</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {competitorCharts.map(s => (
+                  {competitorCharts.map((s: StoredSparkline) => (
                     <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
                   ))}
                 </div>
@@ -562,7 +568,7 @@ export default function BriefViewer({
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Relevant Commodities</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {commodityCharts.map(s => (
+                  {commodityCharts.map((s: StoredSparkline) => (
                     <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
                   ))}
                 </div>
@@ -595,9 +601,10 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="financial_news" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -619,9 +626,10 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="geopolitical_news" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -651,8 +659,9 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="competitor_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -679,7 +688,7 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{item.rationale}</p>
                       {item.rationale.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                     </div>
                   ))}
@@ -711,9 +720,10 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="tech_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -745,9 +755,10 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="hr_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -790,9 +801,10 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="ma_watch" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -825,7 +837,7 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <div className="mt-2">
                         <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Revenue Impact</div>
@@ -860,7 +872,7 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{item.summary}</p>
                       {item.summary.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <div className="mt-2">
                         <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Exec Note</div>
@@ -889,6 +901,20 @@ export default function BriefViewer({
 
             {content.risk_summary?.length > 0 && showSection('CEO') && (
               <CollapsibleSection id="brief-risk" label="Risk Summary" audience="CEO" defaultExpanded>
+                {/* Legend */}
+                <div className="flex items-center gap-4 mb-3 pb-2.5 border-b border-gray-100">
+                  {[
+                    { color: 'bg-red-500',   label: 'High',   def: 'Requires action this week' },
+                    { color: 'bg-amber-400', label: 'Medium', def: 'Monitor closely' },
+                    { color: 'bg-gray-400',  label: 'Low',    def: 'Awareness only' },
+                  ].map(({ color, label, def }) => (
+                    <div key={label} className="flex items-center gap-1.5 group relative">
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
+                      <span className="hidden group-hover:block absolute left-0 top-5 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">{def}</span>
+                    </div>
+                  ))}
+                </div>
                 {content.risk_summary.map((r: RiskItem, i) => <RiskCard key={i} risk={r} />)}
               </CollapsibleSection>
             )}
@@ -933,7 +959,7 @@ export default function BriefViewer({
                       )}
                       <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                       {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                        <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                     </div>
                   ))}
@@ -955,7 +981,7 @@ export default function BriefViewer({
                     )}
                     <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
                     {item.detail.length > 140 && briefId && (
-                      <Link href={`/briefs/${briefId}/article/operational_intelligence/${i}`} className="text-[10px] text-blue-600 hover:underline mt-0.5 inline-block">Read more →</Link>
+                      <Link href={`/briefs/${briefId}/article/operational_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
                   </div>
                 ))}

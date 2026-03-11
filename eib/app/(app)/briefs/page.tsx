@@ -1,11 +1,13 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId, getIsAdmin } from '@/lib/get-company'
 import BriefCard from '@/components/brief/BriefCard'
 import GenerateButton from '@/components/brief/GenerateButton'
 import type { Brief } from '@/lib/types'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
 async function getData() {
+  const companyId = await getSessionCompanyId()
+  if (!companyId) return { company: null, briefs: [] }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -13,7 +15,7 @@ async function getData() {
   const { data: company } = await supabase
     .from('companies')
     .select('id, name')
-    .eq('user_id', DEV_USER_ID)
+    .eq('id', companyId)
     .single()
 
   if (!company) return { company: null, briefs: [] }
@@ -28,10 +30,10 @@ async function getData() {
 }
 
 export default async function BriefsPage() {
-  const { company, briefs } = await getData()
+  const [{ company, briefs }, isAdmin] = await Promise.all([getData(), getIsAdmin()])
 
   return (
-    <div className="p-6 max-w-3xl space-y-5">
+    <div className="p-4 md:p-6 max-w-3xl space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Intelligence Briefs</h1>
@@ -56,7 +58,7 @@ export default async function BriefsPage() {
       {briefs.length > 0 && (
         <div className="space-y-2.5">
           {(briefs as Brief[]).map((brief) => (
-            <BriefCard key={brief.id} brief={brief} />
+            <BriefCard key={brief.id} brief={brief} isAdmin={isAdmin} />
           ))}
         </div>
       )}

@@ -56,6 +56,7 @@ export const SPARKLINES: Record<string, Sparkline> = {
   gbpusd:   generate('GBP/USD',    '£/$',  '',    1.265,   0.007,  0.005, 4, 5),
   usdjpy:   generate('USD/JPY',    '$/¥',  '',    151.5,   1.8,    2.0,  2, 6),
   usdcny:   generate('USD/CNY',    '$/¥',  '',    7.22,    0.04,   0.02, 4, 7),
+  usdils:   generate('USD/ILS',    '$/₪',  '',    3.72,    0.05,   0.03, 4, 12),
   gold:     generate('Gold',       'XAU',  '$/oz', 2_050,  30,    45,  0, 8),
   oil:      generate('WTI Oil',    'WTI',  '$/bbl', 78.5,   3,    -4,  1, 9),
   copper:   generate('Copper',     'HG',   '$/t', 8_900,  200,   150,  0, 10),
@@ -78,6 +79,7 @@ const COUNTRY_FX: Record<string, string> = {
   'united kingdom': 'gbpusd', 'uk': 'gbpusd', 'great britain': 'gbpusd',
   'japan': 'usdjpy',
   'china': 'usdcny',
+  'israel': 'usdils',
 }
 
 export function getFxForCountry(country: string): Sparkline | null {

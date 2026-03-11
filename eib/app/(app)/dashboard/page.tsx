@@ -1,21 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import HistoricDashboard from '@/components/dashboard/HistoricDashboard'
 import type { BriefAggregate } from '@/components/dashboard/HistoricDashboard'
 import type { Brief, BriefContent, TrendInsights } from '@/lib/types'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
-
 export default async function DashboardPage() {
+  const companyId = await getSessionCompanyId()
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const { data: company } = await supabase
-    .from('companies')
-    .select('id, name')
-    .eq('user_id', DEV_USER_ID)
-    .single()
+  const { data: company } = companyId
+    ? await supabase.from('companies').select('id, name').eq('id', companyId).single()
+    : { data: null }
 
   if (!company) {
     return (
@@ -34,7 +33,7 @@ export default async function DashboardPage() {
     .order('week_of', { ascending: true })
     .limit(16)
 
-  const aggregates: BriefAggregate[] = (briefs ?? []).map((b: Brief) => {
+  const aggregates: BriefAggregate[] = (briefs ?? []).map((b) => {
     const c = b.content as BriefContent
 
     const risks = c.risk_summary ?? []
@@ -76,7 +75,7 @@ export default async function DashboardPage() {
     : null
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <div className="max-w-[1100px] mx-auto">
         <HistoricDashboard
           aggregates={aggregates}

@@ -309,7 +309,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             <h3 className={sectionHeadingClass}>Revenue Exposure</h3>
             <p className="text-xs text-gray-400 mt-0.5">AI suggested — adjust as needed</p>
           </div>
-          <button type="button" onClick={() => setRevenueCountries((p) => [...p, { country: '', pct: 0, sector: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
+          <button type="button" onClick={() => setRevenueCountries((p) => [...p, { country: '', sector: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
             + Add country
           </button>
         </div>
@@ -319,11 +319,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
               {i === 0 && <label className={labelClass}>Country</label>}
               <input className={inputClass} value={r.country} onChange={(e) => updateRevenue(i, 'country', e.target.value)} placeholder="Germany" />
             </div>
-            <div className="col-span-2">
-              {i === 0 && <label className={labelClass}>%</label>}
-              <input type="number" min={0} max={100} className={inputClass} value={r.pct || ''} onChange={(e) => updateRevenue(i, 'pct', Number(e.target.value))} />
-            </div>
-            <div className="col-span-4">
+            <div className="col-span-6">
               {i === 0 && <label className={labelClass}>Sector</label>}
               <input className={inputClass} value={r.sector} onChange={(e) => updateRevenue(i, 'sector', e.target.value)} placeholder="Automotive" />
             </div>

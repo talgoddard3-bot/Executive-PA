@@ -1,26 +1,27 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import Link from 'next/link'
 import MarketMiniChart from '@/components/brief/MarketMiniChart'
+import ShareButtons from '@/components/brief/ShareButtons'
+import FeedbackButtons from '@/components/internal/FeedbackButtons'
 import type { BriefContent, StoredSparkline } from '@/lib/types'
-
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 
 // ── Section metadata ──────────────────────────────────────────────────────────
 
-const SECTION_META: Record<string, { label: string; audience: string; color: string; backSegment: string }> = {
-  company_news:             { label: 'Company News',            audience: 'All',  color: 'bg-gray-100 text-gray-600',     backSegment: 'company-news' },
-  competitor_intelligence:  { label: 'Competitor Intelligence', audience: 'CMO',  color: 'bg-orange-50 text-orange-700',  backSegment: 'competitors' },
-  marketing_opportunities:  { label: 'Marketing Opportunities', audience: 'CMO',  color: 'bg-emerald-50 text-emerald-700',backSegment: 'competitors' },
-  geopolitical_news:        { label: 'Geopolitical Signals',    audience: 'CEO',  color: 'bg-violet-50 text-violet-700',  backSegment: 'geopolitical' },
-  financial_news:           { label: 'Financial News',          audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backSegment: 'markets' },
-  financial_signals:        { label: 'Financial Signals',       audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backSegment: 'markets' },
-  tech_intelligence:        { label: 'Tech Intelligence',       audience: 'CTO',  color: 'bg-cyan-50 text-cyan-700',      backSegment: 'technology' },
-  hr_intelligence:          { label: 'HR Intelligence',         audience: 'HR',   color: 'bg-pink-50 text-pink-700',      backSegment: 'hr' },
-  ma_watch:                 { label: 'M&A Watch',               audience: 'BD',   color: 'bg-indigo-50 text-indigo-700',  backSegment: 'ma' },
-  operational_intelligence: { label: 'Operational Intelligence',audience: 'CBPO', color: 'bg-amber-50 text-amber-700',   backSegment: 'supply-chain' },
-  customer_intelligence:    { label: 'Customer Intelligence',   audience: 'CEO',  color: 'bg-teal-50 text-teal-700',     backSegment: 'customers' },
-  risk_summary:             { label: 'Risk Summary',            audience: 'CEO',  color: 'bg-red-50 text-red-700',        backSegment: 'full' },
+const SECTION_META: Record<string, { label: string; audience: string; color: string; backAnchor: string }> = {
+  company_news:             { label: 'Company News',            audience: 'All',  color: 'bg-gray-100 text-gray-600',     backAnchor: 'brief-company-news' },
+  competitor_intelligence:  { label: 'Competitor Intelligence', audience: 'CMO',  color: 'bg-orange-50 text-orange-700',  backAnchor: 'brief-comp' },
+  marketing_opportunities:  { label: 'Marketing Opportunities', audience: 'CMO',  color: 'bg-emerald-50 text-emerald-700',backAnchor: 'brief-mktg' },
+  geopolitical_news:        { label: 'Geopolitical Signals',    audience: 'CEO',  color: 'bg-violet-50 text-violet-700',  backAnchor: 'brief-geo' },
+  financial_news:           { label: 'Financial News',          audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backAnchor: 'brief-fin-news' },
+  financial_signals:        { label: 'Financial Signals',       audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backAnchor: 'brief-fin-signals' },
+  tech_intelligence:        { label: 'Tech Intelligence',       audience: 'CTO',  color: 'bg-cyan-50 text-cyan-700',      backAnchor: 'brief-tech' },
+  hr_intelligence:          { label: 'HR Intelligence',         audience: 'HR',   color: 'bg-pink-50 text-pink-700',      backAnchor: 'brief-hr' },
+  ma_watch:                 { label: 'M&A Watch',               audience: 'BD',   color: 'bg-indigo-50 text-indigo-700',  backAnchor: 'brief-ma' },
+  operational_intelligence: { label: 'Operational Intelligence',audience: 'CBPO', color: 'bg-amber-50 text-amber-700',   backAnchor: 'brief-ops' },
+  customer_intelligence:    { label: 'Customer Intelligence',   audience: 'CEO',  color: 'bg-teal-50 text-teal-700',     backAnchor: 'brief-customers' },
+  risk_summary:             { label: 'Risk Summary',            audience: 'CEO',  color: 'bg-red-50 text-red-700',        backAnchor: 'brief-risk' },
 }
 
 // Which market_snapshots keys are relevant per section
@@ -210,17 +211,22 @@ export default async function ArticlePage({
   const meta = SECTION_META[section]
   if (!meta) notFound()
 
+  const companyId = await getSessionCompanyId()
+  if (!companyId) notFound()
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const [{ data: company }, { data: brief }] = await Promise.all([
-    supabase.from('companies').select('id, name').eq('user_id', DEV_USER_ID).single(),
-    supabase.from('briefs').select('id, week_of, content').eq('id', id).single(),
-  ])
+  const { data: brief } = await supabase
+    .from('briefs')
+    .select('id, week_of, content')
+    .eq('id', id)
+    .eq('company_id', companyId)
+    .single()
 
-  if (!company || !brief?.content) notFound()
+  if (!brief?.content) notFound()
 
   const content = brief.content as BriefContent
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -257,9 +263,7 @@ export default async function ArticlePage({
     .slice(0, 3)
 
   const briefBase = `/briefs/${id}`
-  const backHref = meta.backSegment === 'full'
-    ? `${briefBase}/full`
-    : `${briefBase}/${meta.backSegment}`
+  const backHref = `${briefBase}/full#${meta.backAnchor}`
 
   const prev = idx > 0 ? `/briefs/${id}/article/${section}/${idx - 1}` : null
   const next = idx < sectionArray.length - 1 ? `/briefs/${id}/article/${section}/${idx + 1}` : null
@@ -267,15 +271,18 @@ export default async function ArticlePage({
   return (
     <div className="p-6 max-w-3xl space-y-5">
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
-        <Link href="/briefs" className="hover:text-gray-700 transition-colors">Intelligence Briefs</Link>
-        <span>/</span>
-        <Link href={`/briefs/${id}`} className="hover:text-gray-700 transition-colors">Week of {weekOf}</Link>
-        <span>/</span>
-        <Link href={backHref} className="hover:text-gray-700 transition-colors">{meta.label}</Link>
-        <span>/</span>
-        <span className="text-gray-600 truncate max-w-[260px]">{article.headline}</span>
+      {/* Breadcrumb + share */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 text-sm text-gray-400 flex-wrap">
+          <Link href="/briefs" className="hover:text-gray-700 transition-colors">Intelligence Briefs</Link>
+          <span>/</span>
+          <Link href={`/briefs/${id}`} className="hover:text-gray-700 transition-colors">Week of {weekOf}</Link>
+          <span>/</span>
+          <Link href={backHref} className="hover:text-gray-700 transition-colors">{meta.label}</Link>
+          <span>/</span>
+          <span className="text-gray-600 truncate max-w-[260px]">{article.headline}</span>
+        </div>
+        <ShareButtons title={article.headline} />
       </div>
 
       {/* Header card */}
@@ -364,6 +371,13 @@ export default async function ArticlePage({
           <p className="text-sm font-medium text-blue-900 leading-relaxed">{boldify(article.actionText)}</p>
         </div>
       )}
+
+      {/* Feedback */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 flex items-center gap-3">
+        <p className="text-xs text-gray-500 shrink-0">Was this article useful?</p>
+        <FeedbackButtons briefId={id} section={section} itemIndex={idx} />
+      </div>
+
 
       {/* Related market charts */}
       {charts.length > 0 && (

@@ -65,7 +65,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       severityColor: c.threat_level === 'high' ? 'bg-red-100 text-red-700' : c.threat_level === 'medium' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700',
       title: `${c.competitor} — ${c.headline}`,
       excerpt: c.detail.replace(/\*\*/g, ''),
-      href: `/briefs/${briefId}/competitors`,
+      href: `/briefs/${briefId}/full#brief-comp`,
     })
   })
 
@@ -78,7 +78,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       severity: o.urgency,
       severityColor: o.urgency === 'high' ? 'bg-emerald-100 text-emerald-700' : o.urgency === 'medium' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600',
       title: o.channel, excerpt: o.opportunity,
-      href: `/briefs/${briefId}/competitors`,
+      href: `/briefs/${briefId}/full#brief-mktg`,
     })
   })
 
@@ -89,7 +89,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       section: 'Geopolitical', sectionColor: 'bg-violet-50 text-violet-700',
       title: `${g.region} — ${g.headline}`,
       excerpt: g.relevance,
-      href: `/briefs/${briefId}/geopolitical`,
+      href: `/briefs/${briefId}/full#brief-geo`,
     })
   })
 
@@ -100,7 +100,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       section: 'Financial', sectionColor: 'bg-blue-50 text-blue-700',
       title: `${f.market} — ${f.headline}`,
       excerpt: f.impact,
-      href: `/briefs/${briefId}/markets`,
+      href: `/briefs/${briefId}/full#brief-fin-news`,
     })
   })
 
@@ -111,7 +111,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       id: `ma-${i}`, priority: p,
       section: 'M&A', sectionColor: 'bg-indigo-50 text-indigo-700',
       title: m.headline, excerpt: m.strategic_read,
-      href: `/briefs/${briefId}/ma`,
+      href: `/briefs/${briefId}/full#brief-ma`,
     })
   })
 
@@ -123,7 +123,7 @@ function buildFeed(briefId: string, content: BriefContent): FeedItem[] {
       section: 'Company News',
       sectionColor: n.sentiment === 'negative' ? 'bg-red-50 text-red-700' : n.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-50 text-gray-600',
       title: n.headline, excerpt: n.exec_note,
-      href: `/briefs/${briefId}/company-news`,
+      href: `/briefs/${briefId}/full#brief-company-news`,
     })
   })
 

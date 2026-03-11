@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const DEV_USER_ID = '00000000-0000-0000-0000-000000000001'
 const BUCKET = 'user-avatars'
 
 export async function POST(req: Request) {
+  const serverSupabase = await createServerClient()
+  const { data: { user } } = await serverSupabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,7 +19,7 @@ export async function POST(req: Request) {
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
 
   const ext = file.name.split('.').pop() ?? 'jpg'
-  const path = `${DEV_USER_ID}/avatar.${ext}`
+  const path = `${user.id}/avatar.${ext}`
   const buffer = Buffer.from(await file.arrayBuffer())
 
   const { error: uploadError } = await supabase.storage
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
   // Update the user_profiles row
   await supabase
     .from('user_profiles')
-    .upsert({ user_id: DEV_USER_ID, avatar_url: publicUrl }, { onConflict: 'user_id' })
+    .upsert({ user_id: user.id, avatar_url: publicUrl }, { onConflict: 'user_id' })
 
   return NextResponse.json({ avatar_url: publicUrl })
 }

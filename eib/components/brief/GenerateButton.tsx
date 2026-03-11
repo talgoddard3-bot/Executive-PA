@@ -26,14 +26,14 @@ function GeneratingCard() {
       setPhaseIndex((i) => (i + 1) % PHASES.length)
     }, 4000)
 
-    // Smooth progress bar — fills to ~88% over 36 seconds, slows near the end
+    // Smooth progress bar — fills to ~85% over ~3 minutes, slows near the end
     const start = Date.now()
     const progressTimer = setInterval(() => {
       const elapsed = (Date.now() - start) / 1000
-      // Asymptotic curve: approaches 90% without reaching it
-      const p = 90 * (1 - Math.exp(-elapsed / 30))
-      setProgress(Math.min(p, 90))
-    }, 200)
+      // Asymptotic curve: approaches 85% without reaching it (time constant = 120s)
+      const p = 85 * (1 - Math.exp(-elapsed / 120))
+      setProgress(Math.min(p, 85))
+    }, 500)
 
     return () => {
       clearInterval(phaseTimer)
@@ -71,7 +71,7 @@ function GeneratingCard() {
           </div>
 
           <p className="mt-2 text-[10px] text-gray-400 uppercase tracking-wide">
-            Claude AI · typically 20–40 seconds
+            Claude AI · this may take a few minutes
           </p>
         </div>
       </div>
@@ -85,55 +85,35 @@ export default function GenerateButton() {
   const [existingId, setExistingId] = useState<string | null>(null)
   const router = useRouter()
 
-  async function pollStatus(briefId: string) {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/briefs/${briefId}/status`)
-        const data = await res.json()
-        if (data.status === 'complete') {
-          clearInterval(interval)
-          setLoading(false)
-          router.refresh()
-        } else if (data.status === 'failed') {
-          clearInterval(interval)
-          setLoading(false)
-          setError('Brief generation failed — check the terminal for details')
-        }
-      } catch {
-        // network hiccup — keep polling
-      }
-    }, 3000)
-  }
-
   async function generate() {
     setLoading(true)
     setError('')
     setExistingId(null)
 
-    let data: Record<string, unknown> = {}
     try {
+      // Synthesis runs synchronously on the server — this request waits until complete
       const res = await fetch('/api/briefs/generate', { method: 'POST' })
-      data = await res.json()
+      const data = await res.json()
 
       if (!res.ok) {
         setError((data.error as string) ?? 'Failed to generate brief')
         setLoading(false)
         return
       }
+
+      if (data.alreadyExists) {
+        setLoading(false)
+        setExistingId(data.briefId as string)
+        return
+      }
+
+      // Brief is complete — refresh the page
+      setLoading(false)
+      router.refresh()
     } catch {
-      setError('Network error — check the terminal for details')
+      setError('Network error — please try again')
       setLoading(false)
-      return
     }
-
-    if (data.alreadyExists) {
-      setLoading(false)
-      setExistingId(data.briefId as string)
-      return
-    }
-
-    // Synthesis runs in background on server — poll until complete
-    pollStatus(data.briefId as string)
   }
 
   if (loading) {

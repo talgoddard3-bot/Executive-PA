@@ -1,4 +1,5 @@
-import { getLatestBrief } from '@/lib/get-latest-brief'
+import { createClient } from '@supabase/supabase-js'
+import { getSessionCompanyId } from '@/lib/get-company'
 import Link from 'next/link'
 import type { CompanyNewsItem } from '@/lib/types'
 
@@ -18,49 +19,77 @@ const CATEGORY_COLOR: Record<string, string> = {
   'General Coverage':     'bg-gray-100 text-gray-600',
 }
 
-export default async function CompanyNewsPage() {
-  const { company, brief, weekOf } = await getLatestBrief()
+interface EnrichedNewsItem extends CompanyNewsItem {
+  briefId: string
+  briefWeek: string
+  globalIdx: number
+}
 
-  if (!brief) {
+function formatWeek(weekOf: string) {
+  return new Date(weekOf).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  })
+}
+
+export default async function CompanyNewsPage() {
+  const companyId = await getSessionCompanyId()
+
+  if (!companyId) {
     return (
       <div className="p-6 max-w-4xl">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Company News</h1>
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-          <p className="text-sm text-gray-500 mb-1">No brief has been generated yet.</p>
-          <p className="text-xs text-gray-400">Generate your first intelligence brief to see press coverage.</p>
+          <p className="text-sm text-gray-500">Not signed in.</p>
         </div>
       </div>
     )
   }
 
-  const content = brief.content
-  const items = (content?.company_news ?? []) as CompanyNewsItem[]
+  const db = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  const positive = items.filter(i => i.sentiment === 'positive')
-  const neutral   = items.filter(i => i.sentiment === 'neutral')
-  const negative  = items.filter(i => i.sentiment === 'negative')
+  const [{ data: company }, { data: briefs }] = await Promise.all([
+    db.from('companies').select('name').eq('id', companyId).single(),
+    db.from('briefs')
+      .select('id, week_of, content')
+      .eq('company_id', companyId)
+      .eq('status', 'complete')
+      .order('week_of', { ascending: false }),
+  ])
+
+  // Aggregate all company_news items across all briefs, newest brief first
+  const allItems: EnrichedNewsItem[] = []
+  for (const brief of briefs ?? []) {
+    const items: CompanyNewsItem[] = (brief.content?.company_news ?? []) as CompanyNewsItem[]
+    items.forEach((item, idx) => {
+      allItems.push({
+        ...item,
+        briefId: brief.id,
+        briefWeek: formatWeek(brief.week_of),
+        globalIdx: idx,
+      })
+    })
+  }
+
+  const positive = allItems.filter(i => i.sentiment === 'positive')
+  const neutral   = allItems.filter(i => i.sentiment === 'neutral')
+  const negative  = allItems.filter(i => i.sentiment === 'negative')
 
   return (
     <div className="p-6 max-w-4xl space-y-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Company News</h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            Press coverage of {company?.name ?? 'your company'} · Week of {weekOf}
-          </p>
-        </div>
-        <Link
-          href={`/briefs/${brief.id}/company-news`}
-          className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          View in brief context →
-        </Link>
+      <div>
+        <h1 className="text-xl font-bold text-gray-900">Company News</h1>
+        <p className="text-sm text-gray-400 mt-0.5">
+          All press coverage of {company?.name ?? 'your company'} across every brief
+        </p>
       </div>
 
-      {items.length === 0 ? (
+      {allItems.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
-          <p className="text-sm text-gray-500 mb-1">No press coverage found in the latest brief.</p>
-          <p className="text-xs text-gray-400">Regenerate to capture this week&apos;s media mentions.</p>
+          <p className="text-sm text-gray-500 mb-1">No press coverage found.</p>
+          <p className="text-xs text-gray-400">Generate your first intelligence brief to see media mentions.</p>
         </div>
       ) : (
         <>
@@ -80,6 +109,7 @@ export default async function CompanyNewsPage() {
                 </div>
               ))}
             </div>
+            <span className="ml-auto text-xs text-gray-400">{briefs?.length ?? 0} briefs · {allItems.length} articles</span>
           </div>
 
           {negative.length > 0 && (
@@ -88,7 +118,7 @@ export default async function CompanyNewsPage() {
                 <h2 className="text-sm font-semibold text-gray-900">Negative Coverage</h2>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-50 text-red-700">Requires Attention</span>
               </div>
-              <ArticleList items={negative} briefId={brief.id} allItems={items} />
+              <ArticleList items={negative} />
             </div>
           )}
 
@@ -98,7 +128,7 @@ export default async function CompanyNewsPage() {
                 <h2 className="text-sm font-semibold text-gray-900">Positive Coverage</h2>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Amplify</span>
               </div>
-              <ArticleList items={positive} briefId={brief.id} allItems={items} />
+              <ArticleList items={positive} />
             </div>
           )}
 
@@ -108,7 +138,7 @@ export default async function CompanyNewsPage() {
                 <h2 className="text-sm font-semibold text-gray-900">General Coverage</h2>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">Monitor</span>
               </div>
-              <ArticleList items={neutral} briefId={brief.id} allItems={items} />
+              <ArticleList items={neutral} />
             </div>
           )}
         </>
@@ -117,13 +147,11 @@ export default async function CompanyNewsPage() {
   )
 }
 
-function ArticleList({ items, briefId, allItems }: { items: CompanyNewsItem[]; briefId: string; allItems: CompanyNewsItem[] }) {
+function ArticleList({ items }: { items: EnrichedNewsItem[] }) {
   return (
     <div className="space-y-0">
-      {items.map((item, _i) => {
-        const globalIdx = allItems.indexOf(item)
-        return (
-        <div key={_i} className="py-4 border-b border-gray-100 last:border-0">
+      {items.map((item, i) => (
+        <div key={i} className="py-4 border-b border-gray-100 last:border-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${SENTIMENT_BADGE[item.sentiment] ?? 'bg-gray-50 text-gray-500 border-gray-200'}`}>
               {item.sentiment}
@@ -131,11 +159,11 @@ function ArticleList({ items, briefId, allItems }: { items: CompanyNewsItem[]; b
             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded capitalize ${CATEGORY_COLOR[item.category] ?? 'bg-gray-50 text-gray-500'}`}>
               {item.category}
             </span>
-            {item.date && (
-              <span className="ml-auto text-[10px] text-gray-400">{item.date}</span>
-            )}
+            <span className="ml-auto text-[10px] text-gray-400">
+              {item.date ? `${item.date} · ` : ''}{item.briefWeek}
+            </span>
           </div>
-          <Link href={`/briefs/${briefId}/article/company_news/${globalIdx}`} className="group">
+          <Link href={`/briefs/${item.briefId}/article/company_news/${item.globalIdx}`} className="group">
             <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</p>
           </Link>
           <p className="text-xs text-gray-500 leading-relaxed mb-2">{item.summary.replace(/\*\*/g, '')}</p>
@@ -155,8 +183,7 @@ function ArticleList({ items, briefId, allItems }: { items: CompanyNewsItem[]; b
             </span>
           )}
         </div>
-        )
-      })}
+      ))}
     </div>
   )
 }
