@@ -1,6 +1,18 @@
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 
+export async function getIsAdmin(): Promise<boolean> {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  const { data } = await service()
+    .from('user_profiles')
+    .select('is_admin')
+    .eq('user_id', user.id)
+    .single()
+  return data?.is_admin === true
+}
+
 const service = () =>
   createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,8 +40,9 @@ export async function getSessionCompanyId(): Promise<string | null> {
 
 /**
  * Returns both the user id and company_id.
+ * companyId may be null for newly approved users who haven't completed profile setup.
  */
-export async function getSessionUser(): Promise<{ userId: string; companyId: string } | null> {
+export async function getSessionUser(): Promise<{ userId: string; companyId: string | null } | null> {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -40,7 +53,6 @@ export async function getSessionUser(): Promise<{ userId: string; companyId: str
     .eq('user_id', user.id)
     .single()
 
-  if (!data?.company_id) return null
-
-  return { userId: user.id, companyId: data.company_id }
+  // Return userId even without companyId — routes that require a company check companyId themselves
+  return { userId: user.id, companyId: data?.company_id ?? null }
 }

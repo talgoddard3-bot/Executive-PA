@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { getSessionCompanyId } from '@/lib/get-company'
+import { getSessionCompanyId, getIsAdmin } from '@/lib/get-company'
 import BriefCard from '@/components/brief/BriefCard'
 import GenerateButton from '@/components/brief/GenerateButton'
 import type { Brief } from '@/lib/types'
@@ -30,7 +30,7 @@ async function getData() {
 }
 
 export default async function BriefsPage() {
-  const { company, briefs } = await getData()
+  const [{ company, briefs }, isAdmin] = await Promise.all([getData(), getIsAdmin()])
 
   return (
     <div className="p-4 md:p-6 max-w-3xl space-y-5">
@@ -58,7 +58,7 @@ export default async function BriefsPage() {
       {briefs.length > 0 && (
         <div className="space-y-2.5">
           {(briefs as Brief[]).map((brief) => (
-            <BriefCard key={brief.id} brief={brief} />
+            <BriefCard key={brief.id} brief={brief} isAdmin={isAdmin} />
           ))}
         </div>
       )}

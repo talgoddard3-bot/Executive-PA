@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { getSessionCompanyId } from '@/lib/get-company'
+import { getSessionCompanyId, getIsAdmin } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
 
 export async function GET(
@@ -34,6 +34,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+
+  if (!await getIsAdmin()) {
+    return NextResponse.json({ error: 'Forbidden — only admins can delete briefs' }, { status: 403 })
+  }
+
   const companyId = await getSessionCompanyId()
   if (!companyId) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 

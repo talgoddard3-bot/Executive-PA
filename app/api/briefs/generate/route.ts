@@ -13,16 +13,19 @@ function getMondayOfWeek(date: Date): string {
   return d.toISOString().split('T')[0]
 }
 
-// Increase default response timeout for this route
-export const maxDuration = 120
+// 5 min — synthesis is synchronous, Vercel Pro supports up to 300s
+export const maxDuration = 300
 
 export async function POST() {
   try {
     const session = await getSessionUser()
-    if (!session) {
+    if (!session?.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const { userId, companyId } = session
+    if (!companyId) {
+      return NextResponse.json({ error: 'Company not found. Set up your profile first.' }, { status: 404 })
+    }
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,25 +53,17 @@ export async function POST() {
     // Check for existing brief this week
     const { data: existing } = await supabase
       .from('briefs')
-      .select('id, status, created_at')
+      .select('id, status')
       .eq('company_id', company.id)
       .eq('week_of', weekOf)
       .single()
 
+    if (existing?.status === 'complete') {
+      return NextResponse.json({ briefId: existing.id, status: 'complete', alreadyExists: true })
+    }
+
+    // Delete any failed/stuck brief so we can recreate cleanly
     if (existing) {
-      if (existing.status === 'complete') {
-        return NextResponse.json({ briefId: existing.id, status: 'complete', alreadyExists: true })
-      }
-      if (existing.status === 'generating') {
-        // If stuck generating for >10 min, treat as failed and regenerate
-        const createdAt = new Date((existing as { created_at?: string }).created_at ?? 0).getTime()
-        const stuckThreshold = 10 * 60 * 1000
-        if (Date.now() - createdAt < stuckThreshold) {
-          return NextResponse.json({ briefId: existing.id, status: 'generating', alreadyExists: true })
-        }
-        // Stuck — fall through to delete and recreate
-      }
-      // failed, pending, or stuck generating → delete and recreate
       await supabase.from('briefs').delete().eq('id', existing.id)
     }
 
@@ -83,30 +78,28 @@ export async function POST() {
       return NextResponse.json({ error: 'Failed to create brief' }, { status: 500 })
     }
 
-    // Fire-and-forget synthesis — runs in background so navigation doesn't abort it
-    const briefId = brief.id
-    void (async () => {
-      try {
-        const content = await synthesizeBrief(company as Company, profile as CompanyProfile, userId)
+    // Run synthesis synchronously — Vercel kills background tasks after response is sent,
+    // so fire-and-forget does not work in production. maxDuration = 300 gives 5 min.
+    try {
+      const content = await synthesizeBrief(company as Company, profile as CompanyProfile, userId)
 
-        // Generate trend insights via Haiku (cheap, stored once per brief)
-        const trendInsights = await generateTrendInsights(company.id, content, weekOf)
-        if (trendInsights) {
-          content.trend_insights = trendInsights
-        }
-
-        await supabase
-          .from('briefs')
-          .update({ status: 'complete', content, generated_at: new Date().toISOString() })
-          .eq('id', briefId)
-      } catch (synthErr) {
-        console.error('Brief synthesis failed:', synthErr)
-        await supabase.from('briefs').update({ status: 'failed' }).eq('id', briefId)
+      // Generate trend insights via Haiku (cheap, stored once per brief)
+      const trendInsights = await generateTrendInsights(company.id, content, weekOf)
+      if (trendInsights) {
+        content.trend_insights = trendInsights
       }
-    })()
 
-    // Return immediately — client polls for status
-    return NextResponse.json({ briefId, status: 'generating' })
+      await supabase
+        .from('briefs')
+        .update({ status: 'complete', content, generated_at: new Date().toISOString() })
+        .eq('id', brief.id)
+
+      return NextResponse.json({ briefId: brief.id, status: 'complete' })
+    } catch (synthErr) {
+      console.error('Brief synthesis failed:', synthErr)
+      await supabase.from('briefs').update({ status: 'failed' }).eq('id', brief.id)
+      return NextResponse.json({ error: 'Brief generation failed — please try again' }, { status: 500 })
+    }
 
   } catch (err) {
     console.error('[briefs/generate] error:', err)

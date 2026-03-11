@@ -32,7 +32,7 @@ function splitHeadline(headline: string): { title: string; tagline: string | nul
   }
 }
 
-export default function BriefCard({ brief }: { brief: Brief }) {
+export default function BriefCard({ brief, isAdmin }: { brief: Brief; isAdmin?: boolean }) {
   const weekOf = new Date(brief.week_of).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   })
@@ -81,7 +81,7 @@ export default function BriefCard({ brief }: { brief: Brief }) {
             </span>
           )}
         </div>
-        <DeleteBriefButton briefId={brief.id} />
+        {isAdmin && <DeleteBriefButton briefId={brief.id} />}
       </div>
 
       {/* Headline */}

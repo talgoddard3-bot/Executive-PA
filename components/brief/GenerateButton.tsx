@@ -85,55 +85,35 @@ export default function GenerateButton() {
   const [existingId, setExistingId] = useState<string | null>(null)
   const router = useRouter()
 
-  async function pollStatus(briefId: string) {
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/briefs/${briefId}/status`)
-        const data = await res.json()
-        if (data.status === 'complete') {
-          clearInterval(interval)
-          setLoading(false)
-          router.refresh()
-        } else if (data.status === 'failed') {
-          clearInterval(interval)
-          setLoading(false)
-          setError('Brief generation failed — check the terminal for details')
-        }
-      } catch {
-        // network hiccup — keep polling
-      }
-    }, 3000)
-  }
-
   async function generate() {
     setLoading(true)
     setError('')
     setExistingId(null)
 
-    let data: Record<string, unknown> = {}
     try {
+      // Synthesis runs synchronously on the server — this request waits until complete
       const res = await fetch('/api/briefs/generate', { method: 'POST' })
-      data = await res.json()
+      const data = await res.json()
 
       if (!res.ok) {
         setError((data.error as string) ?? 'Failed to generate brief')
         setLoading(false)
         return
       }
+
+      if (data.alreadyExists) {
+        setLoading(false)
+        setExistingId(data.briefId as string)
+        return
+      }
+
+      // Brief is complete — refresh the page
+      setLoading(false)
+      router.refresh()
     } catch {
-      setError('Network error — check the terminal for details')
+      setError('Network error — please try again')
       setLoading(false)
-      return
     }
-
-    if (data.alreadyExists) {
-      setLoading(false)
-      setExistingId(data.briefId as string)
-      return
-    }
-
-    // Synthesis runs in background on server — poll until complete
-    pollStatus(data.briefId as string)
   }
 
   if (loading) {

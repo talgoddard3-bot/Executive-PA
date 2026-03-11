@@ -72,6 +72,49 @@ export async function PATCH(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // When approving, auto-create the company row and link it to the user profile
+  if (status === 'active') {
+    // Fetch current profile to get company_name and check if company already exists
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('company_name, company_id')
+      .eq('user_id', user_id)
+      .single()
+
+    if (profile && !profile.company_id) {
+      const companyName = profile.company_name?.trim() || 'My Company'
+
+      // Create the company row
+      const { data: newCompany, error: companyErr } = await supabase
+        .from('companies')
+        .upsert(
+          { user_id, name: companyName, industry: 'Unknown' },
+          { onConflict: 'user_id' }
+        )
+        .select()
+        .single()
+
+      if (companyErr || !newCompany) {
+        return NextResponse.json({ error: companyErr?.message ?? 'Failed to create company' }, { status: 500 })
+      }
+
+      // Link company_id + set approved_at alongside status
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          status: 'active',
+          company_id: newCompany.id,
+          approved_at: new Date().toISOString(),
+          ...(position ? { position } : {}),
+        })
+        .eq('user_id', user_id)
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ ok: true })
+    }
+  }
+
+  // For all other updates (position change, reject, etc.)
   const update: Record<string, string> = {}
   if (position) update.position = position
   if (status) update.status = status
