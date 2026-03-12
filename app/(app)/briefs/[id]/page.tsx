@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { getSessionCompanyId } from '@/lib/get-company'
 import BriefDashboard from '@/components/brief/BriefDashboard'
+import BriefGeneratingPoller from '@/components/brief/BriefGeneratingPoller'
+import LateIntelPanel from '@/components/brief/LateIntelPanel'
 import type { Brief } from '@/lib/types'
 
 export default async function BriefPage({
@@ -35,6 +37,34 @@ export default async function BriefPage({
 
   if (!brief) notFound()
 
+  const [
+    { data: lateNotes },
+    { data: lateDocs },
+    { data: patch },
+  ] = await Promise.all([
+    supabase
+      .from('internal_notes')
+      .select('id, category, content, created_at')
+      .eq('company_id', companyId)
+      .eq('target_brief_id', id)
+      .eq('archived', false)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('uploaded_documents')
+      .select('id, title, description, processed_content, processing_status, file_type, created_at')
+      .eq('company_id', companyId)
+      .eq('target_brief_id', id)
+      .eq('archived', false),
+    supabase
+      .from('brief_intel_patches')
+      .select('summary, signal_count, updated_at')
+      .eq('company_id', companyId)
+      .eq('brief_id', id)
+      .single(),
+  ])
+
+  const hasLateIntel = (lateNotes?.length ?? 0) > 0 || (lateDocs?.length ?? 0) > 0
+
   const typedBrief = brief as Brief
 
   const weekOf = new Date(typedBrief.week_of).toLocaleDateString('en-GB', {
@@ -48,6 +78,9 @@ export default async function BriefPage({
       <div className="max-w-[1200px] mx-auto">
         {typedBrief.status !== 'complete' || !typedBrief.content ? (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
+            {typedBrief.status === 'generating' && (
+              <BriefGeneratingPoller briefId={id} />
+            )}
             <p className="text-sm text-gray-500">
               {typedBrief.status === 'generating'
                 ? 'This brief is being generated…'
@@ -57,13 +90,24 @@ export default async function BriefPage({
             </p>
           </div>
         ) : (
-          <BriefDashboard
-            briefId={id}
-            content={typedBrief.content}
-            weekOf={weekOf}
-            generatedAt={typedBrief.generated_at}
-            companyName={company?.name}
-          />
+          <div className="space-y-5">
+            {hasLateIntel && (
+              <LateIntelPanel
+                briefId={id}
+                notes={lateNotes ?? []}
+                docs={lateDocs ?? []}
+                existingPatch={patch?.summary ?? null}
+                patchSignalCount={patch?.signal_count ?? 0}
+              />
+            )}
+            <BriefDashboard
+              briefId={id}
+              content={typedBrief.content}
+              weekOf={weekOf}
+              generatedAt={typedBrief.generated_at}
+              companyName={company?.name}
+            />
+          </div>
         )}
       </div>
     </div>

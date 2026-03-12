@@ -4,23 +4,24 @@ import { getSessionCompanyId } from '@/lib/get-company'
 import Link from 'next/link'
 import MarketMiniChart from '@/components/brief/MarketMiniChart'
 import ShareButtons from '@/components/brief/ShareButtons'
+import FeedbackButtons from '@/components/internal/FeedbackButtons'
 import type { BriefContent, StoredSparkline } from '@/lib/types'
 
 // ── Section metadata ──────────────────────────────────────────────────────────
 
-const SECTION_META: Record<string, { label: string; audience: string; color: string; backSegment: string }> = {
-  company_news:             { label: 'Company News',            audience: 'All',  color: 'bg-gray-100 text-gray-600',     backSegment: 'company-news' },
-  competitor_intelligence:  { label: 'Competitor Intelligence', audience: 'CMO',  color: 'bg-orange-50 text-orange-700',  backSegment: 'competitors' },
-  marketing_opportunities:  { label: 'Marketing Opportunities', audience: 'CMO',  color: 'bg-emerald-50 text-emerald-700',backSegment: 'competitors' },
-  geopolitical_news:        { label: 'Geopolitical Signals',    audience: 'CEO',  color: 'bg-violet-50 text-violet-700',  backSegment: 'geopolitical' },
-  financial_news:           { label: 'Financial News',          audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backSegment: 'markets' },
-  financial_signals:        { label: 'Financial Signals',       audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backSegment: 'markets' },
-  tech_intelligence:        { label: 'Tech Intelligence',       audience: 'CTO',  color: 'bg-cyan-50 text-cyan-700',      backSegment: 'technology' },
-  hr_intelligence:          { label: 'HR Intelligence',         audience: 'HR',   color: 'bg-pink-50 text-pink-700',      backSegment: 'hr' },
-  ma_watch:                 { label: 'M&A Watch',               audience: 'BD',   color: 'bg-indigo-50 text-indigo-700',  backSegment: 'ma' },
-  operational_intelligence: { label: 'Operational Intelligence',audience: 'CBPO', color: 'bg-amber-50 text-amber-700',   backSegment: 'supply-chain' },
-  customer_intelligence:    { label: 'Customer Intelligence',   audience: 'CEO',  color: 'bg-teal-50 text-teal-700',     backSegment: 'customers' },
-  risk_summary:             { label: 'Risk Summary',            audience: 'CEO',  color: 'bg-red-50 text-red-700',        backSegment: 'full' },
+const SECTION_META: Record<string, { label: string; audience: string; color: string; backAnchor: string }> = {
+  company_news:             { label: 'Company News',            audience: 'All',  color: 'bg-gray-100 text-gray-600',     backAnchor: 'brief-company-news' },
+  competitor_intelligence:  { label: 'Competitor Intelligence', audience: 'CMO',  color: 'bg-orange-50 text-orange-700',  backAnchor: 'brief-comp' },
+  marketing_opportunities:  { label: 'Marketing Opportunities', audience: 'CMO',  color: 'bg-emerald-50 text-emerald-700',backAnchor: 'brief-mktg' },
+  geopolitical_news:        { label: 'Geopolitical Signals',    audience: 'CEO',  color: 'bg-violet-50 text-violet-700',  backAnchor: 'brief-geo' },
+  financial_news:           { label: 'Financial News',          audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backAnchor: 'brief-fin-news' },
+  financial_signals:        { label: 'Financial Signals',       audience: 'CFO',  color: 'bg-blue-50 text-blue-700',      backAnchor: 'brief-fin-signals' },
+  tech_intelligence:        { label: 'Tech Intelligence',       audience: 'CTO',  color: 'bg-cyan-50 text-cyan-700',      backAnchor: 'brief-tech' },
+  hr_intelligence:          { label: 'HR Intelligence',         audience: 'HR',   color: 'bg-pink-50 text-pink-700',      backAnchor: 'brief-hr' },
+  ma_watch:                 { label: 'M&A Watch',               audience: 'BD',   color: 'bg-indigo-50 text-indigo-700',  backAnchor: 'brief-ma' },
+  operational_intelligence: { label: 'Operational Intelligence',audience: 'CBPO', color: 'bg-amber-50 text-amber-700',   backAnchor: 'brief-ops' },
+  customer_intelligence:    { label: 'Customer Intelligence',   audience: 'CEO',  color: 'bg-teal-50 text-teal-700',     backAnchor: 'brief-customers' },
+  risk_summary:             { label: 'Risk Summary',            audience: 'CEO',  color: 'bg-red-50 text-red-700',        backAnchor: 'brief-risk' },
 }
 
 // Which market_snapshots keys are relevant per section
@@ -262,12 +263,37 @@ export default async function ArticlePage({
     .slice(0, 3)
 
   const briefBase = `/briefs/${id}`
-  const backHref = meta.backSegment === 'full'
-    ? `${briefBase}/full`
-    : `${briefBase}/${meta.backSegment}`
+  const backHref = `${briefBase}/full#${meta.backAnchor}`
 
   const prev = idx > 0 ? `/briefs/${id}/article/${section}/${idx - 1}` : null
   const next = idx < sectionArray.length - 1 ? `/briefs/${id}/article/${section}/${idx + 1}` : null
+
+  // ── Article feedback (likes, dislikes, notes) ─────────────────────────────
+  const { data: feedbackRows } = await supabase
+    .from('article_feedback')
+    .select('rating, tag, user_id')
+    .eq('company_id', companyId)
+    .eq('brief_id', id)
+    .eq('section', section)
+    .eq('item_index', idx)
+
+  const feedback = feedbackRows ?? []
+  const likes    = feedback.filter(f => f.rating === 1).length
+  const dislikes = feedback.filter(f => f.rating === -1).length
+  const notes    = feedback.filter(f => f.tag)
+
+  // Fetch user names for notes
+  let userNames: Record<string, string> = {}
+  if (notes.length > 0) {
+    const userIds = [...new Set(notes.map(n => n.user_id))]
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('user_id, full_name')
+      .in('user_id', userIds)
+    if (profiles) {
+      userNames = Object.fromEntries(profiles.map(p => [p.user_id, p.full_name ?? 'Team member']))
+    }
+  }
 
   return (
     <div className="p-6 max-w-3xl space-y-5">
@@ -373,6 +399,43 @@ export default async function ArticlePage({
         </div>
       )}
 
+      {/* Feedback */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 flex items-center gap-3">
+        <p className="text-xs text-gray-500 shrink-0">Was this article useful?</p>
+        <FeedbackButtons briefId={id} section={section} itemIndex={idx} />
+      </div>
+
+      {/* Feedback summary */}
+      {(likes > 0 || dislikes > 0 || notes.length > 0) && (
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Team Feedback</p>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1.5 text-sm text-gray-600">
+              <span className="text-base">👍</span>
+              <span className="font-medium">{likes}</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-sm text-gray-600">
+              <span className="text-base">👎</span>
+              <span className="font-medium">{dislikes}</span>
+            </span>
+          </div>
+          {notes.length > 0 && (
+            <div className="space-y-2 pt-1 border-t border-gray-100">
+              {notes.map((note, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                    {(userNames[note.user_id] ?? 'T')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-700">{userNames[note.user_id] ?? 'Team member'}</p>
+                    <p className="text-sm text-gray-600 mt-0.5">{note.tag}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Related market charts */}
       {charts.length > 0 && (

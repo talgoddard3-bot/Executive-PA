@@ -16,7 +16,7 @@ function getMondayOfWeek(date: Date): string {
 // 5 min — synthesis is synchronous, Vercel Pro supports up to 300s
 export const maxDuration = 300
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await getSessionUser()
     if (!session?.userId) {
@@ -48,7 +48,9 @@ export async function POST() {
       return NextResponse.json({ error: 'Complete your company profile first.' }, { status: 400 })
     }
 
-    const weekOf = getMondayOfWeek(new Date())
+    const body = await request.json().catch(() => ({}))
+    const weekOffset = typeof body?.weekOffset === 'number' ? body.weekOffset : 0
+    const weekOf = getMondayOfWeek(new Date(Date.now() - weekOffset * 7 * 24 * 60 * 60 * 1000))
 
     // Check for existing brief this week
     const { data: existing } = await supabase

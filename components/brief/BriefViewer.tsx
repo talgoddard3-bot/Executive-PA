@@ -10,6 +10,7 @@ import { MACRO_CHARTS, SPARKLINES, CFO_CHART_MAP } from '@/lib/market-data'
 import type { StoredSparkline, SWOTItem } from '@/lib/types'
 import MarketMiniChart from './MarketMiniChart'
 import BriefTOC, { AUDIENCE_COLORS, type TOCSection } from './BriefTOC'
+import FeedbackButtons from '@/components/internal/FeedbackButtons'
 
 // ── Styling ──────────────────────────────────────────────────────────────────
 
@@ -603,6 +604,7 @@ export default function BriefViewer({
                         <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="financial_news" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -627,6 +629,7 @@ export default function BriefViewer({
                         <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="geopolitical_news" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -658,6 +661,7 @@ export default function BriefViewer({
                       {item.detail.length > 140 && briefId && (
                         <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="competitor_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -719,6 +723,7 @@ export default function BriefViewer({
                         <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="tech_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -753,6 +758,7 @@ export default function BriefViewer({
                         <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="hr_intelligence" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>
@@ -798,6 +804,7 @@ export default function BriefViewer({
                         <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                       )}
                       <SourceTag source={item.source} />
+                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="ma_watch" itemIndex={i} compact /></div>}
                     </div>
                   ))}
                 </div>

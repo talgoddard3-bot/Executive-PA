@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Background -->
+  <rect width="100" height="100" rx="20" fill="#1c2844"/>
+
+  <!-- Document shape (right half, light gray) -->
+  <path d="M50 18 C58 18 68 22 74 30 C80 38 80 50 80 50 C80 50 80 62 74 70 C68 78 58 82 50 82 Z"
+        fill="#c8d4e6"/>
+
+  <!-- 3 text lines on document -->
+  <line x1="57" y1="44" x2="72" y2="44" stroke="#1c2844" stroke-width="4" stroke-linecap="round"/>
+  <line x1="57" y1="51" x2="72" y2="51" stroke="#1c2844" stroke-width="4" stroke-linecap="round"/>
+  <line x1="57" y1="58" x2="72" y2="58" stroke="#1c2844" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Wifi / signal arcs (top right of document) -->
+  <path d="M61 33 C65 35 67 39 65 43" stroke="#1c2844" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M65 28 C71 31 74 38 71 44" stroke="#1c2844" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Brain outer outline (left half) -->
+  <path d="M50 18
+           C42 18 30 22 24 32
+           C18 42 20 50 26 56
+           C18 62 20 72 28 77
+           C36 82 44 82 50 82"
+        stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Brain top lobe bump -->
+  <path d="M24 32 C22 25 28 18 35 18" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- Brain circuit traces (S-path with nodes) -->
+  <line x1="44" y1="37" x2="31" y2="37" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="31" y1="37" x2="31" y2="46" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="31" y1="46" x2="40" y2="46" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="40" y1="46" x2="40" y2="55" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="40" y1="55" x2="31" y2="55" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="31" y1="55" x2="31" y2="63" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <line x1="31" y1="63" x2="44" y2="63" stroke="white" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Circuit nodes -->
+  <circle cx="31" cy="37" r="3" fill="white"/>
+  <circle cx="31" cy="55" r="3" fill="white"/>
+  <circle cx="40" cy="46" r="2.5" fill="white"/>
+  <circle cx="40" cy="55" r="2.5" fill="white"/>
+</svg>

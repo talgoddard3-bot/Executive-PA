@@ -2,6 +2,7 @@ import { anthropic } from './client'
 import { SYSTEM_PROMPT, buildUserPrompt } from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
+import { buildInternalSignals } from '@/lib/internal-signals'
 import { createClient } from '@supabase/supabase-js'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
 
@@ -27,7 +28,7 @@ export async function synthesizeBrief(
 
   const locationCountryNames = locations.map((l: { country_name: string }) => l.country_name)
 
-  const [signals, marketSnapshots, userProfileResult] = await Promise.all([
+  const [signals, marketSnapshots, userProfileResult, internalSignals] = await Promise.all([
     buildLiveSignals(company, profile, locations),
     fetchLiveMarketData(revenueCountries, {
       stockTicker: company.stock_ticker ?? undefined,
@@ -42,12 +43,18 @@ export async function synthesizeBrief(
     userId
       ? supabase.from('user_profiles').select('language').eq('user_id', userId).single()
       : Promise.resolve({ data: null }),
+    buildInternalSignals(company.id).catch(err => {
+      console.warn('[internal-signals] failed, skipping:', err)
+      return ''
+    }),
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
   // Cap signals at ~40k chars to stay within a sensible token budget
   const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
-  const userPrompt = buildUserPrompt(company, profile, cappedSignals, language, locations)
+  // Internal signals are prepended (highest priority context)
+  const signalsWithInternal = internalSignals ? internalSignals + cappedSignals : cappedSignals
+  const userPrompt = buildUserPrompt(company, profile, signalsWithInternal, language, locations)
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

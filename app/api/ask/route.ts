@@ -99,19 +99,29 @@ export async function POST(request: Request) {
 
     const { context, companyName, industry } = await buildContext(companyId, briefId)
 
-    const systemPrompt = `You are an intelligent strategic assistant embedded in an Executive Intelligence Brief platform for ${companyName} (${industry}).
+    const systemPrompt = `You are a strategic intelligence advisor for ${companyName} (${industry}). You have full access to this week's intelligence brief below.
 
-You have full access to the company's latest weekly intelligence data below. Answer questions about risks, opportunities, competitors, market signals, M&A activity, decisions, SWOT, and strategy. Be direct, concise, and analytical — like a senior advisor. Reference specific data when relevant. Keep answers to 3-5 sentences unless a detailed breakdown is needed.
+RESPONSE FORMAT — ALWAYS follow this:
+- Use **bold** for every key name, number, competitor, and action
+- Structure with bullet points (- item) or numbered steps (1. step)
+- Use ## for section headings when there are multiple sections
+- Use --- to separate major sections
+- Max 5-7 bullets or steps per response. No prose paragraphs.
+- Lead with the action or decision — not context
+- End with a "**→ Bottom line:**" sentence when relevant
 
-If something isn't in the data, say so clearly.
+TONE: Senior advisor. Direct. Opinionated. Never hedge unnecessarily.
 
+If the data does not contain the answer, say "Not in this brief — here's my general guidance:" and give 2-3 bullets.
+
+BRIEF DATA:
 ${context}`
 
     const stream = new ReadableStream({
       async start(controller) {
         const response = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
+          max_tokens: 700,
           stream: true,
           system: systemPrompt,
           messages: [{ role: 'user', content: message }],

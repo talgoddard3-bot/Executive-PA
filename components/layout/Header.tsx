@@ -64,33 +64,29 @@ export default function Header() {
     <header className="h-14 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 flex items-center justify-between px-4 md:px-6 shrink-0 z-20">
       {/* Brand — click to go home */}
       <Link href="/dashboard" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center overflow-hidden"
-          style={{ backgroundColor: brandColor }}>
-          {company.logo_url ? (
-            <Image
-              src={company.logo_url}
-              alt={company.name ?? 'Company logo'}
-              width={28}
-              height={28}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          )}
-        </div>
-        <div className="flex flex-col leading-none">
-          {company.name && (
-            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-widest leading-none mb-0.5">
-              {company.name}
-            </span>
-          )}
-          <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight leading-none">
-            Executive Intelligence
+        {/* Company logo or brand-color initial */}
+        {company.logo_url ? (
+          <Image
+            src={company.logo_url}
+            alt={company.name ?? 'Company'}
+            width={32}
+            height={32}
+            className="shrink-0 rounded object-contain"
+            unoptimized
+          />
+        ) : (
+          <div
+            className="w-8 h-8 rounded flex items-center justify-center text-white text-xs font-bold shrink-0"
+            style={{ background: `linear-gradient(135deg, ${brandColor}, ${brandColor}cc)` }}
+          >
+            {company.name ? company.name.slice(0, 2).toUpperCase() : 'IB'}
+          </div>
+        )}
+        {company.name && (
+          <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+            {company.name}
           </span>
-        </div>
+        )}
       </Link>
 
       {/* Right controls */}

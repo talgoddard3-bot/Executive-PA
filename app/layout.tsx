@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Executive Intelligence Brief",
+  title: "Intelligent Brief",
   description: "Weekly strategic intelligence for global executives.",
 };
 

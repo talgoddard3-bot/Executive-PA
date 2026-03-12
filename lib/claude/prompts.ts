@@ -46,11 +46,28 @@ ACTION fields (impact, relevance, cfo_action, cto_action, mitigation, bd_action,
 - Scenarios: plausible given this week's signals only — not textbook risk categories
 - Decision framing: the decisions THIS CEO actually faces THIS week. Name each option by its real trade-off, not A/B/C. If the data favours one option, say which and why
 - Severity and probability must be calibrated — if it is a quiet week, reflect that. Not everything is high risk
-- Do not repeat the same point across sections
 - competitor_intelligence: ONLY include a competitor with a CONCRETE news story or announcement from the signals. Do not fabricate. An empty array is preferred over invented items
 - M&A Watch: surface deals that shift competitive dynamics or create partnership opportunities. Translate every deal into a specific BD or defensive action
 - Company News: only articles that directly name this company. exec_note must specify an action (amplify, respond publicly, monitor, escalate) — not an observation
-- Source fields: cite the publication type (e.g. "Reuters", "Financial Times", "Bloomberg")`
+- Source fields: cite the publication type (e.g. "Reuters", "Financial Times", "Bloomberg")
+
+━━━ STRICT NO-REPEAT RULES — EACH SECTION HAS ONE JOB ━━━
+Each signal or event belongs in EXACTLY ONE section. Never echo the same event, company, or data point in two sections.
+
+SECTION SCOPE — HARD BOUNDARIES:
+- financial_news: macro/sector market events per geography only (PMI, GDP, interest rate decisions, sector downturns). NOT capital markets instruments — those go to financial_signals.
+- financial_signals: CFO-level capital market instruments ONLY — FX rates, commodity prices, credit spreads, equity indices. NOT macro news events.
+- geopolitical_news: political events, trade policy, sanctions, regulatory decisions ONLY. Do NOT include competitor moves or M&A here.
+- competitor_intelligence: competitor-specific news ONLY. The same competitor event must NOT appear in marketing_opportunities.
+- marketing_opportunities: channel/BD opportunities from market gaps, customer signals, or trend shifts. Must NOT reference competitors already covered in competitor_intelligence.
+- ma_watch: M&A, funding rounds, IPOs ONLY. Do NOT appear in geopolitical_news or competitor_intelligence.
+- risk_summary: a consolidated risk register — each item must draw from a DIFFERENT source section. Do NOT introduce new facts — just crystallise the top risks already covered.
+- capital_impact: pure financial consequence narrative — no new facts, only synthesise what is already in financial_news and financial_signals.
+- swot: strategic synthesis only — each point must reference its source section. Do NOT introduce new events.
+- hr_intelligence: talent market, hiring trends, workforce signals ONLY. No overlap with operational_intelligence.
+- tech_intelligence: technology product/platform/infrastructure developments ONLY. No overlap with competitor_intelligence.
+- scenario_modeling: forward-looking what-if analysis ONLY. Do NOT describe events already reported in other sections — only their future consequences.
+- decision_framing: current CEO decision points ONLY. Must NOT repeat scenario descriptions from scenario_modeling.`
 
 export function buildUserPrompt(
   company: Company,
