@@ -61,6 +61,9 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>('pending')
   const [saving, setSaving] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [weekOffset, setWeekOffset] = useState(1)
+  const [generating, setGenerating] = useState(false)
+  const [genResult, setGenResult] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/users')
@@ -80,7 +83,10 @@ export default function AdminPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId, ...patch }),
     })
-    if (!res.ok) setError('Failed to save')
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error ?? `Failed to save (${res.status})`)
+    }
     setSaving(null)
   }
 
@@ -147,119 +153,128 @@ export default function AdminPage() {
             </p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-gray-900/40">
-                <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">User</th>
-                <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Company</th>
-                <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Position</th>
-                {tab === 'pending' && (
-                  <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Requested</th>
-                )}
-                <th className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  {tab === 'pending' ? 'Action' : 'Status'}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-              {displayed.map(user => {
-                const role = POSITION_ROLE[user.position] ?? 'All'
-                return (
-                  <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                    {/* User */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
-                          {user.avatar_url ? (
-                            <Image src={user.avatar_url} alt="" width={32} height={32} className="object-cover w-full h-full" unoptimized />
-                          ) : initials(user.full_name)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white leading-tight">
-                            {user.full_name || <span className="text-gray-400 italic">No name</span>}
-                          </p>
-                          <p className="text-[10px] text-gray-400">{user.email}</p>
-                        </div>
+          <div className="divide-y divide-gray-100 dark:divide-white/5">
+            {displayed.map(user => {
+              const role = POSITION_ROLE[user.position] ?? 'All'
+              return (
+                <div key={user.user_id} className="p-4 md:p-5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  {/* User info row */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0 overflow-hidden">
+                      {user.avatar_url ? (
+                        <Image src={user.avatar_url} alt="" width={36} height={36} className="object-cover w-full h-full" unoptimized />
+                      ) : initials(user.full_name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-gray-900 dark:text-white text-sm leading-tight">
+                          {user.full_name || <span className="text-gray-400 italic">No name</span>}
+                        </p>
+                        {tab !== 'pending' && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                            user.status === 'active'   ? 'bg-emerald-100 text-emerald-700' :
+                            user.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                         'bg-amber-100 text-amber-700'
+                          }`}>
+                            {user.status ?? 'pending'}
+                          </span>
+                        )}
                       </div>
-                    </td>
-
-                    {/* Company */}
-                    <td className="px-5 py-3.5">
-                      <p className="font-medium text-gray-800 dark:text-gray-200">
-                        {user.company?.name ?? user.company_name ?? <span className="text-gray-400 italic">—</span>}
+                      <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {user.company?.name ?? user.company_name ?? '—'}
+                        {user.company?.industry && <span className="text-gray-400"> · {user.company.industry}</span>}
                       </p>
-                      {user.company?.industry && (
-                        <p className="text-[10px] text-gray-400">{user.company.industry}</p>
-                      )}
-                    </td>
-
-                    {/* Position */}
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={user.position || 'Executive'}
-                          onChange={e => updateUser(user.user_id, { position: e.target.value })}
-                          disabled={saving === user.user_id}
-                          className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-xs text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 cursor-pointer"
-                        >
-                          {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${ROLE_COLOR[role] ?? 'bg-gray-100 text-gray-500'}`}>
-                          {role}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Requested date (pending tab only) */}
-                    {tab === 'pending' && (
-                      <td className="px-5 py-3.5 text-xs text-gray-400">
-                        {formatDate(user.requested_at)}
-                      </td>
+                    </div>
+                    {tab === 'pending' && user.requested_at && (
+                      <p className="text-[10px] text-gray-400 shrink-0">{formatDate(user.requested_at)}</p>
                     )}
+                  </div>
 
-                    {/* Action / Status */}
-                    <td className="px-5 py-3.5">
-                      {tab === 'pending' ? (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => updateUser(user.user_id, { status: 'active' })}
-                            disabled={saving === user.user_id}
-                            className="flex items-center gap-1 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            {saving === user.user_id
-                              ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                              : null}
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => updateUser(user.user_id, { status: 'rejected' })}
-                            disabled={saving === user.user_id}
-                            className="px-3 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors disabled:opacity-50"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      ) : (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                          user.status === 'active'   ? 'bg-emerald-100 text-emerald-700' :
-                          user.status === 'rejected' ? 'bg-red-100 text-red-700' :
-                                                       'bg-amber-100 text-amber-700'
-                        }`}>
-                          {user.status ?? 'pending'}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                  {/* Position + actions row */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                      value={user.position || 'Executive'}
+                      onChange={e => updateUser(user.user_id, { position: e.target.value })}
+                      disabled={saving === user.user_id}
+                      className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1.5 text-xs text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 cursor-pointer"
+                    >
+                      {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase ${ROLE_COLOR[role] ?? 'bg-gray-100 text-gray-500'}`}>
+                      {role}
+                    </span>
+                    {tab === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => updateUser(user.user_id, { status: 'active' })}
+                          disabled={saving === user.user_id}
+                          className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors disabled:opacity-50"
+                        >
+                          {saving === user.user_id && <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => updateUser(user.user_id, { status: 'rejected' })}
+                          disabled={saving === user.user_id}
+                          className="px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold transition-colors disabled:opacity-50"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
 
       <p className="mt-4 text-xs text-gray-400">
         Approved users can log in immediately. Position determines which brief sections they see.
       </p>
+
+      {/* Dev Tools */}
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-5 max-w-md">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-white mb-1">Generate Backdated Brief</h2>
+        <p className="text-xs text-gray-400 mb-4">Creates a brief dated N weeks ago using this week&apos;s live signals — useful for building dashboard history.</p>
+        <div className="flex items-center gap-3">
+          <select
+            value={weekOffset}
+            onChange={e => setWeekOffset(Number(e.target.value))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {[1, 2, 3, 4].map(n => (
+              <option key={n} value={n}>{n} week{n > 1 ? 's' : ''} ago</option>
+            ))}
+          </select>
+          <button
+            onClick={async () => {
+              setGenerating(true)
+              setGenResult(null)
+              const res = await fetch('/api/briefs/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weekOffset }),
+              })
+              const data = await res.json()
+              setGenerating(false)
+              setGenResult(res.ok ? `✓ Brief generated (${data.briefId?.slice(0, 8)}…)` : `Error: ${data.error}`)
+            }}
+            disabled={generating}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+          >
+            {generating && <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            {generating ? 'Generating…' : 'Generate'}
+          </button>
+        </div>
+        {genResult && (
+          <p className={`mt-3 text-xs font-medium ${genResult.startsWith('✓') ? 'text-emerald-600' : 'text-red-600'}`}>
+            {genResult}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

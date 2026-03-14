@@ -110,7 +110,8 @@ export function buildUserPrompt(
         const city = l.city ? `${l.city}, ` : ''
         const head = l.headcount ? ` (${l.headcount.toLocaleString()} employees)` : ''
         const note = l.notes ? ` — ${l.notes}` : ''
-        return `  - ${city}${l.country_name}: ${l.location_type.toUpperCase()}${head}${note}`
+        const types = (l.location_types ?? []).map(t => t.toUpperCase()).join('+') || 'OFFICE'
+        return `  - ${city}${l.country_name}: ${types}${head}${note}`
       }).join('\n')
     : '  (none specified)'
 
@@ -143,7 +144,9 @@ ${signals}
 Produce a strategic intelligence brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
 
 {
-  "headline": "The single most consequential event or development of this week for this company. Must name the specific event, number, or actor — not a theme. Format: [What happened] — [direct impact on this company]. Example: 'Eurozone manufacturing PMI hits 18-month low as German orders collapse — 40% revenue exposure at risk as procurement cycles stall'. Never be vague. This is the one line every executive in the company must read.",
+  "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Think Economist cover or Bloomberg terminal alert — not a sentence, not a question. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle' or 'Micro-Epsilon Targets Core Market as Semiconductor Boom Accelerates'. Never vague, never generic.",
+
+  "tldr": "One sentence. The absolute bottom line this week — the single thing the CEO must know before any meeting. No caveats. No context. Just the verdict. Example: 'Competitor X is expanding into your core market this quarter — accelerate the APAC deal or lose first-mover advantage.'",
 
   "executive_summary": "3–4 sentence lede. Lead with the dominant risk or opportunity, then the market context, then the company-specific implication, then the decision pressure it creates. Reference specific revenue percentages, competitor names, and market figures from the signals.",
 
@@ -316,6 +319,15 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "trigger": "What specific event would cause this scenario to materialise",
       "impact": "Business consequence — revenue, margin, operations",
       "response": "Concrete preparation or response action"
+    }
+  ],
+
+  "weekly_actions": [
+    {
+      "action": "Specific, concrete action — what to do, with whom, by when. Start with a verb. Name real people, teams, or counterparties where possible. E.g. 'Call Frankfurt sales lead this week to assess Q2 pipeline impact from procurement freeze' — not 'Review European exposure'.",
+      "owner": "CEO or CFO or CMO or CTO or CBPO or VP HR or All",
+      "priority": "high or medium or low",
+      "section": "Which section triggered this action e.g. Competitor Intel, Risk Register, Geopolitical"
     }
   ]
 }`

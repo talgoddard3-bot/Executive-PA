@@ -26,10 +26,10 @@ export async function POST(req: Request) {
   if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { country_code, country_name, city, location_type, headcount, notes } = body
+  const { country_code, country_name, city, location_types, headcount, notes } = body
 
-  if (!country_code || !country_name || !location_type) {
-    return NextResponse.json({ error: 'country_code, country_name and location_type are required' }, { status: 400 })
+  if (!country_code || !country_name || !Array.isArray(location_types) || location_types.length === 0) {
+    return NextResponse.json({ error: 'country_code, country_name and at least one location_type are required' }, { status: 400 })
   }
 
   const { data, error } = await service()
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       country_code: country_code.toUpperCase(),
       country_name,
       city: city || null,
-      location_type,
+      location_types,
       headcount: headcount ? Number(headcount) : null,
       notes: notes || null,
     })

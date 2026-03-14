@@ -6,9 +6,10 @@ import type { Sparkline } from '@/lib/market-data'
 interface Props {
   sparkline: Sparkline
   compact?: boolean
+  mini?: boolean
 }
 
-export default function MarketMiniChart({ sparkline, compact = false }: Props) {
+export default function MarketMiniChart({ sparkline, compact = false, mini = false }: Props) {
   const { label, ticker, unit, data, current, pct, up } = sparkline
   const color = up ? '#16a34a' : '#dc2626'
   const fill = up ? '#dcfce7' : '#fee2e2'
@@ -16,6 +17,23 @@ export default function MarketMiniChart({ sparkline, compact = false }: Props) {
   const displayValue = current >= 1000
     ? current.toLocaleString('en-US', { maximumFractionDigits: 0 })
     : current.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+
+  if (mini) {
+    const displayPct = Math.abs(pct).toFixed(2)
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 shrink-0 border-r border-gray-100 last:border-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{ticker}</span>
+          <span className="text-xs font-mono font-bold text-gray-800">
+            {unit ? `${unit.split('/')[0]}` : ''}{displayValue}
+          </span>
+        </div>
+        <span className={`text-[10px] font-bold ${up ? 'text-green-600' : 'text-red-500'}`}>
+          {up ? '▲' : '▼'} {displayPct}%
+        </span>
+      </div>
+    )
+  }
 
   if (compact) {
     return (

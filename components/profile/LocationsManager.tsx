@@ -73,7 +73,7 @@ const COUNTRIES = [
   { code: 'ET', name: 'Ethiopia' },
 ].sort((a, b) => a.name.localeCompare(b.name))
 
-const EMPTY_FORM = { country_code: '', city: '', location_type: 'office' as LocationType, headcount: '', notes: '' }
+const EMPTY_FORM = { country_code: '', city: '', location_types: [] as LocationType[], headcount: '', notes: '' }
 
 export default function LocationsManager() {
   const [locations, setLocations] = useState<CompanyLocation[]>([])
@@ -90,9 +90,18 @@ export default function LocationsManager() {
       .catch(() => setLoading(false))
   }, [])
 
+  function toggleType(t: LocationType) {
+    setForm(f => ({
+      ...f,
+      location_types: f.location_types.includes(t)
+        ? f.location_types.filter(x => x !== t)
+        : [...f.location_types, t],
+    }))
+  }
+
   async function addLocation() {
-    if (!form.country_code || !form.location_type) {
-      setError('Select a country and location type.')
+    if (!form.country_code || form.location_types.length === 0) {
+      setError('Select a country and at least one location type.')
       return
     }
     setSaving(true)
@@ -105,7 +114,7 @@ export default function LocationsManager() {
         country_code: form.country_code,
         country_name: country?.name ?? form.country_code,
         city: form.city,
-        location_type: form.location_type,
+        location_types: form.location_types,
         headcount: form.headcount ? Number(form.headcount) : null,
         notes: form.notes,
       }),
@@ -176,14 +185,15 @@ export default function LocationsManager() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location Type</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Location Type <span className="text-gray-400">(select all that apply)</span></label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               {LOCATION_TYPES.map(t => (
                 <button
                   key={t.value}
-                  onClick={() => setForm(f => ({ ...f, location_type: t.value }))}
+                  type="button"
+                  onClick={() => toggleType(t.value)}
                   className={`text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
-                    form.location_type === t.value
+                    form.location_types.includes(t.value)
                       ? 'border-blue-500 bg-blue-50 text-blue-700'
                       : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                   }`}
@@ -249,9 +259,11 @@ export default function LocationsManager() {
                   <span className="text-sm font-medium text-gray-900">
                     {loc.city ? `${loc.city}, ` : ''}{loc.country_name}
                   </span>
-                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_COLORS[loc.location_type]}`}>
-                    {typeLabel(loc.location_type)}
-                  </span>
+                  {(loc.location_types ?? []).map(t => (
+                    <span key={t} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_COLORS[t] ?? 'bg-gray-100 text-gray-600'}`}>
+                      {typeLabel(t)}
+                    </span>
+                  ))}
                   {loc.headcount && (
                     <span className="text-[10px] text-gray-400">{loc.headcount.toLocaleString()} employees</span>
                   )}

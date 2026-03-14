@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { userId, companyId: sessionCompanyId } = session
 
     const body = await request.json()
-    const { companyId, name, industry, company_type, stock_ticker, revenue_countries, supplier_countries, competitors, customers, keywords, commodities } = body
+    const { companyId, name, industry, company_type, stock_ticker, website, revenue_countries, supplier_countries, competitors, customers, keywords, commodities } = body
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       const { data: company, error: cErr } = await supabase
         .from('companies')
         .upsert(
-          { user_id: userId, name, industry, company_type, stock_ticker: stock_ticker ?? null },
+          { user_id: userId, name, industry, company_type, stock_ticker: stock_ticker ?? null, website: website ?? null },
           { onConflict: 'user_id' }
         )
         .select()
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         .update({ company_id: cId })
         .eq('user_id', userId)
     } else {
-      await supabase.from('companies').update({ name, industry, company_type, stock_ticker: stock_ticker ?? null }).eq('id', cId)
+      await supabase.from('companies').update({ name, industry, company_type, stock_ticker: stock_ticker ?? null, website: website ?? null }).eq('id', cId)
     }
 
     const { error: profileErr } = await supabase

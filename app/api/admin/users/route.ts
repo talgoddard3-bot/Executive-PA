@@ -67,13 +67,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
   }
 
+  const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user_id)
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   // When approving, auto-create the company row and link it to the user profile
-  if (status === 'active') {
+  if (status === 'active' && isValidUUID) {
     // Fetch current profile to get company_name and check if company already exists
     const { data: profile } = await supabase
       .from('user_profiles')
@@ -98,13 +100,12 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: companyErr?.message ?? 'Failed to create company' }, { status: 500 })
       }
 
-      // Link company_id + set approved_at alongside status
+      // Link company_id + activate
       const { error } = await supabase
         .from('user_profiles')
         .update({
           status: 'active',
           company_id: newCompany.id,
-          approved_at: new Date().toISOString(),
           ...(position ? { position } : {}),
         })
         .eq('user_id', user_id)

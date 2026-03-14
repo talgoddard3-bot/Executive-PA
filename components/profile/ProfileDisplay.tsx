@@ -34,6 +34,7 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           industry: company.industry,
           company_type: company.company_type,
           stock_ticker: company.stock_ticker,
+          website: company.website,
           logoUrl: company.logo_url,
           revenue_countries: profile.revenue_countries as RevenueCountry[],
           supplier_countries: profile.supplier_countries as SupplierCountry[],

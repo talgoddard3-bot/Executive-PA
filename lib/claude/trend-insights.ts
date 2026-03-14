@@ -2,38 +2,73 @@ import { anthropic } from './client'
 import { createClient } from '@supabase/supabase-js'
 import type { BriefContent, TrendInsights } from '@/lib/types'
 
-interface BriefMetrics {
+interface BriefSnapshot {
   weekOf: string
-  riskHigh: number
-  riskMed: number
-  riskLow: number
-  competitors: number
-  opportunities: number
-  maDeals: number
-  swotStrengths: number
-  swotWeaknesses: number
-  swotOpportunities: number
-  swotThreats: number
-  headline: string
+  risks: string[]
+  competitors: string[]
+  geo: string[]
+  financial: string[]
+  tech: string[]
+  decisions: string[]
+  companyNews: string[]
+  ma: string[]
+  ops: string[]
 }
 
-function extractMetrics(content: BriefContent, weekOf: string): BriefMetrics {
-  const risks = content.risk_summary ?? []
-  const swot  = content.swot ?? { strengths: [], weaknesses: [], opportunities: [], threats: [] }
+function extractSnapshot(content: BriefContent, weekOf: string): BriefSnapshot {
   return {
     weekOf,
-    riskHigh:         risks.filter(r => r.severity === 'high').length,
-    riskMed:          risks.filter(r => r.severity === 'medium').length,
-    riskLow:          risks.filter(r => r.severity === 'low').length,
-    competitors:      (content.competitor_intelligence ?? []).length,
-    opportunities:    (content.marketing_opportunities ?? []).length,
-    maDeals:          (content.ma_watch ?? []).length,
-    swotStrengths:    swot.strengths?.length ?? 0,
-    swotWeaknesses:   swot.weaknesses?.length ?? 0,
-    swotOpportunities:swot.opportunities?.length ?? 0,
-    swotThreats:      swot.threats?.length ?? 0,
-    headline:         content.headline ?? '',
+    risks: (content.risk_summary ?? [])
+      .map(r => `[${r.severity?.toUpperCase()}] ${r.title} — ${r.detail?.slice(0, 120) ?? ''}`)
+      .slice(0, 5),
+    competitors: (content.competitor_intelligence ?? [])
+      .map(c => `${c.competitor}: ${c.headline?.slice(0, 120) ?? ''} (threat: ${c.threat_level ?? '?'})`)
+      .slice(0, 5),
+    geo: (content.geopolitical_news ?? [])
+      .map(g => `${g.region}: ${g.headline?.slice(0, 120) ?? ''} — ${g.detail?.slice(0, 100) ?? ''}`)
+      .slice(0, 5),
+    financial: [
+      ...(content.financial_signals ?? []).map(f => `${f.headline?.slice(0, 120) ?? ''} — ${f.detail?.slice(0, 100) ?? ''}`),
+      ...(content.financial_news ?? []).map(f => `${f.headline?.slice(0, 120) ?? ''} — ${f.detail?.slice(0, 100) ?? ''}`),
+    ].filter(Boolean).slice(0, 6),
+    tech: (content.tech_intelligence ?? [])
+      .map(t => `${t.headline?.slice(0, 120) ?? ''} — ${t.detail?.slice(0, 80) ?? ''}`)
+      .filter(Boolean)
+      .slice(0, 3),
+    decisions: (content.decision_framing ?? [])
+      .map(d => d.question?.slice(0, 120) ?? '')
+      .filter(Boolean)
+      .slice(0, 3),
+    companyNews: (content.company_news ?? [])
+      .map(n => `${n.headline?.slice(0, 120) ?? ''} — ${n.summary?.slice(0, 80) ?? ''}`)
+      .filter(Boolean)
+      .slice(0, 3),
+    ma: (content.ma_watch ?? [])
+      .map(m => `${m.headline?.slice(0, 120) ?? ''} (${m.type ?? ''}) — ${m.detail?.slice(0, 80) ?? ''}`)
+      .filter(Boolean)
+      .slice(0, 3),
+    ops: (content.operational_intelligence ?? [])
+      .map(o => `${o.headline?.slice(0, 120) ?? ''} — ${o.detail?.slice(0, 80) ?? ''}`)
+      .filter(Boolean)
+      .slice(0, 3),
   }
+}
+
+function formatSnapshot(s: BriefSnapshot): string {
+  const lines: string[] = [`=== WEEK ${s.weekOf} ===`]
+  const add = (label: string, items: string[]) => {
+    if (items.length) lines.push(`${label}:\n${items.map(x => `  • ${x}`).join('\n')}`)
+  }
+  add('RISKS', s.risks)
+  add('COMPETITORS', s.competitors)
+  add('GEOPOLITICAL', s.geo)
+  add('FINANCIAL SIGNALS', s.financial)
+  add('TECHNOLOGY', s.tech)
+  add('KEY DECISIONS', s.decisions)
+  add('COMPANY NEWS', s.companyNews)
+  add('M&A', s.ma)
+  add('OPERATIONS', s.ops)
+  return lines.join('\n')
 }
 
 export async function generateTrendInsights(
@@ -47,7 +82,6 @@ export async function generateTrendInsights(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Fetch last 4 complete briefs before this one
     const { data: prevBriefs } = await supabase
       .from('briefs')
       .select('content, week_of')
@@ -57,51 +91,53 @@ export async function generateTrendInsights(
       .order('week_of', { ascending: false })
       .limit(4)
 
-    if (!prevBriefs || prevBriefs.length === 0) {
-      // No history to compare against
-      return null
-    }
+    if (!prevBriefs || prevBriefs.length === 0) return null
 
-    const current = extractMetrics(currentContent, currentWeekOf)
-    const history: BriefMetrics[] = prevBriefs.map(b =>
-      extractMetrics(b.content as BriefContent, b.week_of)
+    const current = extractSnapshot(currentContent, currentWeekOf)
+    const history = prevBriefs.map(b =>
+      extractSnapshot(b.content as BriefContent, b.week_of)
     )
 
-    // Build a compact data table for Haiku
     const allWeeks = [current, ...history]
-    const dataTable = allWeeks.map(m =>
-      `Week ${m.weekOf}: risks(H${m.riskHigh}/M${m.riskMed}/L${m.riskLow}) competitors(${m.competitors}) opportunities(${m.opportunities}) M&A(${m.maDeals}) SWOT(S${m.swotStrengths}/W${m.swotWeaknesses}/O${m.swotOpportunities}/T${m.swotThreats})`
-    ).join('\n')
+    const briefData = allWeeks.map(formatSnapshot).join('\n\n')
 
-    const prompt = `You are a strategic analyst. Compare these weekly intelligence brief metrics (newest first) and produce a trend analysis.
+    const prompt = `You are an elite strategic analyst. You have intelligence briefs from ${allWeeks.length} consecutive weeks. Your job is NOT to describe what changed — it is to find the non-obvious connections and tell the executive what they should DO or WATCH as a result.
 
-DATA (newest first):
-${dataTable}
+Think like this example: "Japan's yen has weakened significantly across 3 weeks of financial signals, while geopolitical briefs flag Japanese industrial restructuring. For a company that sources from Japan, this creates a short procurement window — components are effectively cheaper right now, but currency stabilisation is likely within 60-90 days."
 
-Latest brief headline: "${current.headline}"
+That is the level of insight required: specific, named, connected across signal types, with a business implication.
 
-Produce a JSON object:
+INTELLIGENCE BRIEFS (most recent first):
+${briefData}
+
+INSTRUCTIONS:
+1. Read across ALL weeks and ALL signal categories simultaneously
+2. Find 2–4 themes where signals from DIFFERENT categories (e.g. financial + geopolitical, competitor + regulatory) connect to tell a story
+3. Name specific countries, currencies, companies, technologies, regulations — never use vague terms
+4. Every theme must answer: "So what should the executive do or watch because of this?"
+5. Only include a theme if you can trace it across at least 2 weeks OR if it combines 2+ signal types into a non-obvious conclusion
+6. SKIP: pure count changes, single-week events with no trajectory, anything with no direct business implication
+
+Return ONLY this JSON (no preamble, no markdown):
 {
-  "summary": "2-3 sentence narrative of the key trends across these ${allWeeks.length} briefs. Be specific about directions and magnitudes.",
-  "trends": [
-    { "metric": "High Risks", "direction": "up or down or stable", "delta": "e.g. +2 vs last week", "insight": "one sentence why this matters" },
-    { "metric": "Competitor Signals", "direction": "up or down or stable", "delta": "...", "insight": "..." },
-    { "metric": "Opportunities", "direction": "up or down or stable", "delta": "...", "insight": "..." },
-    { "metric": "M&A Activity", "direction": "up or down or stable", "delta": "...", "insight": "..." },
-    { "metric": "SWOT Balance", "direction": "up or down or stable", "delta": "e.g. threats +3 vs 2 weeks ago", "insight": "..." }
+  "summary": "2-3 sentences. The single most important strategic narrative emerging from these weeks. Be specific — name the actual forces and what they mean for the company.",
+  "themes": [
+    {
+      "title": "5-8 word punchy theme title — specific, not generic",
+      "analysis": "2-3 sentences. What is the pattern, how has it evolved, and what is the specific business implication or action. Name specific entities.",
+      "signal": "escalating | recurring | emerging | resolving"
+    }
   ],
   "watch_items": [
-    "Specific thing to watch based on trend 1",
-    "Specific thing to watch based on trend 2",
-    "Specific thing to watch based on trend 3"
+    "Specific forward-looking action or watch point. Start with a verb. Name the specific thing to monitor and why it matters to this company."
   ]
 }
 
-Return ONLY valid JSON. No preamble.`
+themes: 2–4 items only. watch_items: 2–3 items only.`
 
     const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1000,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     })
 
@@ -112,7 +148,7 @@ Return ONLY valid JSON. No preamble.`
 
     const jsonMatch = text.match(/\{[\s\S]*\}/)
     if (!jsonMatch) {
-      console.warn('[trend-insights] Haiku did not return valid JSON')
+      console.warn('[trend-insights] No valid JSON returned')
       return null
     }
 
@@ -122,7 +158,7 @@ Return ONLY valid JSON. No preamble.`
       generated_at: new Date().toISOString(),
       briefs_compared: allWeeks.length,
       summary: parsed.summary ?? '',
-      trends: parsed.trends ?? [],
+      themes: parsed.themes ?? [],
       watch_items: parsed.watch_items ?? [],
     } satisfies TrendInsights
 

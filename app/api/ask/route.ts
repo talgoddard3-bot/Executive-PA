@@ -99,20 +99,16 @@ export async function POST(request: Request) {
 
     const { context, companyName, industry } = await buildContext(companyId, briefId)
 
-    const systemPrompt = `You are a strategic intelligence advisor for ${companyName} (${industry}). You have full access to this week's intelligence brief below.
+    const systemPrompt = `You are a strategic intelligence advisor for ${companyName} (${industry}).
 
-RESPONSE FORMAT — ALWAYS follow this:
-- Use **bold** for every key name, number, competitor, and action
-- Structure with bullet points (- item) or numbered steps (1. step)
-- Use ## for section headings when there are multiple sections
-- Use --- to separate major sections
-- Max 5-7 bullets or steps per response. No prose paragraphs.
-- Lead with the action or decision — not context
-- End with a "**→ Bottom line:**" sentence when relevant
-
-TONE: Senior advisor. Direct. Opinionated. Never hedge unnecessarily.
-
-If the data does not contain the answer, say "Not in this brief — here's my general guidance:" and give 2-3 bullets.
+STRICT RULES — NO EXCEPTIONS:
+- Maximum 4 bullet points per response. Never more.
+- Each bullet: one sentence, under 20 words.
+- No prose paragraphs. No introductions. No summaries.
+- Bold **one** key term per bullet — the number, name, or action.
+- If multiple topics: use one short heading (## Topic), then max 3 bullets.
+- End with "**→ Action:**" — one sentence, one verb, one owner.
+- If not in the brief: "Not covered — " then one sentence of guidance.
 
 BRIEF DATA:
 ${context}`
@@ -121,7 +117,7 @@ ${context}`
       async start(controller) {
         const response = await anthropic.messages.create({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 700,
+          max_tokens: 600,
           stream: true,
           system: systemPrompt,
           messages: [{ role: 'user', content: message }],

@@ -13,6 +13,7 @@ interface ProfileFormProps {
     industry: string
     company_type?: 'B2B' | 'B2C' | 'B2B2C'
     stock_ticker?: string | null
+    website?: string | null
     logoUrl?: string | null
     revenue_countries: RevenueCountry[]
     supplier_countries: SupplierCountry[]
@@ -43,6 +44,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [industry, setIndustry] = useState(initialData?.industry ?? '')
   const [companyType, setCompanyType] = useState<'B2B' | 'B2C' | 'B2B2C'>(initialData?.company_type ?? 'B2B')
   const [stockTicker, setStockTicker] = useState(initialData?.stock_ticker ?? '')
+  const [website, setWebsite] = useState(initialData?.website ?? '')
   const [suggesting, setSuggesting] = useState(false)
   const [suggestError, setSuggestError] = useState('')
 
@@ -150,6 +152,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           industry,
           company_type: companyType,
           stock_ticker: stockTicker.trim().toUpperCase() || null,
+          website: website.trim() || null,
           revenue_countries: revenueCountries,
           supplier_countries: supplierCountries,
           competitors,
@@ -230,6 +233,20 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             maxLength={12}
           />
           <p className="mt-1 text-xs text-gray-400">Used to show your company stock chart in intelligence briefs.</p>
+        </div>
+
+        <div>
+          <label className={labelClass}>
+            Company website <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <input
+            className={inputClass}
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            placeholder="https://www.yourcompany.com"
+            type="url"
+          />
+          <p className="mt-1 text-xs text-gray-400">Used to scan your site for company context during brief generation.</p>
         </div>
 
         {suggestError && <p className="text-sm text-red-600">{suggestError}</p>}
@@ -367,7 +384,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             <h3 className={sectionHeadingClass}>Key Competitors</h3>
             <p className="text-xs text-gray-400 mt-0.5">AI suggested — adjust as needed</p>
           </div>
-          <button type="button" onClick={() => setCompetitors((p) => [...p, { name: '', notes: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
+          <button type="button" onClick={() => setCompetitors((p) => [...p, { name: '', ticker: '', notes: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
             + Add competitor
           </button>
         </div>
@@ -377,7 +394,11 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
               {i === 0 && <label className={labelClass}>Name</label>}
               <input className={inputClass} value={c.name} onChange={(e) => updateCompetitor(i, 'name', e.target.value)} placeholder="Competitor GmbH" />
             </div>
-            <div className="col-span-7">
+            <div className="col-span-2">
+              {i === 0 && <label className={labelClass}>Ticker</label>}
+              <input className={inputClass} value={c.ticker ?? ''} onChange={(e) => updateCompetitor(i, 'ticker', e.target.value.toUpperCase())} placeholder="MSFT" />
+            </div>
+            <div className="col-span-5">
               {i === 0 && <label className={labelClass}>Notes</label>}
               <input className={inputClass} value={c.notes} onChange={(e) => updateCompetitor(i, 'notes', e.target.value)} placeholder="Market leader in Germany" />
             </div>
