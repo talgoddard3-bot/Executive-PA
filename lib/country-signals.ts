@@ -48,8 +48,9 @@ export async function buildCountrySignals(locations: CompanyLocation[]): Promise
   lines.push('Signals are tagged by site type. Use to assess labour, regulatory, energy, FX, and logistics risk at each location.')
 
   const fetches = locations.map(async (loc) => {
-    const topic = LOCATION_TOPICS[loc.location_type]
-    const label = TYPE_LABELS[loc.location_type]
+    const locType = loc.location_types?.[0] ?? 'office'
+    const topic = LOCATION_TOPICS[locType]
+    const label = TYPE_LABELS[locType]
     const tag   = loc.city ? `${loc.city}, ${loc.country_name}` : loc.country_name
 
     // Parallel: country RSS feeds + GDELT operational query
