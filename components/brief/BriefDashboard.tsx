@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import MarketMiniChart from './MarketMiniChart'
 import type { BriefContent, SWOTAnalysis } from '@/lib/types'
-import type { Sparkline } from '@/lib/market-data'
+import DashboardVisuals from '@/components/dashboard/DashboardVisuals'
 
 interface Props {
   briefId: string
@@ -309,13 +308,8 @@ function SignalCard({ item }: { item: FeedItem }) {
 }
 
 export default function BriefDashboard({ briefId, content, weekOf, generatedAt, companyName }: Props) {
-  const snaps = content.market_snapshots ?? {}
-  const macroCharts = ['sp500', 'msci', 'dxy', 'gold']
-    .map(k => snaps[k]).filter(Boolean) as unknown as Sparkline[]
-
   const swot = content.swot ?? { strengths: [], weaknesses: [], opportunities: [], threats: [] }
   const topSignals = buildTopSignals(briefId, content)
-  const feed       = buildFeed(briefId, content)
 
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -388,32 +382,31 @@ export default function BriefDashboard({ briefId, content, weekOf, generatedAt, 
       {/* ── 1. AI Weekly Summary ──────────────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
         <div className="p-5 pb-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">
-            Weekly Intelligence Brief · Week of {weekOf}
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
+            {companyName ?? 'Company'} · Week of {weekOf}
           </p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight mb-1">
-            {companyName ?? 'Company'}
-          </h1>
-          {content.headline && (
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-3 leading-snug">
+          {content.headline ? (
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-snug mb-3">
               {content.headline}
-            </p>
+            </h1>
+          ) : (
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-snug mb-3">
+              {companyName ?? 'Company'} — Weekly Intelligence Brief
+            </h1>
           )}
           <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             {boldify(content.executive_summary)}
           </p>
         </div>
-        {macroCharts.length > 0 && (
-          <div className="border-t border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-gray-700/50 px-5 py-3 flex items-center gap-3">
-            {macroCharts.map(s => <MarketMiniChart key={s.ticker} sparkline={s} compact />)}
-          </div>
-        )}
       </div>
 
       {/* ── 2. SWOT Circle ───────────────────────────────────────────────── */}
       <SwotCircleViz swot={swot} />
 
-      {/* ── 3. Top Signals This Week ──────────────────────────────────────── */}
+      {/* ── 3. AI Strategic Visuals ───────────────────────────────────────── */}
+      <DashboardVisuals briefId={briefId} />
+
+      {/* ── 4. Top Signals This Week ──────────────────────────────────────── */}
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Top Signals This Week</p>
         <div className="grid grid-cols-3 gap-3">
@@ -426,51 +419,19 @@ export default function BriefDashboard({ briefId, content, weekOf, generatedAt, 
         </div>
       </div>
 
-      {/* ── 4. Intelligence Feed ─────────────────────────────────────────── */}
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
-            Intelligence Feed · {feed.length} items
-          </p>
-          <Link href={`/briefs/${briefId}/full`}
-            className="text-[10px] text-blue-600 hover:text-blue-800 dark:text-blue-400 font-medium transition-colors">
-            View full brief →
-          </Link>
+      {/* ── 4. Read Full Brief CTA ───────────────────────────────────────── */}
+      <Link
+        href={`/briefs/${briefId}/full`}
+        className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm px-5 py-4 hover:border-blue-200 hover:shadow-md transition-all group"
+      >
+        <div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-700 transition-colors">Read the Full Brief</p>
+          <p className="text-xs text-gray-400 mt-0.5">All intelligence sections — filtered by role, with in-depth analysis</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm divide-y divide-gray-100 dark:divide-white/5">
-          {feed.map(item => (
-            <Link key={item.id} href={item.href}
-              className="flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
-              {/* Priority dot */}
-              <div className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${
-                item.priority >= 9 ? 'bg-red-500' :
-                item.priority >= 7 ? 'bg-amber-500' :
-                item.priority >= 5 ? 'bg-blue-400' : 'bg-gray-300'
-              }`} />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 ${item.sectionColor}`}>
-                    {item.section}
-                  </span>
-                  {item.severityColor && item.severity && (
-                    <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded shrink-0 ${item.severityColor}`}>
-                      {item.severity}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-1 leading-snug">{item.title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">{item.excerpt}</p>
-              </div>
-              <svg className="w-3.5 h-3.5 text-gray-300 group-hover:text-blue-400 shrink-0 mt-1 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          ))}
-          {feed.length === 0 && (
-            <div className="p-8 text-center text-sm text-gray-400 dark:text-gray-500">No data yet. Generate a brief.</div>
-          )}
-        </div>
-      </div>
+        <svg className="w-5 h-5 text-gray-300 group-hover:text-blue-500 shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
     </div>
   )
 }

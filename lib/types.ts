@@ -3,10 +3,10 @@ export type LocationType = 'hq' | 'manufacturing' | 'sales' | 'r&d' | 'office'
 export interface CompanyLocation {
   id: string
   company_id: string
-  country_code: string   // ISO 3166-1 alpha-2: 'IL', 'GB', 'FR'
+  country_code: string
   country_name: string
   city?: string | null
-  location_type: LocationType
+  location_types: LocationType[]
   headcount?: number | null
   notes?: string | null
   created_at: string
@@ -24,12 +24,13 @@ export interface SupplierCountry {
 
 export interface Competitor {
   name: string
+  ticker?: string
   notes: string
 }
 
 export interface Customer {
   name: string
-  notes: string   // what they buy, relationship type, sector
+  notes: string
 }
 
 export interface CompanyProfile {
@@ -50,15 +51,14 @@ export interface Company {
   name: string
   industry: string
   company_type?: 'B2B' | 'B2C' | 'B2B2C'
-  stock_ticker?: string | null   // e.g. "AAPL", "TSLA" — empty if private
+  stock_ticker?: string | null
+  website?: string | null
   logo_url?: string | null
-  brand_color?: string | null   // hex e.g. "#2563eb", extracted from logo
+  brand_color?: string | null
   created_at: string
   updated_at: string
   company_profiles?: CompanyProfile[]
 }
-
-// ── Market data snapshots (stored inside brief content) ──────────────────────
 
 export interface StoredDataPoint {
   date: string
@@ -76,21 +76,19 @@ export interface StoredSparkline {
   up: boolean
 }
 
-// ── Brief Content Schema ────────────────────────────────────────────────────
-
 export interface FinancialNewsItem {
-  market: string          // e.g. "Germany — Automotive"
-  headline: string        // one punchy sentence
-  detail: string          // 2–3 sentence explanation with **bold** on key figures
-  impact: string          // direct business impact for this company
-  source?: string         // e.g. "Reuters", "Financial Times"
+  market: string
+  headline: string
+  detail: string
+  impact: string
+  source?: string
 }
 
 export interface GeopoliticalItem {
-  region: string          // e.g. "Taiwan" or "EU–US Trade"
+  region: string
   headline: string
-  detail: string          // with **bold** on key figures
-  relevance: string       // why it matters to this company specifically
+  detail: string
+  relevance: string
   source?: string
 }
 
@@ -103,12 +101,12 @@ export interface CompetitorMoveItem {
 }
 
 export interface CustomerIntelItem {
-  customer: string          // customer name from profile
-  headline: string          // what is happening with this customer
-  detail: string            // 2–3 sentences with **bold** on key figure or development
-  revenue_impact: string    // direct impact on our revenue/relationship with this customer
+  customer: string
+  headline: string
+  detail: string
+  revenue_impact: string
   signal_type: 'spending_cut' | 'growth' | 'financial_distress' | 'strategic_shift' | 'leadership_change' | 'general'
-  sentiment: 'positive' | 'neutral' | 'negative'   // for our business relationship
+  sentiment: 'positive' | 'neutral' | 'negative'
   source?: string
 }
 
@@ -120,52 +118,52 @@ export interface RiskItem {
 }
 
 export interface CapitalImpact {
-  revenue_exposure: string      // how current signals affect revenue
-  margin_pressure: string       // cost / pricing pressure
-  capex_considerations: string  // investment timing / decisions
+  revenue_exposure: string
+  margin_pressure: string
+  capex_considerations: string
 }
 
 export interface DecisionFrame {
-  question: string      // the decision that needs to be made
-  context: string       // why it's pressing now
-  options: string[]     // 2–3 concrete options
+  question: string
+  context: string
+  options: string[]
 }
 
 export interface Scenario {
   title: string
   probability: 'low' | 'medium' | 'high'
-  trigger: string       // what would cause this scenario
-  impact: string        // consequence for the business
-  response: string      // how to prepare or respond
+  trigger: string
+  impact: string
+  response: string
 }
 
 export interface MarketingOpportunityItem {
-  channel: string           // e.g. "Enterprise Sales — APAC" or "D2C — US Market"
-  opportunity: string       // the specific opportunity this week's signals create
-  rationale: string         // why this signal makes this opportunity timely
+  channel: string
+  opportunity: string
+  rationale: string
   urgency: 'low' | 'medium' | 'high'
 }
 
 export interface FinancialSignalItem {
-  category: string          // "FX Risk" | "Interest Rates" | "Credit Markets" | "Commodity Pricing" | "Equity Sentiment"
+  category: string
   headline: string
   detail: string
-  cfo_action: string        // specific CFO action or consideration
+  cfo_action: string
 }
 
 export interface OperationalAlert {
-  area: string              // "Logistics" | "Procurement" | "Vendor Risk" | "Production" | "Inventory"
+  area: string
   headline: string
   detail: string
-  mitigation: string        // concrete action to address this
+  mitigation: string
 }
 
 export interface HRIntelItem {
-  category: string          // "Talent Market" | "Competitor Hiring" | "Executive Move" | "Workforce Restructuring" | "Compensation Trends" | "Skills Gap" | "Labour Relations"
+  category: string
   headline: string
-  detail: string            // 2–3 sentences with **bold** on key figure or company
-  company_impact: string    // what this means for our company's talent strategy
-  action: string            // specific HR action or consideration
+  detail: string
+  company_impact: string
+  action: string
   signal_type: 'competitor' | 'market' | 'regulatory' | 'economic'
   source?: string
 }
@@ -173,28 +171,28 @@ export interface HRIntelItem {
 export interface MAItem {
   type: 'acquisition' | 'merger' | 'funding' | 'ipo' | 'divestiture' | 'rumour'
   headline: string
-  acquirer?: string           // buyer / lead investor
-  target: string              // company being acquired / funded / divested
-  deal_size?: string          // e.g. "$2.4B" or "undisclosed"
-  detail: string              // 2–3 sentences with **bold** on key figure or implication
-  strategic_read: string      // what this deal signals about sector dynamics
-  bd_action: string           // specific BD opportunity or defence for this company
-  relevance: 'direct' | 'adjacent' | 'watch'   // how close to our space
+  acquirer?: string
+  target: string
+  deal_size?: string
+  detail: string
+  strategic_read: string
+  bd_action: string
+  relevance: 'direct' | 'adjacent' | 'watch'
   source?: string
 }
 
 export interface TechIntelItem {
-  category: string          // "AI / LLM" | "Hardware" | "Software" | "Semiconductors" | "Cybersecurity" | "Emerging Tech"
+  category: string
   headline: string
-  detail: string            // 2–3 sentences with **bold** on key product/company/figure
-  cto_action: string        // specific action or consideration for the CTO
-  relevance: 'direct' | 'watch' | 'awareness'   // how relevant to this company
+  detail: string
+  cto_action: string
+  relevance: 'direct' | 'watch' | 'awareness'
   source?: string
 }
 
 export interface SWOTItem {
-  point: string         // one sentence with **bold** on the key phrase
-  source: string        // which section it came from e.g. "Competitor Intel"
+  point: string
+  source: string
   urgency?: 'low' | 'medium' | 'high'
 }
 
@@ -206,20 +204,28 @@ export interface SWOTAnalysis {
 }
 
 export interface CompanyNewsItem {
-  headline: string          // article headline
-  summary: string           // 2–3 sentence summary of the article
+  headline: string
+  summary: string
   sentiment: 'positive' | 'neutral' | 'negative'
-  category: string          // "Product Launch" | "Partnership" | "Financial Results" | "Leadership" | "Legal / Regulatory" | "Brand / PR" | "General Coverage"
-  exec_note: string         // why leadership should care about this coverage
-  source?: string           // publication name
-  source_url?: string       // publication homepage URL e.g. https://bloomberg.com
-  date?: string             // publication date if known
+  category: string
+  exec_note: string
+  source?: string
+  source_url?: string
+  date?: string
+}
+
+export interface WeeklyAction {
+  action: string
+  owner: 'CEO' | 'CFO' | 'CMO' | 'CTO' | 'CBPO' | 'VP HR' | 'All'
+  priority: 'high' | 'medium' | 'low'
+  section: string
 }
 
 export interface BriefContent {
-  headline: string                      // one editorial headline for the week
-  executive_summary: string             // 3–4 sentence lede
-  swot: SWOTAnalysis                    // visual summary — rendered first
+  headline: string
+  tldr?: string
+  executive_summary: string
+  swot: SWOTAnalysis
   financial_news: FinancialNewsItem[]
   geopolitical_news: GeopoliticalItem[]
   competitor_intelligence: CompetitorMoveItem[]
@@ -235,23 +241,86 @@ export interface BriefContent {
   customer_intelligence: CustomerIntelItem[]
   decision_framing: DecisionFrame[]
   scenario_modeling: Scenario[]
-  market_snapshots?: Record<string, StoredSparkline>  // live data attached at generation time
-  trend_insights?: TrendInsights        // generated once post-brief via Haiku
+  weekly_actions?: WeeklyAction[]
+  market_snapshots?: Record<string, StoredSparkline>
+  trend_insights?: TrendInsights
+  dashboard_visuals?: DashboardVisualsResult
 }
 
-export interface TrendInsight {
-  metric: string      // e.g. "High Risks", "Competitor Signals"
-  direction: 'up' | 'down' | 'stable'
-  delta: string       // e.g. "+3 vs last week"
-  insight: string     // one-sentence narrative
+export interface TrendTheme {
+  title: string                                           // 4–7 word punchy title
+  analysis: string                                        // 2–3 substantive sentences
+  signal: 'escalating' | 'recurring' | 'emerging' | 'resolving'
 }
 
 export interface TrendInsights {
   generated_at: string
-  briefs_compared: number    // how many briefs were analysed
-  summary: string            // 2–3 sentence overall trend narrative
-  trends: TrendInsight[]     // per-metric trend lines
-  watch_items: string[]      // 2–3 bullet points of things to watch
+  briefs_compared: number
+  summary: string
+  themes: TrendTheme[]
+  watch_items: string[]
+  // legacy compat
+  trends?: unknown[]
+}
+
+// ── Dashboard Visuals ─────────────────────────────────────────────────────────
+
+export type DashboardVisualType =
+  | 'Strategic Impact Score'
+  | 'Company Exposure Map'
+  | 'Risk Heatmap'
+  | 'Opportunity Radar'
+  | 'Decision Radar'
+  | 'Competitive Pressure Map'
+  | 'Strategic Momentum Tracker'
+
+export interface StrategicImpactScoreData {
+  score: number
+  direction: 'rising' | 'stable' | 'falling'
+  time_horizon: 'immediate' | 'near-term' | 'long-term'
+  confidence: 'low' | 'medium' | 'high'
+  primary_theme: string
+  rationale: string
+}
+export interface CompanyExposureMapData {
+  exposures: { area: string; level: 'low' | 'medium' | 'high'; why: string; entities?: string[] }[]
+}
+export interface RiskHeatmapData {
+  risks: { category: string; severity: 'low' | 'medium' | 'high'; why: string }[]
+}
+export interface OpportunityRadarData {
+  opportunities: { area: string; strength: 'low' | 'medium' | 'high'; why: string }[]
+}
+export interface DecisionRadarData {
+  decisions: { issue: string; urgency: 'monitor' | 'decide soon' | 'immediate'; function: string; why: string }[]
+}
+export interface CompetitivePressureMapData {
+  pressures: { competitor: string; level: 'low' | 'medium' | 'high'; why: string }[]
+}
+export interface StrategicMomentumTrackerData {
+  momentum_items: { theme: string; momentum: 'accelerating' | 'stable' | 'weakening'; why: string }[]
+}
+
+export type DashboardVisualData =
+  | StrategicImpactScoreData
+  | CompanyExposureMapData
+  | RiskHeatmapData
+  | OpportunityRadarData
+  | DecisionRadarData
+  | CompetitivePressureMapData
+  | StrategicMomentumTrackerData
+
+export interface DashboardVisual {
+  visual_type: DashboardVisualType
+  priority: number
+  title: string
+  why_selected: string
+  data: DashboardVisualData
+}
+
+export interface DashboardVisualsResult {
+  generated_at: string
+  dashboard_visuals: DashboardVisual[]
 }
 
 export interface Brief {

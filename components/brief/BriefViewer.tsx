@@ -81,9 +81,9 @@ function CountryLabel({ name }: { name: string }) {
   )
 }
 
-// ── Collapsible section ───────────────────────────────────────────────────────
+// ── Collapsible section (kept but unused) ────────────────────────────────────
 
-function CollapsibleSection({
+function _CollapsibleSection({
   id, label, audience, children, defaultExpanded = false,
 }: {
   id: string; label: string; audience: string
@@ -116,6 +116,49 @@ function CollapsibleSection({
           <span>↓</span>
         </button>
       )}
+    </section>
+  )
+}
+
+// ── Section header colors ─────────────────────────────────────────────────────
+
+const SECTION_HEADER: Record<string, { bar: string; bg: string }> = {
+  'brief-risk':       { bar: 'bg-red-700',     bg: 'bg-red-50/40' },
+  'brief-comp':       { bar: 'bg-orange-600',   bg: 'bg-orange-50/40' },
+  'brief-geo':        { bar: 'bg-violet-700',   bg: 'bg-violet-50/40' },
+  'brief-fin-news':   { bar: 'bg-blue-700',     bg: 'bg-blue-50/40' },
+  'brief-fin-signals':{ bar: 'bg-blue-600',     bg: 'bg-blue-50/30' },
+  'brief-mktg':       { bar: 'bg-emerald-700',  bg: 'bg-emerald-50/40' },
+  'brief-company-news':{ bar: 'bg-gray-700',    bg: 'bg-gray-50/60' },
+  'brief-ma':         { bar: 'bg-indigo-700',   bg: 'bg-indigo-50/40' },
+  'brief-tech':       { bar: 'bg-cyan-700',     bg: 'bg-cyan-50/40' },
+  'brief-hr':         { bar: 'bg-pink-700',     bg: 'bg-pink-50/40' },
+  'brief-ops':        { bar: 'bg-amber-700',    bg: 'bg-amber-50/40' },
+  'brief-customers':  { bar: 'bg-teal-700',     bg: 'bg-teal-50/40' },
+  'brief-scenario':   { bar: 'bg-slate-700',    bg: 'bg-slate-50/40' },
+  'brief-decisions':  { bar: 'bg-gray-800',     bg: 'bg-gray-50/60' },
+  'brief-capital':    { bar: 'bg-blue-800',     bg: 'bg-blue-50/30' },
+}
+
+// ── Brief section ─────────────────────────────────────────────────────────────
+
+function BriefSection({
+  id, label, audience, children,
+}: {
+  id: string; label: string; audience: string; children: React.ReactNode
+}) {
+  const style = SECTION_HEADER[id] ?? { bar: 'bg-gray-700', bg: 'bg-gray-50/40' }
+  return (
+    <section id={id} className="scroll-mt-6 rounded-xl overflow-hidden border border-black/5 shadow-sm">
+      {/* Colored header bar */}
+      <div className={`${style.bar} px-5 py-3 flex items-center gap-3`}>
+        <span className="text-white/60 text-[9px] font-bold uppercase tracking-widest">{audience}</span>
+        <h2 className="text-sm font-black uppercase tracking-widest text-white">{label}</h2>
+      </div>
+      {/* Content area with tinted background */}
+      <div className={`${style.bg} p-4`}>
+        {children}
+      </div>
     </section>
   )
 }
@@ -228,13 +271,13 @@ function SWOTPanel({ swot, brandColor }: { swot: BriefContent['swot']; brandColo
 
         {/* ── Donut chart + legend ── */}
         <div className="shrink-0 flex flex-col items-center gap-4">
-          <div className="relative w-44 h-44">
+          <div className="relative w-48 h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%" cy="50%"
-                  innerRadius={52} outerRadius={72}
+                  innerRadius={56} outerRadius={78}
                   paddingAngle={3}
                   dataKey="value"
                   onClick={(d) => setActiveQ(activeQ === d.key ? null : d.key as keyof typeof SWOT_CONFIG)}
@@ -259,13 +302,13 @@ function SWOTPanel({ swot, brandColor }: { swot: BriefContent['swot']; brandColo
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               {activeQ ? (
                 <>
-                  <span className="text-2xl font-bold text-gray-900">{(swot?.[activeQ] ?? []).length}</span>
-                  <span className="text-[10px] text-gray-500 font-medium">{SWOT_CONFIG[activeQ].label}</span>
+                  <span className="text-xl font-bold text-gray-900">{(swot?.[activeQ] ?? []).length}</span>
+                  <span className="text-[9px] text-gray-500 font-medium">{SWOT_CONFIG[activeQ].label}</span>
                 </>
               ) : (
                 <>
-                  <span className="text-2xl font-bold text-gray-900">{totalItems}</span>
-                  <span className="text-[10px] text-gray-500 font-medium">signals</span>
+                  <span className="text-xl font-bold text-gray-900">{totalItems}</span>
+                  <span className="text-[9px] text-gray-500 font-medium">signals</span>
                 </>
               )}
             </div>
@@ -307,7 +350,7 @@ function SWOTPanel({ swot, brandColor }: { swot: BriefContent['swot']; brandColo
         </div>
 
         {/* ── Items list ── */}
-        <div className="flex-1 min-w-0 space-y-3 max-h-72 overflow-y-auto pr-1">
+        <div className="flex-1 min-w-0 space-y-3 max-h-[32rem] overflow-y-auto pr-1">
           {displayItems.length === 0 && (
             <p className="text-xs text-gray-400 italic">No signals in this quadrant this week.</p>
           )}
@@ -414,6 +457,7 @@ export default function BriefViewer({
   briefId?: string
 }) {
   const [roleFilter, setRoleFilter] = useState<Role>('All')
+  const [tickerExpanded, setTickerExpanded] = useState(false)
   const accent = brandColor ?? '#111827'
 
   function showSection(audience: string): boolean {
@@ -516,6 +560,12 @@ export default function BriefViewer({
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 leading-snug mb-3">{content.headline}</h1>
+          {content.tldr && (
+            <div className="mb-3 px-3 py-2.5 bg-gray-900 rounded-lg">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">TL;DR</span>
+              <span className="text-sm font-semibold text-white">{content.tldr}</span>
+            </div>
+          )}
           <p className="text-sm text-gray-700 leading-relaxed border-l-2 border-gray-300 pl-3">
             <RichText text={content.executive_summary} />
           </p>
@@ -537,441 +587,342 @@ export default function BriefViewer({
           ))}
         </div>
 
-        {/* Market strip: FX pairs + company stock + macro context */}
-        <div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {mastheadFinal.map((s: StoredSparkline) => (
-              <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
-            ))}
-          </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">
-            {content.market_snapshots
-              ? `✓ Live market data · fetched at brief generation`
-              : '⚠ Simulated market data — regenerate brief to fetch live data.'}
-          </p>
-        </div>
-
-        {/* Competitor stocks + commodities */}
-        {(competitorCharts.length > 0 || commodityCharts.length > 0) && (
-          <div className="space-y-2">
-            {competitorCharts.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Competitor Stocks</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {competitorCharts.map((s: StoredSparkline) => (
-                    <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
-                  ))}
-                </div>
-              </div>
-            )}
-            {commodityCharts.length > 0 && (
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">Relevant Commodities</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {commodityCharts.map((s: StoredSparkline) => (
-                    <MarketMiniChart key={s.ticker} sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']} compact />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* SWOT snapshot */}
         {content.swot && <SWOTPanel swot={content.swot} brandColor={brandColor} />}
 
-        {/* Main 2/3 + 1/3 grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* ── All sections — single full-width column, priority order ─── */}
+        <div className="space-y-8">
 
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 space-y-4">
+          {/* 1. Risk Summary */}
+          {content.risk_summary?.length > 0 && showSection('CEO') && (
+            <BriefSection id="brief-risk" label="Risk Summary" audience="CEO">
+              {/* Legend */}
+              <div className="flex items-center gap-4 mb-4 pb-3 border-b border-gray-100">
+                {[
+                  { color: 'bg-red-500',   label: 'High',   def: 'Requires action this week' },
+                  { color: 'bg-amber-400', label: 'Medium', def: 'Monitor closely' },
+                  { color: 'bg-gray-400',  label: 'Low',    def: 'Awareness only' },
+                ].map(({ color, label, def }) => (
+                  <div key={label} className="flex items-center gap-1.5 group relative">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
+                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
+                    <span className="hidden group-hover:block absolute left-0 top-5 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">{def}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.risk_summary.map((r: RiskItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <RiskCard risk={r} />
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.financial_news?.length > 0 && showSection('CFO') && (
-              <CollapsibleSection id="brief-fin-news" label="Financial News" audience="CFO" defaultExpanded>
-                <div className="space-y-5">
-                  {content.financial_news.map((item, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <CountryLabel name={item.market} />
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mt-1 mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mt-1 mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <SourceTag source={item.source} />
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="financial_news" itemIndex={i} compact /></div>}
+          {/* 2. Competitor Intelligence */}
+          {content.competitor_intelligence?.length > 0 && showSection('CMO') && (
+            <BriefSection id="brief-comp" label="Competitor Intelligence" audience="CMO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.competitor_intelligence.map((item, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{item.competitor}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-900 text-white tracking-wide">
+                        {typeLabel[item.type] ?? item.type.toUpperCase()}
+                      </span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${threatBadge[item.threat_level]}`}>
+                        {item.threat_level} threat
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="competitor_intelligence" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.geopolitical_news?.length > 0 && showSection('CEO') && (
-              <CollapsibleSection id="brief-geo" label="Geopolitical Signals" audience="CEO" defaultExpanded>
-                <div className="space-y-5">
-                  {content.geopolitical_news.map((item, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <CountryLabel name={item.region} />
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mt-1 mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mt-1 mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <SourceTag source={item.source} />
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="geopolitical_news" itemIndex={i} compact /></div>}
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+          {/* 3. Geopolitical News */}
+          {content.geopolitical_news?.length > 0 && showSection('CEO') && (
+            <BriefSection id="brief-geo" label="Geopolitical Signals" audience="CEO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.geopolitical_news.map((item, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <CountryLabel name={item.region} />
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <SourceTag source={item.source} />
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="geopolitical_news" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.competitor_intelligence?.length > 0 && showSection('CMO') && (
-              <CollapsibleSection id="brief-comp" label="Competitor Intelligence" audience="CMO" defaultExpanded>
-                <div className="space-y-5">
-                  {content.competitor_intelligence.map((item, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{item.competitor}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-900 text-white tracking-wide">
-                          {typeLabel[item.type] ?? item.type.toUpperCase()}
+          {/* Market data — expandable ticker */}
+          {mastheadFinal.length > 0 && (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <button
+                onClick={() => setTickerExpanded(!tickerExpanded)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-gray-500">Market Data</span>
+                  {!tickerExpanded && (
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      {mastheadFinal.slice(0, 5).map(s => (
+                        <span key={s.ticker} className="flex items-center gap-1 text-[11px] text-gray-500 shrink-0">
+                          <span className="font-semibold text-gray-700">{s.ticker}</span>
+                          <span className={s.pct >= 0 ? 'text-emerald-600' : 'text-red-500'}>
+                            {s.pct >= 0 ? '▲' : '▼'}{Math.abs(s.pct).toFixed(2)}%
+                          </span>
                         </span>
-                        <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${threatBadge[item.threat_level]}`}>
-                          {item.threat_level} threat
-                        </span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/competitor_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="competitor_intelligence" itemIndex={i} compact /></div>}
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              </CollapsibleSection>
-            )}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[10px] text-gray-300">
+                    {content.market_snapshots ? '✓ Live' : '⚠ Simulated'}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform ${tickerExpanded ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+              {tickerExpanded && (
+                <div className="border-t border-gray-100 p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3">
+                    {[...mastheadFinal, ...competitorCharts, ...commodityCharts].map((s, i) => (
+                      <MarketMiniChart
+                        key={`${s.ticker}-${i}`}
+                        sparkline={s as Parameters<typeof MarketMiniChart>[0]['sparkline']}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-            {content.marketing_opportunities?.length > 0 && showSection('CMO') && (
-              <CollapsibleSection id="brief-mktg" label="Marketing Opportunities" audience="CMO">
-                <div className="space-y-4">
-                  {content.marketing_opportunities.map((item: MarketingOpportunityItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.channel}</span>
-                        <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${urgencyBadge[item.urgency]}`}>
-                          {item.urgency} urgency
-                        </span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="group">
-                          <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.opportunity}</p>
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.opportunity}</p>
-                      )}
-                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{item.rationale}</p>
-                      {item.rationale.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
+          {/* 4. Financial News */}
+          {content.financial_news?.length > 0 && showSection('CFO') && (
+            <BriefSection id="brief-fin-news" label="Financial News" audience="CFO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.financial_news.map((item, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <CountryLabel name={item.market} />
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <SourceTag source={item.source} />
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="financial_news" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
+
+          {/* 5. Marketing Opportunities */}
+          {content.marketing_opportunities?.length > 0 && showSection('CMO') && (
+            <BriefSection id="brief-mktg" label="Marketing Opportunities" audience="CMO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.marketing_opportunities.map((item: MarketingOpportunityItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.channel}</span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${urgencyBadge[item.urgency]}`}>
+                        {item.urgency} urgency
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="group">
+                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.opportunity}</p>
+                      </Link>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{item.opportunity}</p>
+                    )}
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3 flex-1">{item.rationale}</p>
+                    {item.rationale.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/marketing_opportunities/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.tech_intelligence?.length > 0 && showSection('CTO') && (
-              <CollapsibleSection id="brief-tech" label="Tech Intelligence" audience="CTO">
-                <div className="space-y-4">
-                  {content.tech_intelligence.map((item: TechIntelItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.category}</span>
-                        <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                          item.relevance === 'direct'    ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
-                          item.relevance === 'watch'     ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                          'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>
-                          {item.relevance}
-                        </span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <SourceTag source={item.source} />
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="tech_intelligence" itemIndex={i} compact /></div>}
+          {/* 6. Company News */}
+          {content.company_news?.length > 0 && showSection('CMO') && (
+            <BriefSection id="brief-company-news" label="Company News" audience="CMO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.company_news.map((item: CompanyNewsItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{item.category}</span>
+                      <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded capitalize ${
+                        item.sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700' :
+                        item.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-600'
+                      }`}>{item.sentiment}</span>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            {content.hr_intelligence?.length > 0 && showSection('HR') && (
-              <CollapsibleSection id="brief-hr" label="HR Intelligence" audience="HR">
-                <div className="space-y-4">
-                  {content.hr_intelligence.map((item: HRIntelItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.category}</span>
-                        <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                          item.signal_type === 'competitor' ? 'bg-pink-50 text-pink-700 border-pink-200' :
-                          item.signal_type === 'market'     ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                          item.signal_type === 'regulatory' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                              'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>
-                          {item.signal_type}
-                        </span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <SourceTag source={item.source} />
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="hr_intelligence" itemIndex={i} compact /></div>}
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1">{item.summary}</p>
+                    {item.summary.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <div className="mt-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Exec Note</div>
+                      <p className="text-xs text-gray-700">{item.exec_note}</p>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+                    <SourceTag source={item.source} />
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.ma_watch?.length > 0 && showSection('BD') && (
-              <CollapsibleSection id="brief-ma" label="M&A Watch" audience="BD">
-                <div className="space-y-5">
-                  {content.ma_watch.map((item: MAItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${
-                          item.type === 'acquisition' ? 'bg-indigo-900 text-white' :
-                          item.type === 'merger'      ? 'bg-indigo-700 text-white' :
-                          item.type === 'funding'     ? 'bg-violet-600 text-white' :
-                          item.type === 'ipo'         ? 'bg-blue-600 text-white' :
-                          item.type === 'divestiture' ? 'bg-orange-600 text-white' :
-                                                        'bg-gray-500 text-white'
-                        }`}>
-                          {item.type.toUpperCase()}
-                        </span>
-                        {item.deal_size && (
-                          <span className="text-[10px] font-bold text-gray-500">{item.deal_size}</span>
-                        )}
-                        <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                          item.relevance === 'direct'   ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
-                          item.relevance === 'adjacent' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                                          'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>
-                          {item.relevance}
-                        </span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
+          {/* 7. M&A Watch */}
+          {content.ma_watch?.length > 0 && showSection('BD') && (
+            <BriefSection id="brief-ma" label="M&A Watch" audience="BD">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.ma_watch.map((item: MAItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${
+                        item.type === 'acquisition' ? 'bg-indigo-900 text-white' :
+                        item.type === 'merger'      ? 'bg-indigo-700 text-white' :
+                        item.type === 'funding'     ? 'bg-violet-600 text-white' :
+                        item.type === 'ipo'         ? 'bg-blue-600 text-white' :
+                        item.type === 'divestiture' ? 'bg-orange-600 text-white' :
+                                                      'bg-gray-500 text-white'
+                      }`}>
+                        {item.type.toUpperCase()}
+                      </span>
+                      {item.deal_size && (
+                        <span className="text-[10px] font-bold text-gray-500">{item.deal_size}</span>
                       )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <SourceTag source={item.source} />
-                      {briefId && <div className="mt-2"><FeedbackButtons briefId={briefId} section="ma_watch" itemIndex={i} compact /></div>}
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+                        item.relevance === 'direct'   ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
+                        item.relevance === 'adjacent' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                        'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}>
+                        {item.relevance}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <SourceTag source={item.source} />
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="ma_watch" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.customer_intelligence?.length > 0 && showSection('CEO') && (
-              <CollapsibleSection id="brief-customers" label="Customer Intelligence" audience="CEO">
-                <div className="space-y-5">
-                  {content.customer_intelligence.map((item: CustomerIntelItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                          item.sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700' :
-                          item.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
-                                                          'bg-gray-100 text-gray-600'
-                        }`}>{item.customer}</span>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border capitalize ${
-                          item.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                          item.sentiment === 'negative' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                          'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>{item.signal_type.replace(/_/g, ' ')}</span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <div className="mt-2">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Revenue Impact</div>
-                        <p className="text-xs text-gray-700"><RichText text={item.revenue_impact} /></p>
-                      </div>
-                      <SourceTag source={item.source} />
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+          {/* 8. Financial Signals */}
+          {content.financial_signals?.length > 0 && showSection('CFO') && (
+            <BriefSection id="brief-fin-signals" label="Financial Signals" audience="CFO">
+              {/* Charts for first 2 signals — prefer live data */}
+              <div className="flex gap-4 mb-4 overflow-x-auto pb-1">
+                {content.financial_signals.slice(0, 2).map((item: FinancialSignalItem, i) => {
+                  const chartKey = CFO_CHART_MAP[item.category.toLowerCase()]
+                  const sparkline = chartKey ? getChart(chartKey) : null
+                  return sparkline ? <MarketMiniChart key={i} sparkline={sparkline as Parameters<typeof MarketMiniChart>[0]['sparkline']} /> : null
+                })}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.financial_signals.map((item: FinancialSignalItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{item.category}</div>
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="group">
+                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</p>
+                      </Link>
+                    ) : (
+                      <p className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</p>
+                    )}
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.company_news?.length > 0 && showSection('CMO') && (
-              <CollapsibleSection id="brief-company-news" label="Company News" audience="CMO">
-                <div className="space-y-5">
-                  {content.company_news.map((item: CompanyNewsItem, i) => (
-                    <div key={i} className="border-b border-gray-100 pb-5 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{item.category}</span>
-                        <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded capitalize ${
-                          item.sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700' :
-                          item.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
-                                                          'bg-gray-100 text-gray-600'
-                        }`}>{item.sentiment}</span>
-                      </div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="group">
-                          <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">{item.headline}</h3>
-                        </Link>
-                      ) : (
-                        <h3 className="text-sm font-semibold text-gray-900 leading-snug mb-1">{item.headline}</h3>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{item.summary}</p>
-                      {item.summary.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/company_news/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                      <div className="mt-2">
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Exec Note</div>
-                        <p className="text-xs text-gray-700">{item.exec_note}</p>
-                      </div>
-                      <SourceTag source={item.source} />
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+          {/* 9. Capital Impact */}
+          {content.capital_impact && showSection('CFO') && (
+            <BriefSection id="brief-capital" label="Capital Impact" audience="CFO">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Revenue Exposure', value: content.capital_impact.revenue_exposure },
+                  { label: 'Margin Pressure',  value: content.capital_impact.margin_pressure },
+                  { label: 'Capex',            value: content.capital_impact.capex_considerations },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">{label}</div>
+                    <p className="text-xs text-gray-700 leading-relaxed"><RichText text={value} /></p>
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.scenario_modeling?.length > 0 && showSection('CEO') && (
-              <CollapsibleSection id="brief-scenarios" label="Scenario Modeling" audience="CEO">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {content.scenario_modeling.map((s: Scenario, i) => (
-                    <ScenarioCard key={i} scenario={s} />
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
-          </div>
-
-          {/* RIGHT SIDEBAR */}
-          <div className="space-y-4">
-
-            {content.risk_summary?.length > 0 && showSection('CEO') && (
-              <CollapsibleSection id="brief-risk" label="Risk Summary" audience="CEO" defaultExpanded>
-                {/* Legend */}
-                <div className="flex items-center gap-4 mb-3 pb-2.5 border-b border-gray-100">
-                  {[
-                    { color: 'bg-red-500',   label: 'High',   def: 'Requires action this week' },
-                    { color: 'bg-amber-400', label: 'Medium', def: 'Monitor closely' },
-                    { color: 'bg-gray-400',  label: 'Low',    def: 'Awareness only' },
-                  ].map(({ color, label, def }) => (
-                    <div key={label} className="flex items-center gap-1.5 group relative">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-                      <span className="hidden group-hover:block absolute left-0 top-5 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">{def}</span>
-                    </div>
-                  ))}
-                </div>
-                {content.risk_summary.map((r: RiskItem, i) => <RiskCard key={i} risk={r} />)}
-              </CollapsibleSection>
-            )}
-
-            {content.capital_impact && showSection('CFO') && (
-              <CollapsibleSection id="brief-capital" label="Capital Impact" audience="CFO" defaultExpanded>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Revenue Exposure', value: content.capital_impact.revenue_exposure },
-                    { label: 'Margin Pressure',  value: content.capital_impact.margin_pressure },
-                    { label: 'Capex',            value: content.capital_impact.capex_considerations },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">{label}</div>
-                      <p className="text-xs text-gray-700 leading-relaxed"><RichText text={value} /></p>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            {content.financial_signals?.length > 0 && showSection('CFO') && (
-              <CollapsibleSection id="brief-fin-signals" label="Financial Signals" audience="CFO" defaultExpanded>
-                {/* Charts for first 2 signals — prefer live data */}
-                <div className="space-y-2 mb-3">
-                  {content.financial_signals.slice(0, 2).map((item: FinancialSignalItem, i) => {
-                    const chartKey = CFO_CHART_MAP[item.category.toLowerCase()]
-                    const sparkline = chartKey ? getChart(chartKey) : null
-                    return sparkline ? <MarketMiniChart key={i} sparkline={sparkline as Parameters<typeof MarketMiniChart>[0]['sparkline']} /> : null
-                  })}
-                </div>
-                <div>
-                  {content.financial_signals.map((item: FinancialSignalItem, i) => (
-                    <div key={i} className="py-2.5 border-b border-gray-100 last:border-0">
-                      <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">{item.category}</div>
-                      {briefId ? (
-                        <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="group">
-                          <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</p>
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
-                      {item.detail.length > 140 && briefId && (
-                        <Link href={`/briefs/${briefId}/article/financial_signals/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            {content.operational_intelligence?.length > 0 && showSection('CBPO') && (
-              <CollapsibleSection id="brief-ops" label="Operational Intelligence" audience="CBPO">
+          {/* 10. Operational Intelligence */}
+          {content.operational_intelligence?.length > 0 && showSection('CBPO') && (
+            <BriefSection id="brief-ops" label="Operational Intelligence" audience="CBPO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {content.operational_intelligence.map((item: OperationalAlert, i) => (
-                  <div key={i} className="py-2.5 border-b border-gray-100 last:border-0">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">{item.area}</div>
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{item.area}</div>
                     {briefId ? (
                       <Link href={`/briefs/${briefId}/article/operational_intelligence/${i}`} className="group">
                         <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</p>
@@ -979,37 +930,160 @@ export default function BriefViewer({
                     ) : (
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-0.5 leading-relaxed line-clamp-2"><RichText text={item.detail} /></p>
+                    <p className="text-xs text-gray-500 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
                     {item.detail.length > 140 && briefId && (
-                      <Link href={`/briefs/${briefId}/article/operational_intelligence/${i}`} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                      <Link href={`/briefs/${briefId}/article/operational_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
                   </div>
                 ))}
-              </CollapsibleSection>
-            )}
+              </div>
+            </BriefSection>
+          )}
 
-            {content.decision_framing?.length > 0 && showSection('CEO') && (
-              <CollapsibleSection id="brief-decisions" label="Decision Framing" audience="CEO" defaultExpanded>
-                <div className="space-y-5">
-                  {content.decision_framing.map((d, i) => (
-                    <div key={i}>
-                      <p className="text-sm font-semibold text-gray-900 leading-snug">{d.question}</p>
-                      <p className="text-xs text-gray-500 mt-1 mb-2">{d.context}</p>
-                      <ul className="space-y-1">
-                        {d.options.map((opt, j) => (
-                          <li key={j} className="flex gap-2 text-xs text-gray-700">
-                            <span className="shrink-0 font-bold text-gray-400">{String.fromCharCode(65 + j)}.</span>
-                            <span>{opt}</span>
-                          </li>
-                        ))}
-                      </ul>
+          {/* 11. Tech Intelligence */}
+          {content.tech_intelligence?.length > 0 && showSection('CTO') && (
+            <BriefSection id="brief-tech" label="Tech Intelligence" audience="CTO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.tech_intelligence.map((item: TechIntelItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.category}</span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+                        item.relevance === 'direct'    ? 'bg-cyan-50 text-cyan-700 border-cyan-200' :
+                        item.relevance === 'watch'     ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                        'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}>
+                        {item.relevance}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <SourceTag source={item.source} />
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="tech_intelligence" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
-          </div>
+          {/* 12. HR Intelligence */}
+          {content.hr_intelligence?.length > 0 && showSection('HR') && (
+            <BriefSection id="brief-hr" label="HR Intelligence" audience="HR">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.hr_intelligence.map((item: HRIntelItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.category}</span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
+                        item.signal_type === 'competitor' ? 'bg-pink-50 text-pink-700 border-pink-200' :
+                        item.signal_type === 'market'     ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        item.signal_type === 'regulatory' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                            'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}>
+                        {item.signal_type}
+                      </span>
+                    </div>
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <SourceTag source={item.source} />
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="hr_intelligence" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
+
+          {/* 13. Customer Intelligence */}
+          {content.customer_intelligence?.length > 0 && showSection('CEO') && (
+            <BriefSection id="brief-customers" label="Customer Intelligence" audience="CEO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.customer_intelligence.map((item: CustomerIntelItem, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                        item.sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700' :
+                        item.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-600'
+                      }`}>{item.customer}</span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border capitalize ${
+                        item.sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        item.sentiment === 'negative' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                        'bg-gray-50 text-gray-500 border-gray-200'
+                      }`}>{item.signal_type.replace(/_/g, ' ')}</span>
+                    </div>
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/customer_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <div className="mt-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Revenue Impact</div>
+                      <p className="text-xs text-gray-700"><RichText text={item.revenue_impact} /></p>
+                    </div>
+                    <SourceTag source={item.source} />
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
+
+          {/* 14. Scenario Modeling */}
+          {content.scenario_modeling?.length > 0 && showSection('CEO') && (
+            <BriefSection id="brief-scenarios" label="Scenario Modeling" audience="CEO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.scenario_modeling.map((s: Scenario, i) => (
+                  <ScenarioCard key={i} scenario={s} />
+                ))}
+              </div>
+            </BriefSection>
+          )}
+
+          {/* 15. Decision Framing */}
+          {content.decision_framing?.length > 0 && showSection('CEO') && (
+            <BriefSection id="brief-decisions" label="Decision Framing" audience="CEO">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {content.decision_framing.map((d, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-gray-900 leading-snug">{d.question}</p>
+                    <p className="text-xs text-gray-500 leading-relaxed">{d.context}</p>
+                    <ul className="space-y-1 mt-1">
+                      {d.options.map((opt, j) => (
+                        <li key={j} className="flex gap-2 text-xs text-gray-700">
+                          <span className="shrink-0 font-bold text-gray-400">{String.fromCharCode(65 + j)}.</span>
+                          <span>{opt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
+
         </div>
       </div>
 
