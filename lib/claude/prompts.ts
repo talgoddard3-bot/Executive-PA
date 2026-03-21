@@ -43,6 +43,7 @@ ACTION fields (impact, relevance, cfo_action, cto_action, mitigation, bd_action,
 ━━━ CONTENT RULES ━━━
 - Brief headline: the most consequential development this week for THIS company. Name the event, the number, the actor. Format: [what happened] — [direct consequence]. Make it a front-page alert
 - Every section: tie signals to this company's specific exposure using approximate language ("a significant market", "roughly a quarter of revenue", "a key supply source") — never state exact percentages
+- Never cite internal company metrics (headcount, employee counts, office sizes) as facts — these change constantly and are not verified. Write the strategic point without the number. Bad: "threatens your 398-employee manufacturing base". Good: "threatens your sole proprietary manufacturing site"
 - Scenarios: plausible given this week's signals only — not textbook risk categories
 - Decision framing: the decisions THIS CEO actually faces THIS week. Name each option by its real trade-off, not A/B/C. If the data favours one option, say which and why
 - Severity and probability must be calibrated — if it is a quiet week, reflect that. Not everything is high risk
