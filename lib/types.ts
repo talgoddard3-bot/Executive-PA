@@ -224,6 +224,11 @@ export interface WeeklyAction {
 export interface BriefContent {
   headline: string
   tldr?: string
+  sector_tags?: string[]        // e.g. ["fintech", "regulation", "AI"]
+  region_tags?: string[]        // e.g. ["US", "EU", "APAC"]
+  read_time?: number            // estimated minutes
+  urgency?: 'act-now' | 'monitor' | 'awareness'   // 🔴🟡🟢
+  so_what?: string              // 1-paragraph opinionated decision-maker insight
   executive_summary: string
   swot: SWOTAnalysis
   financial_news: FinancialNewsItem[]

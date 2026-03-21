@@ -4,6 +4,7 @@ import { fetchCompetitorSignals } from './finnhub'
 import { buildFREDMacroSignals } from './fred'
 import { buildCountrySignals } from './country-signals'
 import { buildEdgarSignals } from './sec-edgar'
+import { buildResearchSignals } from './research'
 import { createClient } from '@supabase/supabase-js'
 
 const NEWS_API_BASE = 'https://newsapi.org/v2/everything'
@@ -345,6 +346,10 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
   const edgarCompetitors = profile.competitors.slice(0, 6).map(c => ({ name: c.name, ticker: c.ticker }))
   const edgarSignals = await buildEdgarSignals(edgarCompetitors, company.stock_ticker ?? null).catch(() => '')
   if (edgarSignals) lines.push(edgarSignals)
+
+  // ── Academic research signals (Semantic Scholar) ─────────────────────────
+  const research = await buildResearchSignals(company.industry ?? '', profile.keywords ?? []).catch(() => '')
+  if (research) lines.push('\n' + research)
 
   const result = lines.join('\n')
   console.log(`[signals] Fetched live signals: ${result.length} chars`)

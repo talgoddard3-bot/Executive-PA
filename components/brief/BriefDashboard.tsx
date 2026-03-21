@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { BriefContent } from '@/lib/types'
+import type { BriefContent, SWOTAnalysis } from '@/lib/types'
 import DashboardVisuals from '@/components/dashboard/DashboardVisuals'
 import SWOTPanel from '@/components/brief/SWOTPanel'
 

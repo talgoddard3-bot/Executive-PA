@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import Image from 'next/image'
@@ -458,7 +458,19 @@ export default function BriefViewer({
 }) {
   const [roleFilter, setRoleFilter] = useState<Role>('All')
   const [tickerExpanded, setTickerExpanded] = useState(false)
+  const [readProgress, setReadProgress] = useState(0)
   const accent = brandColor ?? '#111827'
+
+  useEffect(() => {
+    function onScroll() {
+      const el = document.documentElement
+      const scrolled = el.scrollTop
+      const total = el.scrollHeight - el.clientHeight
+      setReadProgress(total > 0 ? Math.min(100, (scrolled / total) * 100) : 0)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   function showSection(audience: string): boolean {
     const allowed = ROLE_MAP[roleFilter]
@@ -525,6 +537,14 @@ export default function BriefViewer({
   return (
     <div className="font-sans flex gap-8 items-start">
 
+      {/* ── Reading progress bar (fixed, top of viewport) ─────────────── */}
+      <div className="fixed top-0 left-0 right-0 h-0.5 z-50 bg-transparent pointer-events-none">
+        <div
+          className="h-full transition-all duration-100 ease-out"
+          style={{ width: `${readProgress}%`, backgroundColor: accent }}
+        />
+      </div>
+
       {/* ── MAIN CONTENT ─────────────────────────────────────────── */}
       <div className="flex-1 min-w-0 space-y-4">
 
@@ -568,6 +588,52 @@ export default function BriefViewer({
           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed border-l-2 border-gray-300 dark:border-gray-600 pl-3">
             <RichText text={content.executive_summary} />
           </p>
+
+          {/* ── So What callout ──────────────────────────────────────── */}
+          {content.so_what && (
+            <div className="mt-4 rounded-xl border-2 p-4" style={{ borderColor: accent + '40', background: accent + '0a' }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] mb-2" style={{ color: accent }}>
+                What this means for you
+              </p>
+              <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed font-medium">
+                {content.so_what}
+              </p>
+            </div>
+          )}
+
+          {/* ── Metadata row: urgency + read time + sector tags ──────── */}
+          {(content.urgency || content.read_time || content.sector_tags?.length) && (
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              {content.urgency === 'act-now' && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-red-50 text-red-700 border-red-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />Act Now
+                </span>
+              )}
+              {content.urgency === 'monitor' && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Monitor
+                </span>
+              )}
+              {content.urgency === 'awareness' && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border bg-green-50 text-green-700 border-green-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Awareness
+                </span>
+              )}
+              {content.read_time && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {content.read_time} min read
+                </span>
+              )}
+              {content.sector_tags?.map(tag => (
+                <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 font-medium capitalize">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Role filter bar ─────────────────────────────────────────── */}

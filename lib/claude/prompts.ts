@@ -146,9 +146,19 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
 {
   "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Think Economist cover or Bloomberg terminal alert — not a sentence, not a question. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle' or 'Micro-Epsilon Targets Core Market as Semiconductor Boom Accelerates'. Never vague, never generic.",
 
+  "sector_tags": ["2–4 short topic tags for this brief, lowercase, from this list: macro, markets, competitive, regulatory, technology, talent, capital, geopolitical, supply-chain, consumer, ai, cybersecurity, energy, trade. Pick only the most relevant."],
+
+  "region_tags": ["2–3 geographic regions covered, from: US, EU, UK, APAC, MENA, LatAm, Global. Pick only the most relevant."],
+
+  "urgency": "One of: 'act-now' (regulatory deadline, fast-moving competitive event requiring this-week action), 'monitor' (trend developing over 30–90 days), 'awareness' (background context, no immediate action needed). Be calibrated — not every brief is act-now.",
+
+  "read_time": 8,
+
   "tldr": "One sentence. The absolute bottom line this week — the single thing the CEO must know before any meeting. No caveats. No context. Just the verdict. Example: 'Competitor X is expanding into your core market this quarter — accelerate the APAC deal or lose first-mover advantage.'",
 
   "executive_summary": "3–4 sentence lede. Lead with the dominant risk or opportunity, then the market context, then the company-specific implication, then the decision pressure it creates. Reference specific revenue percentages, competitor names, and market figures from the signals.",
+
+  "so_what": "The most important paragraph in the brief. 3–5 sentences. Directly address the CEO: what does all of this week's intelligence mean for their company RIGHT NOW? Be opinionated — do not hedge. Name the single most important action or decision this week. Example: 'The ASML restriction is the clearest signal yet that your semiconductor customers will cut orders in H2. The window to lock in Q3 contracts is this month, not next quarter. Move the APAC negotiation to a board-level conversation this week and price in a 15% volume buffer.'",
 
   "swot": {
     "strengths": [

@@ -142,7 +142,7 @@ export default function BriefCard({ brief, isAdmin }: { brief: Brief; isAdmin?: 
               href={`/briefs/${brief.id}`}
               className="text-xs font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors"
             >
-              Dashboard
+              Overview
             </Link>
             <Link
               href={`/briefs/${brief.id}/full`}

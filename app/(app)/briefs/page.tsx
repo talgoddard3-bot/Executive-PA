@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getSessionCompanyId, getIsAdmin } from '@/lib/get-company'
 import GenerateButton from '@/components/brief/GenerateButton'
 import DeleteBriefButton from '@/components/brief/DeleteBriefButton'
+import BriefsListClient from '@/components/brief/BriefsListClient'
 import Link from 'next/link'
 import type { Brief } from '@/lib/types'
 
@@ -34,6 +35,12 @@ function riskBadge(brief: Brief) {
   const high = brief.content?.risk_summary?.filter(r => r.severity === 'high').length ?? 0
   const med  = brief.content?.risk_summary?.filter(r => r.severity === 'medium').length ?? 0
   return { high, med }
+}
+
+const URGENCY_CONFIG = {
+  'act-now':   { badge: 'bg-red-50 text-red-700 border-red-200',     dot: 'bg-red-500',   label: 'Act Now' },
+  'monitor':   { badge: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500', label: 'Monitor' },
+  'awareness': { badge: 'bg-green-50 text-green-700 border-green-200', dot: 'bg-green-500', label: 'Awareness' },
 }
 
 export default async function BriefsPage() {
@@ -94,21 +101,41 @@ export default async function BriefsPage() {
         </div>
       )}
 
-      {/* Latest brief — featured */}
+      {/* Latest brief — hero card */}
       {latest && (() => {
         const weekOf = new Date(latest.week_of).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
         const { high, med } = riskBadge(latest)
         const headline = latest.content?.headline ?? ''
         const tldr = latest.content?.tldr
+        const soWhat = latest.content?.so_what
+        const urgency = latest.content?.urgency
+        const readTime = latest.content?.read_time
+        const sectorTags = latest.content?.sector_tags ?? []
         const sep = headline.indexOf(' — ')
         const title = sep !== -1 ? headline.slice(0, sep) : headline
         const tagline = sep !== -1 ? headline.slice(sep + 3) : null
+        const urgencyCfg = urgency ? URGENCY_CONFIG[urgency as keyof typeof URGENCY_CONFIG] : null
         return (
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
-            <div className="px-5 pt-4 pb-2 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            {/* Hero top bar */}
+            <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-white/5 flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded">Latest Brief</span>
                 <span className="text-[11px] text-gray-400 dark:text-gray-500">Week of {weekOf}</span>
+                {urgencyCfg && (
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${urgencyCfg.badge}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${urgencyCfg.dot}`} />
+                    {urgencyCfg.label}
+                  </span>
+                )}
+                {readTime && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {readTime} min read
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {high > 0 && <span className="text-[10px] bg-red-100 text-red-700 font-bold px-1.5 py-0.5 rounded">{high} high risk{high !== 1 ? 's' : ''}</span>}
@@ -116,27 +143,51 @@ export default async function BriefsPage() {
                 {isAdmin && <DeleteBriefButton briefId={latest.id} />}
               </div>
             </div>
+
             <div className="p-5">
+              {/* Headline */}
               {title && (
                 <div className="mb-3">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-snug">{title}</h2>
-                  {tagline && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{tagline}</p>}
+                  {tagline && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 leading-snug">{tagline}</p>}
                 </div>
               )}
+
+              {/* Sector tags */}
+              {sectorTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {sectorTags.map(tag => (
+                    <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 font-medium capitalize">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* TL;DR */}
               {tldr && (
-                <div className="mb-4 px-3 py-2 bg-gray-900 rounded-lg">
+                <div className="mb-4 px-3 py-2 bg-gray-900 dark:bg-black/40 rounded-lg">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">TL;DR</span>
                   <span className="text-sm font-semibold text-white">{tldr}</span>
                 </div>
               )}
+
+              {/* So What callout */}
+              {soWhat && (
+                <div className="mb-4 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-lg">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-1">What this means for you</p>
+                  <p className="text-sm text-blue-900 dark:text-blue-100 leading-relaxed">{soWhat}</p>
+                </div>
+              )}
+
               {/* SWOT bullets */}
-              {latest.content?.swot && (() => {
+              {!soWhat && latest.content?.swot && (() => {
                 const s = latest.content.swot
                 const items = [
-                  { key: 'S', color: 'bg-green-500', label: 'Strength', text: s.strengths?.[0]?.point },
-                  { key: 'W', color: 'bg-red-500',   label: 'Weakness', text: s.weaknesses?.[0]?.point },
-                  { key: 'O', color: 'bg-blue-500',  label: 'Opportunity', text: s.opportunities?.[0]?.point },
-                  { key: 'T', color: 'bg-amber-500', label: 'Threat', text: s.threats?.[0]?.point },
+                  { key: 'S', color: 'bg-green-500', text: s.strengths?.[0]?.point },
+                  { key: 'W', color: 'bg-red-500',   text: s.weaknesses?.[0]?.point },
+                  { key: 'O', color: 'bg-blue-500',  text: s.opportunities?.[0]?.point },
+                  { key: 'T', color: 'bg-amber-500', text: s.threats?.[0]?.point },
                 ].filter(i => i.text)
                 return (
                   <ul className="space-y-1.5 mb-4">
@@ -149,6 +200,7 @@ export default async function BriefsPage() {
                   </ul>
                 )
               })()}
+
               <div className="flex items-center gap-2 pt-3 border-t border-gray-100 dark:border-white/5">
                 <Link href={`/briefs/${latest.id}`} className="text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/15 px-3 py-1.5 rounded-lg transition-colors">
                   Overview
@@ -165,39 +217,11 @@ export default async function BriefsPage() {
         )
       })()}
 
-      {/* Archive */}
+      {/* Archive — searchable + filterable */}
       {archive.length > 0 && (
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Archive</p>
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm divide-y divide-gray-100 dark:divide-white/5">
-            {archive.map(b => {
-              const weekOf = new Date(b.week_of).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-              const { high, med } = riskBadge(b)
-              const headline = b.content?.headline ?? ''
-              const sep = headline.indexOf(' — ')
-              const title = sep !== -1 ? headline.slice(0, sep) : headline
-              return (
-                <div key={b.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500">{weekOf}</span>
-                      {high > 0 && <span className="text-[10px] bg-red-100 text-red-700 font-bold px-1 py-0 rounded">{high}H</span>}
-                      {med > 0  && <span className="text-[10px] bg-amber-100 text-amber-700 font-bold px-1 py-0 rounded">{med}M</span>}
-                    </div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 truncate group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{title || 'Brief'}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {isAdmin && <DeleteBriefButton briefId={b.id} />}
-                    <Link href={`/briefs/${b.id}/full`} className="text-xs text-gray-400 hover:text-blue-600 transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Archive</p>
+          <BriefsListClient briefs={archive} isAdmin={isAdmin} />
         </div>
       )}
     </div>
