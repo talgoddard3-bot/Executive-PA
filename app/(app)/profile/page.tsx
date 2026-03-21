@@ -38,8 +38,8 @@ export default async function ProfilePage({
       <div className="max-w-2xl space-y-5">
 
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Company Profile</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Manage your company details and intelligence preferences</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Company Profile</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">Manage your company details and intelligence preferences</p>
         </div>
 
         {justSaved && (
@@ -57,10 +57,10 @@ export default async function ProfilePage({
             <LocationsManager />
           </>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-6 space-y-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Set up your company profile</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Set up your company profile</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 This information is used to personalise your intelligence brief.
               </p>
             </div>

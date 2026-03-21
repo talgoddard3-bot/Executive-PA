@@ -160,7 +160,7 @@ function WeekCell({ label, sub, badge, badgeStyle }: {
   badge?: string | null
   badgeStyle?: string
 }) {
-  if (!label) return <td className="px-3 py-3 text-xs text-gray-300 text-center">—</td>
+  if (!label) return <td className="px-3 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">—</td>
   return (
     <td className="px-3 py-3 align-top max-w-[180px]">
       {badge && (
@@ -168,8 +168,8 @@ function WeekCell({ label, sub, badge, badgeStyle }: {
           {badge}
         </span>
       )}
-      <p className="text-xs font-medium text-gray-800 leading-snug">{label}</p>
-      {sub && <p className="text-[11px] text-gray-400 leading-snug mt-0.5 line-clamp-2">{sub}</p>}
+      <p className="text-xs font-medium text-gray-800 dark:text-gray-100 leading-snug">{label}</p>
+      {sub && <p className="text-[11px] text-gray-400 dark:text-gray-500 leading-snug mt-0.5 line-clamp-2">{sub}</p>}
     </td>
   )
 }
@@ -180,7 +180,7 @@ function FeedCard({ article, briefId }: { article: FeedArticle; briefId: string 
   const cat = CAT_STYLE[article.type]
   const href = briefId ? `/briefs/${briefId}/article/${article.section}/${article.index}` : undefined
   return (
-    <div className="py-4 border-b border-gray-100 last:border-0 group">
+    <div className="py-4 border-b border-gray-100 dark:border-white/5 last:border-0 group">
       <div className="flex items-center gap-2 mb-1.5">
         <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded tracking-widest uppercase ${cat.badge}`}>
           {cat.label}
@@ -205,15 +205,15 @@ function FeedCard({ article, briefId }: { article: FeedArticle; briefId: string 
       </div>
       {href ? (
         <Link href={href}>
-          <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug mb-1">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors leading-snug mb-1">
             {article.headline}
           </h3>
         </Link>
       ) : (
-        <h3 className="text-sm font-bold text-gray-900 leading-snug mb-1">{article.headline}</h3>
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-snug mb-1">{article.headline}</h3>
       )}
       {article.snippet && (
-        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">{article.snippet}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">{article.snippet}</p>
       )}
       {href && (
         <Link href={href} className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition-colors">
@@ -370,10 +370,10 @@ function KpiCard({
   color?: string
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-1">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4 flex flex-col gap-1">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">{label}</p>
       <div className="flex items-end gap-2">
-        <span className={`text-2xl font-black ${color ?? 'text-gray-900'}`}>{value}</span>
+        <span className={`text-2xl font-black ${color ?? 'text-gray-900 dark:text-white'}`}>{value}</span>
         {trend && (
           <span className={`text-xs font-bold mb-1 ${
             trendUp === true ? 'text-red-500' : trendUp === false ? 'text-emerald-500' : 'text-gray-400'
@@ -382,7 +382,7 @@ function KpiCard({
           </span>
         )}
       </div>
-      {sub && <p className="text-xs text-gray-500 leading-snug">{sub}</p>}
+      {sub && <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{sub}</p>}
     </div>
   )
 }
@@ -401,24 +401,24 @@ function SectionTile({
 }) {
   if (items.length === 0) return null
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden flex flex-col">
       <div className={`px-4 py-2.5 ${color}`}>
         <h3 className="text-[11px] font-black uppercase tracking-widest text-white">{title}</h3>
       </div>
-      <div className="flex-1 divide-y divide-gray-100">
+      <div className="flex-1 divide-y divide-gray-100 dark:divide-white/5">
         {items.slice(0, 4).map((item, i) => (
-          <div key={i} className="px-4 py-3 hover:bg-gray-50 transition-colors group">
+          <div key={i} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
             {item.meta && (
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">{item.meta}</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-0.5">{item.meta}</p>
             )}
             {briefId ? (
               <Link href={`/briefs/${briefId}/article/${sectionKey}/${item.index}`}>
-                <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors leading-snug">
                   {item.headline}
                 </p>
               </Link>
             ) : (
-              <p className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{item.headline}</p>
             )}
             {item.badge && (
               <span className={`mt-1 inline-block text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${item.badgeStyle ?? 'bg-gray-100 text-gray-600'}`}>
@@ -429,8 +429,8 @@ function SectionTile({
         ))}
       </div>
       {briefId && items.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-gray-100 bg-gray-50/40">
-          <Link href={`/briefs/${briefId}/full#${anchor}`} className="text-xs text-blue-600 font-semibold hover:text-blue-800 transition-colors">
+        <div className="px-4 py-2.5 border-t border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-white/5">
+          <Link href={`/briefs/${briefId}/full#${anchor}`} className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-800 transition-colors">
             See all {items.length} →
           </Link>
         </div>
@@ -463,8 +463,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
   if (aggregates.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-16 text-center">
-        <p className="text-gray-400 text-sm">No briefs yet. Generate your first brief to start tracking trends.</p>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-16 text-center">
+        <p className="text-gray-400 dark:text-gray-500 text-sm">No briefs yet. Generate your first brief to start tracking trends.</p>
         <Link href="/briefs" className="mt-4 inline-block text-sm text-blue-600 hover:underline">Go to Briefs →</Link>
       </div>
     )
@@ -519,7 +519,7 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
         {/* Brief Digest (left 2/3) */}
         <div className="lg:col-span-2 space-y-3">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
             <div className="px-5 py-3 bg-gray-950 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Intelligence Brief</span>
@@ -539,22 +539,22 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
               )}
             </div>
             <div className="px-5 py-4">
-              <h2 className="text-lg font-black text-gray-900 leading-tight tracking-tight mb-2">
+              <h2 className="text-lg font-black text-gray-900 dark:text-white leading-tight tracking-tight mb-2">
                 {latest.headline}
               </h2>
               {latestBriefContent?.tldr && (
-                <div className="mb-3 px-3 py-2 bg-gray-50 rounded-lg border-l-4 border-gray-900">
-                  <p className="text-sm font-medium text-gray-800">{latestBriefContent.tldr}</p>
+                <div className="mb-3 px-3 py-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-l-4 border-gray-900 dark:border-blue-500">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{latestBriefContent.tldr}</p>
                 </div>
               )}
               {latest.executiveSummary && (
-                <p className="text-sm text-gray-600 leading-relaxed line-clamp-3">{latest.executiveSummary}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-3">{latest.executiveSummary}</p>
               )}
             </div>
             {latest.capitalImpactRevenue && (
-              <div className="px-5 py-2.5 border-t border-gray-100 bg-amber-50/40 flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Revenue Exposure</span>
-                <span className="text-xs text-gray-600">{latest.capitalImpactRevenue}</span>
+              <div className="px-5 py-2.5 border-t border-gray-100 dark:border-white/5 bg-amber-50/40 dark:bg-amber-900/20 flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Revenue Exposure</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">{latest.capitalImpactRevenue}</span>
               </div>
             )}
           </div>
@@ -563,8 +563,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
           {chartData.length >= 3 && (
             <div className="grid grid-cols-2 gap-3">
               {/* Risk Intensity Chart */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Risk Intensity (12 wks)</p>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Risk Intensity (12 wks)</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
                     <YAxis domain={[0, 'dataMax + 1']} hide />
@@ -578,8 +578,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                 </ResponsiveContainer>
               </div>
               {/* Competitor Count Chart */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Competitor Activity (12 wks)</p>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Competitor Activity (12 wks)</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
                     <YAxis domain={[0, 'dataMax + 1']} hide />
@@ -603,14 +603,14 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
           {/* Markets */}
           {markets.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Markets</p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Markets</p>
               <div className="space-y-2">
                 {markets.map(m => (
                   <div key={m.label} className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700">{m.label}</span>
+                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">{m.label}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-mono text-gray-900">{m.value}</span>
+                      <span className="text-xs font-mono text-gray-900 dark:text-white">{m.value}</span>
                       {m.up !== null && (
                         <span className={`text-[10px] font-bold ${m.up ? 'text-green-600' : 'text-red-500'}`}>
                           {m.up ? '▲' : '▼'}
@@ -625,13 +625,13 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
           {/* Top Risks */}
           {topRisksForSidebar.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-red-500 mb-3">Top Risks</p>
               <div className="space-y-2">
                 {topRisksForSidebar.map((r, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    <p className="text-xs text-gray-700 leading-snug">{r.title}</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug">{r.title}</p>
                   </div>
                 ))}
               </div>
@@ -640,15 +640,15 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
           {/* Competitor pressure */}
           {competitorPressure.length > 0 && (
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">Competitor Pressure</p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3">Competitor Pressure</p>
               <div className="space-y-2">
                 {competitorPressure.slice(0, 5).map(c => (
                   <div key={c.name} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-700 truncate flex-1">{c.name}</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1">{c.name}</span>
                     <div className="flex gap-0.5">
                       {c.weeks.map((level, wi) => (
-                        <div key={wi} className={`w-2 h-2 rounded-sm ${level ? THREAT_DOT[level] : 'bg-gray-100'}`} />
+                        <div key={wi} className={`w-2 h-2 rounded-sm ${level ? THREAT_DOT[level] : 'bg-gray-100 dark:bg-white/10'}`} />
                       ))}
                     </div>
                     <span className={`text-[10px] font-bold ${
@@ -738,8 +738,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
         return (
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Intelligence Breakdown</p>
-              <div className="flex-1 border-t border-gray-200" />
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Intelligence Breakdown</p>
+              <div className="flex-1 border-t border-gray-200 dark:border-white/10" />
               {latestBriefId && (
                 <Link href={`/briefs/${latestBriefId}/full`} className="text-xs text-blue-600 font-semibold hover:text-blue-800">
                   View full brief →
@@ -759,13 +759,13 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
       <div>
         <button
           onClick={() => setHistoryOpen(h => !h)}
-          className="w-full flex items-center gap-2 text-xs text-gray-400 hover:text-gray-700 transition-colors mb-3"
+          className="w-full flex items-center gap-2 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors mb-3"
         >
-          <div className="flex-1 border-t border-gray-100" />
+          <div className="flex-1 border-t border-gray-100 dark:border-white/5" />
           <span className="font-semibold uppercase tracking-widest px-2">
             {historyOpen ? '▲ Hide historical data' : '▼ Show historical data'}
           </span>
-          <div className="flex-1 border-t border-gray-100" />
+          <div className="flex-1 border-t border-gray-100 dark:border-white/5" />
         </button>
 
         {historyOpen && (
@@ -773,28 +773,28 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
 
             {/* 4-Week Comparison Table */}
             {last4.length >= 2 && (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="px-5 pt-4 pb-3 border-b border-gray-100 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-gray-700">{last4.length}-Week Intelligence Comparison</p>
-                  <p className="text-[10px] text-gray-400">● = this week</p>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
+                <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">{last4.length}-Week Intelligence Comparison</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">● = this week</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="border-b border-gray-100 bg-gray-50/40">
-                        <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 w-28">Category</th>
+                      <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-white/5">
+                        <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 w-28">Category</th>
                         {last4.map(a => (
-                          <th key={a.id} className="text-left px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">
+                          <th key={a.id} className="text-left px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
                             {a.weekShort}{a.id === latest?.id && <span className="ml-1 text-blue-500">●</span>}
                           </th>
                         ))}
-                        <th className="text-center px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Trend</th>
+                        <th className="text-center px-3 py-2.5 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Trend</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
+                    <tbody className="divide-y divide-gray-50 dark:divide-white/5">
 
-                      <tr className="hover:bg-gray-50/40">
-                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 align-top">Top Risk</td>
+                      <tr className="hover:bg-gray-50/40 dark:hover:bg-white/5">
+                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 align-top">Top Risk</td>
                         {last4.map(a => (
                           <WeekCell
                             key={a.id}
@@ -811,8 +811,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-gray-50/40">
-                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 align-top">Competitor</td>
+                      <tr className="hover:bg-gray-50/40 dark:hover:bg-white/5">
+                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 align-top">Competitor</td>
                         {last4.map(a => (
                           <WeekCell
                             key={a.id}
@@ -829,8 +829,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-gray-50/40">
-                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 align-top">Decision</td>
+                      <tr className="hover:bg-gray-50/40 dark:hover:bg-white/5">
+                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 align-top">Decision</td>
                         {last4.map(a => (
                           <WeekCell
                             key={a.id}
@@ -845,8 +845,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-gray-50/40">
-                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 align-top">Geopolitical</td>
+                      <tr className="hover:bg-gray-50/40 dark:hover:bg-white/5">
+                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 align-top">Geopolitical</td>
                         {last4.map(a => (
                           <WeekCell
                             key={a.id}
@@ -857,8 +857,8 @@ export default function HistoricDashboard({ aggregates, latestBriefId, companyNa
                         <td className="px-3" />
                       </tr>
 
-                      <tr className="hover:bg-gray-50/40">
-                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 align-top">Markets</td>
+                      <tr className="hover:bg-gray-50/40 dark:hover:bg-white/5">
+                        <td className="px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 align-top">Markets</td>
                         {last4.map(a => (
                           <WeekCell
                             key={a.id}

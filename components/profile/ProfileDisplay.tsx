@@ -11,7 +11,7 @@ interface ProfileDisplayProps {
   profile: CompanyProfile
 }
 
-const sectionHeadingClass = 'text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3'
+const sectionHeadingClass = 'text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3'
 
 export default function ProfileDisplay({ company, profile }: ProfileDisplayProps) {
   const [editing, setEditing] = useState(false)
@@ -54,31 +54,31 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           {/* Static logo display — editing handled inside ProfileForm */}
-          <div className="w-16 h-16 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="w-16 h-16 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0 overflow-hidden">
             {company.logo_url ? (
               <Image src={company.logo_url} alt={company.name} width={64} height={64} className="object-contain p-1" />
             ) : (
-              <span className="text-lg font-bold text-gray-300">
+              <span className="text-lg font-bold text-gray-300 dark:text-gray-600">
                 {company.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()}
               </span>
             )}
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-xl font-semibold text-gray-900">{company.name}</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{company.name}</h2>
               {company.company_type && (
-                <span className="rounded border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-semibold tracking-wide text-gray-500">
+                <span className="rounded border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-2 py-0.5 text-xs font-semibold tracking-wide text-gray-500 dark:text-gray-400">
                   {company.company_type}
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">{company.industry}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{company.industry}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setEditing(true)}
-            className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors"
+            className="flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:border-gray-300 transition-colors"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -88,13 +88,13 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           {!confirmReset ? (
             <button
               onClick={() => setConfirmReset(true)}
-              className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors"
+              className="flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-red-600 hover:border-red-200 transition-colors"
             >
               Switch company
             </button>
           ) : (
             <div className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">Delete all data?</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Delete all data?</span>
               <button
                 onClick={handleReset}
                 disabled={resetting}
@@ -104,7 +104,7 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
               </button>
               <button
                 onClick={() => setConfirmReset(false)}
-                className="rounded-md border border-gray-200 px-2.5 py-1 text-xs text-gray-500 hover:text-gray-700"
+                className="rounded-md border border-gray-200 dark:border-white/10 px-2.5 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
               >
                 Cancel
               </button>
@@ -116,19 +116,19 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
       {/* Revenue Exposure */}
       <section>
         <h3 className={sectionHeadingClass}>Revenue Exposure</h3>
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-2 font-medium text-gray-500">Country</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-500">Sector</th>
+              <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Country</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Sector</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {(profile.revenue_countries as RevenueCountry[]).map((r, i) => (
                 <tr key={i}>
-                  <td className="px-4 py-2.5 text-gray-900">{r.country}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{r.sector}</td>
+                  <td className="px-4 py-2.5 text-gray-900 dark:text-white">{r.country}</td>
+                  <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{r.sector}</td>
                 </tr>
               ))}
             </tbody>
@@ -139,19 +139,19 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
       {/* Supplier Countries */}
       <section>
         <h3 className={sectionHeadingClass}>Supplier Countries</h3>
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+        <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-2 font-medium text-gray-500">Country</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-500">Materials / Components</th>
+              <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Country</th>
+                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Materials / Components</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {(profile.supplier_countries as SupplierCountry[]).map((s, i) => (
                 <tr key={i}>
-                  <td className="px-4 py-2.5 text-gray-900">{s.country}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{s.materials}</td>
+                  <td className="px-4 py-2.5 text-gray-900 dark:text-white">{s.country}</td>
+                  <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{s.materials}</td>
                 </tr>
               ))}
             </tbody>
@@ -162,11 +162,11 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
       {/* Competitors */}
       <section>
         <h3 className={sectionHeadingClass}>Key Competitors</h3>
-        <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+        <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-white/5">
           {(profile.competitors as Competitor[]).map((c, i) => (
             <div key={i} className="px-4 py-2.5">
-              <span className="text-sm font-medium text-gray-900">{c.name}</span>
-              {c.notes && <span className="text-sm text-gray-500"> — {c.notes}</span>}
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{c.name}</span>
+              {c.notes && <span className="text-sm text-gray-500 dark:text-gray-400"> — {c.notes}</span>}
             </div>
           ))}
         </div>
@@ -176,11 +176,11 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
       {(profile.customers ?? []).length > 0 && (
         <section>
           <h3 className={sectionHeadingClass}>Key Customers</h3>
-          <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+          <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-white/5">
             {(profile.customers as Customer[]).map((c, i) => (
               <div key={i} className="px-4 py-2.5">
-                <span className="text-sm font-medium text-gray-900">{c.name}</span>
-                {c.notes && <span className="text-sm text-gray-500"> — {c.notes}</span>}
+                <span className="text-sm font-medium text-gray-900 dark:text-white">{c.name}</span>
+                {c.notes && <span className="text-sm text-gray-500 dark:text-gray-400"> — {c.notes}</span>}
               </div>
             ))}
           </div>
