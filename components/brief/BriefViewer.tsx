@@ -50,7 +50,7 @@ function RichText({ text, className }: { text: string; className?: string }) {
     <span className={className}>
       {parts.map((part, i) =>
         i % 2 === 1
-          ? <strong key={i} className="font-semibold text-gray-900">{part}</strong>
+          ? <strong key={i} className="font-semibold text-gray-900 dark:text-white">{part}</strong>
           : part
       )}
     </span>
@@ -500,7 +500,6 @@ export default function BriefViewer({
   const allowedAudiences = ROLE_MAP[roleFilter]
   const allTocSections: TOCSection[] = [
     { id: 'brief-summary',    label: 'Executive Summary',      audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO },
-    { id: 'brief-swot',       label: 'SWOT Snapshot',          audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO },
     ...(content.financial_news?.length       ? [{ id: 'brief-fin-news',    label: 'Financial News',           audience: 'CFO',  audienceColor: AUDIENCE_COLORS.CFO }] : []),
     ...(content.geopolitical_news?.length    ? [{ id: 'brief-geo',         label: 'Geopolitical Signals',     audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.competitor_intelligence?.length ? [{ id: 'brief-comp',     label: 'Competitor Intelligence',  audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
@@ -520,7 +519,7 @@ export default function BriefViewer({
 
   // Filter TOC to match visible sections
   const tocSections = allTocSections.filter(
-    s => allowedAudiences === 'all' || allowedAudiences.includes(s.audience) || s.id === 'brief-summary' || s.id === 'brief-swot'
+    s => allowedAudiences === 'all' || allowedAudiences.includes(s.audience) || s.id === 'brief-summary'
   )
 
   return (
@@ -537,16 +536,16 @@ export default function BriefViewer({
                 <Image src={logoUrl} alt={companyName ?? 'Logo'} width={20} height={20}
                   className="rounded object-contain" unoptimized />
               )}
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500">
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-gray-500 dark:text-gray-400">
                 Executive Intelligence Brief
               </span>
             </div>
             <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[10px] text-gray-400">
+              <span className="text-[10px] text-gray-400 dark:text-gray-500">
                 {weekOf && `Week of ${weekOf}`}{companyName && ` · ${companyName}`}
               </span>
               {generatedAt && (
-                <span className="text-[10px] text-gray-300 flex items-center gap-1">
+                <span className="text-[10px] text-gray-300 dark:text-gray-600 flex items-center gap-1">
                   <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -559,14 +558,14 @@ export default function BriefViewer({
               )}
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 leading-snug mb-3">{content.headline}</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white leading-snug mb-3">{content.headline}</h1>
           {content.tldr && (
             <div className="mb-3 px-3 py-2.5 bg-gray-900 rounded-lg">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">TL;DR</span>
               <span className="text-sm font-semibold text-white">{content.tldr}</span>
             </div>
           )}
-          <p className="text-sm text-gray-700 leading-relaxed border-l-2 border-gray-300 pl-3">
+          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed border-l-2 border-gray-300 dark:border-gray-600 pl-3">
             <RichText text={content.executive_summary} />
           </p>
         </div>
@@ -586,9 +585,6 @@ export default function BriefViewer({
             </button>
           ))}
         </div>
-
-        {/* SWOT snapshot */}
-        {content.swot && <SWOTPanel swot={content.swot} brandColor={brandColor} />}
 
         {/* ── All sections — single full-width column, priority order ─── */}
         <div className="space-y-8">

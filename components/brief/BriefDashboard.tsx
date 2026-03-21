@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { BriefContent, SWOTAnalysis } from '@/lib/types'
+import type { BriefContent } from '@/lib/types'
 import DashboardVisuals from '@/components/dashboard/DashboardVisuals'
+import SWOTPanel from '@/components/brief/SWOTPanel'
 
 interface Props {
   briefId: string
@@ -400,8 +401,8 @@ export default function BriefDashboard({ briefId, content, weekOf, generatedAt, 
         </div>
       </div>
 
-      {/* ── 2. SWOT Circle ───────────────────────────────────────────────── */}
-      <SwotCircleViz swot={swot} />
+      {/* ── 2. SWOT ──────────────────────────────────────────────────────── */}
+      <SWOTPanel swot={content.swot} />
 
       {/* ── 3. AI Strategic Visuals ───────────────────────────────────────── */}
       <DashboardVisuals briefId={briefId} />
