@@ -92,12 +92,6 @@ export default async function BriefPage({
           </div>
         ) : (
           <div className="space-y-5">
-            {typedBrief.content.weekly_actions && typedBrief.content.weekly_actions.length > 0 && (
-              <ActionItemsPanel
-                briefId={id}
-                actions={typedBrief.content.weekly_actions}
-              />
-            )}
             {hasLateIntel && (
               <LateIntelPanel
                 briefId={id}
@@ -114,6 +108,12 @@ export default async function BriefPage({
               generatedAt={typedBrief.generated_at}
               companyName={company?.name}
             />
+            {typedBrief.content.weekly_actions && typedBrief.content.weekly_actions.length > 0 && (
+              <ActionItemsPanel
+                briefId={id}
+                actions={typedBrief.content.weekly_actions}
+              />
+            )}
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { BriefContent, SWOTAnalysis } from '@/lib/types'
+import type { BriefContent, SWOTAnalysis, RiskItem } from '@/lib/types'
 import DashboardVisuals from '@/components/dashboard/DashboardVisuals'
 import SWOTPanel from '@/components/brief/SWOTPanel'
 
@@ -284,6 +284,173 @@ function SwotCircleViz({ swot }: { swot: SWOTAnalysis }) {
   )
 }
 
+// ── Risk Summary Panel ────────────────────────────────────────────────────────
+
+const SEVERITY_CONFIG = {
+  high:   { dot: 'bg-red-500',   badge: 'bg-red-100 text-red-700 border-red-200',     label: 'HIGH',   timeframeColor: 'text-red-500' },
+  medium: { dot: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200', label: 'MEDIUM', timeframeColor: 'text-amber-600' },
+  low:    { dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-600 border-gray-200',   label: 'LOW',    timeframeColor: 'text-gray-400' },
+}
+
+function RiskPanel({ risks }: { risks: RiskItem[] }) {
+  if (!risks || risks.length === 0) return null
+
+  const high   = risks.filter(r => r.severity === 'high')
+  const medium = risks.filter(r => r.severity === 'medium')
+  const low    = risks.filter(r => r.severity === 'low')
+
+  return (
+    <div className="rounded-xl border-2 overflow-hidden bg-white dark:bg-gray-800" style={{ borderColor: '#ef444433' }}>
+      {/* Header */}
+      <div className="px-5 py-3 flex items-center justify-between" style={{ background: '#ef44440d' }}>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-black uppercase tracking-[0.15em] text-red-700 dark:text-red-400">
+            Risk Summary
+          </span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{risks.length} risks identified</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {[
+            { dot: 'bg-red-500',   label: 'High',   count: high.length },
+            { dot: 'bg-amber-400', label: 'Medium', count: medium.length },
+            { dot: 'bg-gray-400',  label: 'Low',    count: low.length },
+          ].map(({ dot, label, count }) => count > 0 && (
+            <div key={label} className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${dot}`} />
+              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Risk grid */}
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {risks.map((risk, i) => {
+          const cfg = SEVERITY_CONFIG[risk.severity] ?? SEVERITY_CONFIG.low
+          return (
+            <div key={i} className="flex items-start gap-2.5 bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-100 dark:border-white/10">
+              <span className={`mt-1.5 shrink-0 w-2 h-2 rounded-full ${cfg.dot}`} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{risk.title}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wide ${cfg.badge}`}>
+                    {cfg.label}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{risk.detail}</p>
+                <p className={`text-[10px] mt-1 uppercase tracking-wide font-medium ${cfg.timeframeColor}`}>{risk.timeframe}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Capital Impact Panel ──────────────────────────────────────────────────────
+
+function CapitalImpactPanel({ capital }: { capital: BriefContent['capital_impact'] }) {
+  if (!capital) return null
+  const fields = [
+    { label: 'Revenue Exposure',    icon: '📈', text: capital.revenue_exposure },
+    { label: 'Margin Pressure',     icon: '💰', text: capital.margin_pressure },
+    { label: 'Capex Considerations',icon: '🏗️', text: capital.capex_considerations },
+  ].filter(f => f.text)
+  if (fields.length === 0) return null
+
+  return (
+    <div className="rounded-xl border-2 overflow-hidden bg-white dark:bg-gray-800" style={{ borderColor: '#3b82f633' }}>
+      <div className="px-5 py-3" style={{ background: '#3b82f60d' }}>
+        <span className="text-xs font-black uppercase tracking-[0.15em] text-blue-700 dark:text-blue-400">Capital Impact</span>
+      </div>
+      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        {fields.map(({ label, icon, text }) => (
+          <div key={label} className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-100 dark:border-white/10">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">
+              {icon} {label}
+            </p>
+            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Decision Framing Panel ────────────────────────────────────────────────────
+
+function DecisionFramingPanel({ decisions }: { decisions: BriefContent['decision_framing'] }) {
+  if (!decisions || decisions.length === 0) return null
+
+  return (
+    <div className="rounded-xl border-2 overflow-hidden bg-white dark:bg-gray-800" style={{ borderColor: '#111827' + '33' }}>
+      <div className="px-5 py-3" style={{ background: '#11182708' }}>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black uppercase tracking-[0.15em] text-gray-800 dark:text-gray-200">Decision Framing</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500">{decisions.length} decision{decisions.length !== 1 ? 's' : ''} this week</span>
+        </div>
+      </div>
+      <div className="p-4 space-y-4">
+        {decisions.map((d, i) => (
+          <div key={i} className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-100 dark:border-white/10">
+            <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">{d.question}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug mb-2">{d.context}</p>
+            <ul className="space-y-1">
+              {(d.options ?? []).map((opt, j) => (
+                <li key={j} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                  <span className="shrink-0 w-4 h-4 mt-0.5 rounded-full bg-gray-200 dark:bg-white/10 text-gray-500 dark:text-gray-400 flex items-center justify-center text-[9px] font-bold">{j + 1}</span>
+                  {opt}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Scenario Modeling Panel ───────────────────────────────────────────────────
+
+const PROB_CONFIG = {
+  high:   { dot: 'bg-red-500',   badge: 'bg-red-50 text-red-700 border-red-200' },
+  medium: { dot: 'bg-amber-400', badge: 'bg-amber-50 text-amber-700 border-amber-200' },
+  low:    { dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-600 border-gray-200' },
+}
+
+function ScenarioPanel({ scenarios }: { scenarios: BriefContent['scenario_modeling'] }) {
+  if (!scenarios || scenarios.length === 0) return null
+
+  return (
+    <div className="rounded-xl border-2 overflow-hidden bg-white dark:bg-gray-800" style={{ borderColor: '#64748b33' }}>
+      <div className="px-5 py-3" style={{ background: '#64748b0d' }}>
+        <span className="text-xs font-black uppercase tracking-[0.15em] text-slate-700 dark:text-slate-300">Scenario Modeling</span>
+      </div>
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+        {scenarios.map((s, i) => {
+          const cfg = PROB_CONFIG[s.probability] ?? PROB_CONFIG.low
+          return (
+            <div key={i} className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-100 dark:border-white/10 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{s.title}</p>
+                <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded border ${cfg.badge}`}>
+                  {s.probability} prob
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400"><span className="font-semibold text-gray-700 dark:text-gray-300">Trigger: </span>{s.trigger}</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400"><span className="font-semibold text-gray-700 dark:text-gray-300">Impact: </span>{s.impact}</p>
+              <p className="text-[11px] text-gray-600 dark:text-gray-300 bg-white dark:bg-white/5 rounded p-1.5 border border-gray-100 dark:border-white/10">
+                <span className="font-semibold">→ </span>{s.response}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function SwotPill({ label, count, color }: { label: string; count: number; color: string }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${color}`}>
@@ -404,7 +571,27 @@ export default function BriefDashboard({ briefId, content, weekOf, generatedAt, 
       {/* ── 2. SWOT ──────────────────────────────────────────────────────── */}
       <SWOTPanel swot={content.swot} />
 
-      {/* ── 3. AI Strategic Visuals ───────────────────────────────────────── */}
+      {/* ── 3. Risk Summary ───────────────────────────────────────────────── */}
+      {content.risk_summary && content.risk_summary.length > 0 && (
+        <RiskPanel risks={content.risk_summary} />
+      )}
+
+      {/* ── 4. Capital Impact ─────────────────────────────────────────────── */}
+      {content.capital_impact && (
+        <CapitalImpactPanel capital={content.capital_impact} />
+      )}
+
+      {/* ── 5. Decision Framing ───────────────────────────────────────────── */}
+      {content.decision_framing && content.decision_framing.length > 0 && (
+        <DecisionFramingPanel decisions={content.decision_framing} />
+      )}
+
+      {/* ── 6. Scenario Modeling ──────────────────────────────────────────── */}
+      {content.scenario_modeling && content.scenario_modeling.length > 0 && (
+        <ScenarioPanel scenarios={content.scenario_modeling} />
+      )}
+
+      {/* ── 7. AI Strategic Visuals ───────────────────────────────────────── */}
       <DashboardVisuals briefId={briefId} />
 
       {/* ── 4. Top Signals This Week ──────────────────────────────────────── */}
