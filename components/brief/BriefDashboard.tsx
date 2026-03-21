@@ -547,28 +547,7 @@ export default function BriefDashboard({ briefId, content, weekOf, generatedAt, 
         </div>
       </div>
 
-      {/* ── 1. AI Weekly Summary ──────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
-        <div className="p-5 pb-4">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">
-            {companyName ?? 'Company'} · Week of {weekOf}
-          </p>
-          {content.headline ? (
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-snug mb-3">
-              {content.headline}
-            </h1>
-          ) : (
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-snug mb-3">
-              {companyName ?? 'Company'} — Weekly Intelligence Brief
-            </h1>
-          )}
-          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-            {boldify(content.executive_summary)}
-          </p>
-        </div>
-      </div>
-
-      {/* ── 2. SWOT ──────────────────────────────────────────────────────── */}
+      {/* ── 1. SWOT ──────────────────────────────────────────────────────── */}
       <SWOTPanel swot={content.swot} />
 
       {/* ── 3. Risk Summary ───────────────────────────────────────────────── */}

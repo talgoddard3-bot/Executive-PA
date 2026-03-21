@@ -516,9 +516,6 @@ export default function BriefViewer({
     ...(content.geopolitical_news?.length    ? [{ id: 'brief-geo',         label: 'Geopolitical Signals',     audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.competitor_intelligence?.length ? [{ id: 'brief-comp',     label: 'Competitor Intelligence',  audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
     ...(content.marketing_opportunities?.length ? [{ id: 'brief-mktg',    label: 'Marketing Opportunities',  audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
-    ...(content.scenario_modeling?.length    ? [{ id: 'brief-scenarios',   label: 'Scenario Modeling',        audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
-    ...(content.risk_summary?.length         ? [{ id: 'brief-risk',        label: 'Risk Summary',             audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
-    ...(content.capital_impact               ? [{ id: 'brief-capital',     label: 'Capital Impact',           audience: 'CFO',  audienceColor: AUDIENCE_COLORS.CFO }] : []),
     ...(content.financial_signals?.length    ? [{ id: 'brief-fin-signals', label: 'Financial Signals',        audience: 'CFO',  audienceColor: AUDIENCE_COLORS.CFO }] : []),
     ...(content.operational_intelligence?.length ? [{ id: 'brief-ops',    label: 'Operational Intelligence', audience: 'CBPO', audienceColor: AUDIENCE_COLORS.CBPO }] : []),
     ...(content.tech_intelligence?.length    ? [{ id: 'brief-tech',        label: 'Tech Intelligence',        audience: 'CTO',  audienceColor: AUDIENCE_COLORS.CTO  }] : []),
@@ -526,7 +523,6 @@ export default function BriefViewer({
     ...(content.ma_watch?.length            ? [{ id: 'brief-ma',           label: 'M&A Watch',                audience: 'BD',   audienceColor: AUDIENCE_COLORS.BD   }] : []),
     ...(content.customer_intelligence?.length ? [{ id: 'brief-customers',  label: 'Customer Intelligence',    audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.company_news?.length        ? [{ id: 'brief-company-news', label: 'Company News',             audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
-    ...(content.decision_framing?.length     ? [{ id: 'brief-decisions',   label: 'Decision Framing',         audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
   ]
 
   // Filter TOC to match visible sections
@@ -655,34 +651,7 @@ export default function BriefViewer({
         {/* ── All sections — single full-width column, priority order ─── */}
         <div className="space-y-8">
 
-          {/* 1. Risk Summary */}
-          {content.risk_summary?.length > 0 && showSection('CEO') && (
-            <BriefSection id="brief-risk" label="Risk Summary" audience="CEO">
-              {/* Legend */}
-              <div className="flex items-center gap-4 mb-4 pb-3 border-b border-gray-100">
-                {[
-                  { color: 'bg-red-500',   label: 'High',   def: 'Requires action this week' },
-                  { color: 'bg-amber-400', label: 'Medium', def: 'Monitor closely' },
-                  { color: 'bg-gray-400',  label: 'Low',    def: 'Awareness only' },
-                ].map(({ color, label, def }) => (
-                  <div key={label} className="flex items-center gap-1.5 group relative">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${color}`} />
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{label}</span>
-                    <span className="hidden group-hover:block absolute left-0 top-5 bg-gray-900 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-10">{def}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {content.risk_summary.map((r: RiskItem, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
-                    <RiskCard risk={r} />
-                  </div>
-                ))}
-              </div>
-            </BriefSection>
-          )}
-
-          {/* 2. Competitor Intelligence */}
+          {/* 1. Competitor Intelligence */}
           {content.competitor_intelligence?.length > 0 && showSection('CMO') && (
             <BriefSection id="brief-comp" label="Competitor Intelligence" audience="CMO">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -960,25 +929,7 @@ export default function BriefViewer({
             </BriefSection>
           )}
 
-          {/* 9. Capital Impact */}
-          {content.capital_impact && showSection('CFO') && (
-            <BriefSection id="brief-capital" label="Capital Impact" audience="CFO">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { label: 'Revenue Exposure', value: content.capital_impact.revenue_exposure },
-                  { label: 'Margin Pressure',  value: content.capital_impact.margin_pressure },
-                  { label: 'Capex',            value: content.capital_impact.capex_considerations },
-                ].map(({ label, value }) => (
-                  <div key={label} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">{label}</div>
-                    <p className="text-xs text-gray-700 leading-relaxed"><RichText text={value} /></p>
-                  </div>
-                ))}
-              </div>
-            </BriefSection>
-          )}
-
-          {/* 10. Operational Intelligence */}
+          {/* 9. Operational Intelligence */}
           {content.operational_intelligence?.length > 0 && showSection('CBPO') && (
             <BriefSection id="brief-ops" label="Operational Intelligence" audience="CBPO">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1107,39 +1058,6 @@ export default function BriefViewer({
                       <p className="text-xs text-gray-700"><RichText text={item.revenue_impact} /></p>
                     </div>
                     <SourceTag source={item.source} />
-                  </div>
-                ))}
-              </div>
-            </BriefSection>
-          )}
-
-          {/* 14. Scenario Modeling */}
-          {content.scenario_modeling?.length > 0 && showSection('CEO') && (
-            <BriefSection id="brief-scenarios" label="Scenario Modeling" audience="CEO">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {content.scenario_modeling.map((s: Scenario, i) => (
-                  <ScenarioCard key={i} scenario={s} />
-                ))}
-              </div>
-            </BriefSection>
-          )}
-
-          {/* 15. Decision Framing */}
-          {content.decision_framing?.length > 0 && showSection('CEO') && (
-            <BriefSection id="brief-decisions" label="Decision Framing" audience="CEO">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {content.decision_framing.map((d, i) => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
-                    <p className="text-sm font-semibold text-gray-900 leading-snug">{d.question}</p>
-                    <p className="text-xs text-gray-500 leading-relaxed">{d.context}</p>
-                    <ul className="space-y-1 mt-1">
-                      {d.options.map((opt, j) => (
-                        <li key={j} className="flex gap-2 text-xs text-gray-700">
-                          <span className="shrink-0 font-bold text-gray-400">{String.fromCharCode(65 + j)}.</span>
-                          <span>{opt}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                 ))}
               </div>
