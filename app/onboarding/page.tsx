@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
 
 const POSITIONS = [
   { value: 'Chief Executive Officer',        label: 'CEO',   desc: 'Strategy & full brief' },
@@ -18,8 +19,11 @@ const POSITIONS = [
 
 const STEPS = ['You', 'Company', 'Confirm']
 
-export default function OnboardingPage() {
+function OnboardingForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const plan    = searchParams.get('plan')    ?? localStorage.getItem('ib_plan')    ?? 'solo'
+  const billing = searchParams.get('billing') ?? localStorage.getItem('ib_billing') ?? 'monthly'
   const [step, setStep] = useState<'loading' | 1 | 2 | 3 | 'done'>('loading')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -42,10 +46,23 @@ export default function OnboardingPage() {
     const res = await fetch('/api/onboarding', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ full_name: form.full_name, email: form.email, company_name: form.company_name, position: form.position }),
+      body: JSON.stringify({ full_name: form.full_name, email: form.email, company_name: form.company_name, position: form.position, plan }),
     })
-    if (res.ok) { setStep('done'); setTimeout(() => router.replace('/pending'), 1200) }
-    else { const d = await res.json(); setError(d.error ?? 'Something went wrong.'); setSaving(false) }
+    if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Something went wrong.'); setSaving(false); return }
+
+    // Redirect to Stripe Checkout
+    const stripeRes = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan, billing }),
+    })
+    if (stripeRes.ok) {
+      const { url } = await stripeRes.json()
+      if (url) { window.location.href = url; return }
+    }
+    // Stripe not configured — go straight to pending
+    setStep('done')
+    setTimeout(() => router.replace('/pending'), 1200)
   }
 
   if (step === 'loading') return (
@@ -210,5 +227,13 @@ export default function OnboardingPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingForm />
+    </Suspense>
   )
 }

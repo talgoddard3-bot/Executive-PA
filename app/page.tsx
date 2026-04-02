@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
@@ -87,6 +88,7 @@ const STEPS = [
 const PLANS = [
   {
     name: 'Solo',
+    plan: 'solo',
     desc: 'For a single executive who needs an edge.',
     monthlyPrice: 15,
     yearlyPrice: 150,
@@ -104,6 +106,7 @@ const PLANS = [
   },
   {
     name: 'Team',
+    plan: 'team',
     desc: 'For C-suites that move as one unit.',
     monthlyPrice: 50,
     yearlyPrice: 500,
@@ -142,11 +145,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
+            <Image src="/logo-icon.svg" alt="Intelligent Brief" width={32} height={32} className="rounded-lg" />
             <span className="font-semibold text-white tracking-tight">Intelligent Brief</span>
           </div>
 
@@ -165,7 +164,7 @@ export default function LandingPage() {
               Sign in
             </Link>
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition-colors"
             >
               Request access
@@ -205,7 +204,7 @@ export default function LandingPage() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5"
             >
               Request early access
@@ -375,7 +374,8 @@ export default function LandingPage() {
                 </div>
 
                 <Link
-                  href="/login"
+                  href={`/login?mode=signup&plan=${plan.plan}&billing=${billing}`}
+                  onClick={() => { localStorage.setItem('ib_plan', plan.plan); localStorage.setItem('ib_billing', billing) }}
                   className={`block w-full text-center py-3 rounded-xl text-sm font-semibold transition-all mb-7 ${
                     plan.highlight
                       ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20'
@@ -418,7 +418,7 @@ export default function LandingPage() {
                 Join executives who walk into their Monday meetings already knowing what happened, why it matters, and what to do about it.
               </p>
               <Link
-                href="/login"
+                href="/login?mode=signup"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5"
               >
                 Request early access
@@ -435,11 +435,7 @@ export default function LandingPage() {
       <footer className="border-t border-white/5 py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center">
-              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
+            <Image src="/logo-icon.svg" alt="Intelligent Brief" width={24} height={24} className="rounded-md" />
             <span className="text-sm font-semibold text-white">Intelligent Brief</span>
           </div>
           <p className="text-xs text-gray-500">© {new Date().getFullYear()} Intelligent Brief. All rights reserved.</p>

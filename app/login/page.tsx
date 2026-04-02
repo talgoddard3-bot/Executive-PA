@@ -1,14 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Suspense } from 'react'
 
 type Mode = 'signin' | 'signup' | 'forgot'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
-  const [mode, setMode] = useState<Mode>('signin')
+  const searchParams = useSearchParams()
+  const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin'
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -329,5 +332,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }
