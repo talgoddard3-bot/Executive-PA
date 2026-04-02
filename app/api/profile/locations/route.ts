@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       country_code: country_code.toUpperCase(),
       country_name,
       city: city || null,
+      location_type: location_types[0],   // legacy NOT NULL column
       location_types,
       headcount: headcount ? Number(headcount) : null,
       notes: notes || null,
