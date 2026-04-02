@@ -129,15 +129,21 @@ async function fetchFMPStock(symbol: string, label: string, ticker: string): Pro
 async function searchFMPTicker(companyName: string): Promise<string | null> {
   if (!FMP_KEY) return null
   try {
-    const url = `https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(companyName)}&limit=3&exchange=NASDAQ,NYSE,NYSE%20American&apikey=${FMP_KEY}`
+    // Search across major global exchanges — US, EU, and global listings
+    const url = `https://financialmodelingprep.com/api/v3/search?query=${encodeURIComponent(companyName)}&limit=10&apikey=${FMP_KEY}`
     const res = await fetch(url, { cache: 'no-store' })
     if (!res.ok) return null
-    const json = await res.json()
-    // Prefer exact or close name match
-    const hit = (json as Array<{ symbol: string; name: string }>).find(r =>
+    const json = await res.json() as Array<{ symbol: string; name: string; exchangeShortName?: string }>
+    if (!json.length) return null
+    // Prefer US listings first (more liquid data), then any exchange
+    const usHit = json.find(r =>
+      ['NASDAQ','NYSE','AMEX','NYSE AMERICAN'].includes(r.exchangeShortName ?? '') &&
+      r.name.toLowerCase().includes(companyName.toLowerCase().split(' ')[0])
+    )
+    const anyHit = json.find(r =>
       r.name.toLowerCase().includes(companyName.toLowerCase().split(' ')[0])
     ) ?? json[0]
-    return hit?.symbol ?? null
+    return (usHit ?? anyHit)?.symbol ?? null
   } catch { return null }
 }
 

@@ -491,20 +491,21 @@ export default function BriefViewer({
     .filter(([k]) => k.startsWith('commodity_'))
     .map(([, v]) => v as StoredSparkline)
 
-  // Build personalized masthead: show the most relevant charts for this week
-  // Priority: company stock > FX pairs with biggest moves > macro context
+  // Build personalized masthead: company-specific first, then macro fills
+  // Priority: company stock > competitors > commodities > relevant FX > macro
   const fxKeys = ['eurusd', 'gbpusd', 'usdjpy', 'usdcny', 'usdils']
   const fxCharts = fxKeys
     .map(k => content.market_snapshots?.[k] as StoredSparkline | undefined)
     .filter(Boolean) as StoredSparkline[]
-  // Sort FX by absolute % move so the most relevant ones appear first
   const fxSorted = [...fxCharts].sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct))
   const macroFills = ['sp500', 'dxy', 'gold', 'oil']
     .map(k => getChart(k))
     .filter(Boolean) as StoredSparkline[]
   const mastheadCharts: StoredSparkline[] = [
     ...(companyStockChart ? [companyStockChart] : []),
-    ...fxSorted,
+    ...competitorCharts.slice(0, 3),
+    ...commodityCharts.slice(0, 3),
+    ...fxSorted.slice(0, 2),
     ...macroFills,
   ].slice(0, 8)
   const mastheadFinal = mastheadCharts.length >= 2 ? mastheadCharts : MACRO_CHARTS

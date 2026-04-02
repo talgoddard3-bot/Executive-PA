@@ -73,6 +73,11 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
               )}
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{company.industry}</p>
+            {company.stock_ticker && (
+              <span className="inline-block mt-1 rounded border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-2 py-0.5 text-xs font-mono font-semibold text-gray-500 dark:text-gray-400">
+                {company.stock_ticker}
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
