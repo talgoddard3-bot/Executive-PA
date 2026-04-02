@@ -130,6 +130,12 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
+    // If Supabase redirected the auth code here instead of /auth/callback, forward it
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (code) {
+      window.location.replace(`/auth/callback?code=${code}`)
+      return
+    }
     const fn = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', fn, { passive: true })
     return () => window.removeEventListener('scroll', fn)
