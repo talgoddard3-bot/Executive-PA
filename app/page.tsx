@@ -164,7 +164,7 @@ export default function LandingPage() {
               Sign in
             </Link>
             <Link
-              href="/login?mode=signup"
+              href="/get-started"
               className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition-colors"
             >
               Request access
@@ -204,7 +204,7 @@ export default function LandingPage() {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
             <Link
-              href="/login?mode=signup"
+              href="/get-started"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5"
             >
               Request early access
@@ -374,7 +374,7 @@ export default function LandingPage() {
                 </div>
 
                 <Link
-                  href={`/login?mode=signup&plan=${plan.plan}&billing=${billing}`}
+                  href={`/get-started?plan=${plan.plan}&billing=${billing}`}
                   onClick={() => { localStorage.setItem('ib_plan', plan.plan); localStorage.setItem('ib_billing', billing) }}
                   className={`block w-full text-center py-3 rounded-xl text-sm font-semibold transition-all mb-7 ${
                     plan.highlight
@@ -418,7 +418,7 @@ export default function LandingPage() {
                 Join executives who walk into their Monday meetings already knowing what happened, why it matters, and what to do about it.
               </p>
               <Link
-                href="/login?mode=signup"
+                href="/get-started"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5"
               >
                 Request early access
