@@ -20,9 +20,14 @@ export async function GET(request: Request) {
     )
   }
 
-  // Password reset flow — skip profile check, go straight to reset page
+  // Password reset flow — skip profile check
   if (next === '/reset-password') {
     return NextResponse.redirect(`${origin}/reset-password`)
+  }
+
+  // Post-signup finish flow (plan + Stripe)
+  if (next === '/get-started-finish') {
+    return NextResponse.redirect(`${origin}/get-started-finish`)
   }
 
   // Check profile status
