@@ -7,8 +7,8 @@ import { useState } from 'react'
 const STATS = [
   { value: '7am', label: 'Ready every Monday morning' },
   { value: '5 min', label: 'Average reading time' },
-  { value: '12+', label: 'Live data sources' },
-  { value: '6', label: 'C-suite roles covered' },
+  { value: 'Dozens', label: 'Live data sources' },
+  { value: '8+', label: 'C-suite roles covered' },
 ]
 
 const ROLES = [
@@ -17,7 +17,9 @@ const ROLES = [
   { label: 'CMO', color: 'bg-pink-500/10 text-pink-300 border-pink-500/20', desc: 'Competitor moves, brand signals' },
   { label: 'CTO', color: 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20', desc: 'AI, cybersecurity, tech disruption' },
   { label: 'COO', color: 'bg-orange-500/10 text-orange-300 border-orange-500/20', desc: 'Supply chain, operations, labour' },
-  { label: 'CFO', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20', desc: 'Talent, workforce, hiring trends' },
+  { label: 'VP HR', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20', desc: 'Talent, workforce, hiring trends' },
+  { label: 'CBPO', color: 'bg-amber-500/10 text-amber-300 border-amber-500/20', desc: 'Business processes, operational intelligence' },
+  { label: 'BD', color: 'bg-rose-500/10 text-rose-300 border-rose-500/20', desc: 'M&A, partnerships, deal flow' },
 ]
 
 const SOURCES = [
@@ -35,7 +37,7 @@ const HOW = [
   {
     n: '02',
     title: 'We crawl the world for you',
-    desc: 'Every week our AI scans 12+ live sources — markets, filings, news, patents, research.',
+    desc: 'Every week our AI scans dozens of live sources — markets, filings, news, patents, research.',
   },
   {
     n: '03',
@@ -202,13 +204,68 @@ export default function OnePagerWeb() {
           <div className="text-center mb-10">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Data sources</p>
             <h2 className="text-3xl font-bold text-white mb-3">Built on the world's best data.</h2>
-            <p className="text-gray-400 text-sm">12+ live sources, synthesised by Claude AI into one coherent brief.</p>
+            <p className="text-gray-400 text-sm">Dozens of live sources, synthesised by Claude AI into one coherent brief.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-2">
             {SOURCES.map(s => (
               <span key={s} className="px-3 py-1.5 rounded-full border border-white/10 bg-white/[0.03] text-xs text-gray-400 font-medium">
                 {s}
               </span>
+            ))}
+          </div>
+        </section>
+
+        {/* Features grid */}
+        <section className="py-14 border-t border-white/5">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Features</p>
+            <h2 className="text-3xl font-bold text-white mb-3">Built for how executive teams actually work.</h2>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto">Everything your leadership team needs — personalised, collaborative, and always in sync.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {[
+              {
+                icon: '🎯',
+                title: 'Position personalisation',
+                desc: 'Every brief is filtered by role. Your CEO sees strategy and risk. Your CFO sees markets and capital. Your CTO sees tech disruption. No noise from sections that aren\'t yours.',
+              },
+              {
+                icon: '🏢',
+                title: 'Company customisation',
+                desc: 'Set your industry, competitors, supply chain, target markets, and key commodities. The brief is built around your business — not a generic sector template.',
+              },
+              {
+                icon: '✅',
+                title: 'Action items',
+                desc: 'Every brief ends with a prioritised action list per role. Add, edit, or remove actions. Mark them done. Your team always knows what to do next.',
+              },
+              {
+                icon: '💬',
+                title: 'Comments & tagging',
+                desc: 'React to any article in the brief. Tag a colleague with @mention to share a signal or flag a risk. Keeps strategic conversations in context, not buried in email.',
+              },
+              {
+                icon: '🔄',
+                title: 'Full management sync',
+                desc: 'Every C-level member gets the same brief, filtered to their view. Everyone is working from the same intelligence. No more "did you see that article?" — they already did.',
+              },
+              {
+                icon: '🔮',
+                title: 'Internal data — coming soon',
+                desc: 'Today the brief runs on external signals. Soon you\'ll be able to upload internal notes, sales signals, and documents — and the AI will weave them into your analysis.',
+                soon: true,
+              },
+            ].map((f, i) => (
+              <div key={i} className={`rounded-2xl border p-6 relative ${f.soon ? 'border-white/5 bg-white/[0.01]' : 'border-white/10 bg-white/[0.03]'}`}>
+                {f.soon && (
+                  <span className="absolute top-4 right-4 text-[9px] font-bold uppercase tracking-wider text-blue-400 border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
+                    Coming soon
+                  </span>
+                )}
+                <p className="text-2xl mb-3">{f.icon}</p>
+                <p className={`text-sm font-bold mb-2 ${f.soon ? 'text-gray-500' : 'text-white'}`}>{f.title}</p>
+                <p className={`text-xs leading-relaxed ${f.soon ? 'text-gray-600' : 'text-gray-400'}`}>{f.desc}</p>
+              </div>
             ))}
           </div>
         </section>

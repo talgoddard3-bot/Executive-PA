@@ -63,8 +63,8 @@ export default function PrintOnePager() {
             {[
               { v: '7am', l: 'Ready every Monday' },
               { v: '5 min', l: 'Average read time' },
-              { v: '12+', l: 'Live data sources' },
-              { v: '6', l: 'C-suite roles covered' },
+              { v: 'Dozens', l: 'Live data sources' },
+              { v: '8+', l: 'C-suite roles covered' },
             ].map(s => (
               <div key={s.l} className="border border-gray-200 rounded-lg p-3 text-center">
                 <p className="text-2xl font-black text-gray-900 leading-none mb-1">{s.v}</p>
@@ -97,10 +97,12 @@ export default function PrintOnePager() {
               <div className="space-y-2">
                 {[
                   'Written for your company, not a generic sector',
-                  'Filtered by your role — CEO sees strategy, CFO sees markets',
-                  'Backed by 12+ live sources including SEC, patents, research',
-                  'Synthesised by Claude AI into clear, opinionated analysis',
-                  '"What this means for you" — never just headlines',
+                  'Position-personalised — CEO sees strategy, CFO sees markets',
+                  'Backed by dozens of live sources: SEC, patents, research, markets',
+                  'Action items per role — add, edit, mark done',
+                  'Comment & tag colleagues directly on articles',
+                  'Full C-suite sync — everyone briefed from the same intelligence',
+                  'External data today; internal data integration coming soon',
                 ].map((f, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-gray-600">
                     <span className="text-emerald-600 font-bold mt-0.5 shrink-0">✓</span>
