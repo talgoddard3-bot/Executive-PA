@@ -166,7 +166,7 @@ export default function LandingPage() {
 
           {/* CTA */}
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-gray-400 hover:text-white transition-colors hidden sm:block">
+            <Link href="/login" className="text-sm text-gray-400 hover:text-white transition-colors">
               Sign in
             </Link>
             <Link
