@@ -5,6 +5,7 @@ import { buildFREDMacroSignals } from './fred'
 import { buildCountrySignals } from './country-signals'
 import { buildEdgarSignals } from './sec-edgar'
 import { buildResearchSignals } from './research'
+import { buildPatentSignals } from './patents'
 import { createClient } from '@supabase/supabase-js'
 
 const NEWS_API_BASE = 'https://newsapi.org/v2/everything'
@@ -348,8 +349,12 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
   if (edgarSignals) lines.push(edgarSignals)
 
   // ── Academic research signals (Semantic Scholar) ─────────────────────────
-  const research = await buildResearchSignals(company.industry ?? '', profile.keywords ?? []).catch(() => '')
+  const [research, patents] = await Promise.all([
+    buildResearchSignals(company.industry ?? '', profile.keywords ?? []).catch(() => ''),
+    buildPatentSignals(company.name, profile.competitors.map((c: { name: string }) => c.name)).catch(() => ''),
+  ])
   if (research) lines.push('\n' + research)
+  if (patents) lines.push('\n' + patents)
 
   const result = lines.join('\n')
   console.log(`[signals] Fetched live signals: ${result.length} chars`)
