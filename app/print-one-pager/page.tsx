@@ -179,7 +179,7 @@ export default function PrintOnePager() {
 
           {/* Data sources */}
           <div className="mb-8">
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-3">Data Sources</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-1">Data Sources — and more</p>
             <div className="flex flex-wrap gap-1.5">
               {['SEC EDGAR', 'Federal Reserve', 'Alpha Vantage', 'Bloomberg RSS', 'NewsAPI', 'GDELT', 'Google News', 'Semantic Scholar', 'USPTO Patents', 'S&P / MSCI', 'PR Newswire', 'Financial Times'].map(s => (
                 <span key={s} className="px-2 py-0.5 bg-gray-100 rounded text-[9px] text-gray-600 font-medium">{s}</span>

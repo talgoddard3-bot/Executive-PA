@@ -203,7 +203,7 @@ export default function OnePagerWeb() {
         <section className="py-14 border-t border-white/5">
           <div className="text-center mb-10">
             <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Data sources</p>
-            <h2 className="text-3xl font-bold text-white mb-3">Built on the world's best data.</h2>
+            <h2 className="text-3xl font-bold text-white mb-3">Built on the world's best data — and more.</h2>
             <p className="text-gray-400 text-sm">Dozens of live sources, synthesised by Claude AI into one coherent brief.</p>
           </div>
           <div className="flex flex-wrap justify-center gap-2">
