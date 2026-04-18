@@ -212,33 +212,216 @@ LOCATION_TOPICS = {
 
 COUNTRY_RSS = {
     'IL': [
-        ('https://www.jpost.com/rss/rssfeedsfrontpage.aspx',         'Jerusalem Post', False),
-        ('https://www.timesofisrael.com/feed/',                       'Times of Israel', False),
-        ('https://www.ynet.co.il/Integration/StoryRss1854.xml',       'Ynet', False),
-        ('https://www.calcalist.co.il/GeneralRSS/0,16318,L-8,00.xml','Calcalist', False),
+        ('https://www.globes.co.il/EN/rss/rss.aspx',                   'Globes Business IL', False),
+        ('https://www.jpost.com/rss/rssfeedsfrontpage.aspx',            'Jerusalem Post', False),
+        ('https://www.timesofisrael.com/feed/',                          'Times of Israel', False),
+        ('https://www.calcalist.co.il/GeneralRSS/0,16318,L-8,00.xml',  'Calcalist', False),
     ],
     'GB': [
-        ('https://feeds.bbci.co.uk/news/business/rss.xml',           'BBC Business', False),
-        ('https://www.theguardian.com/uk/business/rss',               'Guardian Business', False),
+        ('https://feeds.bbci.co.uk/news/business/rss.xml',              'BBC Business', False),
+        ('https://www.theguardian.com/uk/business/rss',                  'Guardian Business', False),
+        ('https://www.thisismoney.co.uk/money/news/feed.rss',            'This is Money', False),
     ],
     'US': [
-        ('https://feeds.a.dj.com/rss/RSSMarketsMain.xml',            'WSJ Markets', False),
+        ('https://feeds.a.dj.com/rss/RSSMarketsMain.xml',               'WSJ Markets', False),
+        ('https://feeds.reuters.com/reuters/businessNews',               'Reuters Business', False),
     ],
     'DE': [
-        ('https://www.dw.com/en/rss/rss/business/s-4928.xml',        'Deutsche Welle', False),
+        ('https://www.dw.com/en/rss/rss/business/s-4928.xml',           'Deutsche Welle', False),
+        ('https://www.handelsblatt.com/rss/english',                     'Handelsblatt EN', False),
     ],
     'FR': [
-        ('https://www.france24.com/en/economy/rss',                   'France 24', False),
+        ('https://www.france24.com/en/economy/rss',                      'France 24', False),
+        ('https://www.lesechos.fr/rss/rss_une.xml',                      'Les Echos', False),
+    ],
+    'JP': [
+        ('https://asia.nikkei.com/rss/feed/nar',                         'Nikkei Asia', False),
+        ('https://www3.nhk.or.jp/nhkworld/en/news/feeds/rss.xml',        'NHK World', False),
+    ],
+    'KR': [
+        ('https://www.koreaherald.com/rss/koreaherald.xml',              'Korea Herald', False),
+        ('https://koreajoongangdaily.joins.com/rss/feed',                 'Korea JoongAng Daily', False),
+    ],
+    'CN': [
+        ('https://www.caixinglobal.com/rss/',                             'Caixin Global', False),
+        ('https://www.scmp.com/rss/5/feed',                               'South China Morning Post', False),
+    ],
+    'HK': [
+        ('https://www.scmp.com/rss/5/feed',                               'South China Morning Post', False),
     ],
     'SG': [
-        ('https://www.businesstimes.com.sg/rss/top-stories',          'Business Times SG', False),
+        ('https://www.businesstimes.com.sg/rss/top-stories',              'Business Times SG', False),
+        ('https://www.channelnewsasia.com/rss/8395844',                   'CNA Business', False),
     ],
     'AU': [
-        ('https://www.abc.net.au/news/feed/2942460/rss.xml',          'ABC Australia', False),
+        ('https://www.abc.net.au/news/feed/2942460/rss.xml',              'ABC Australia', False),
+        ('https://www.afr.com/rss',                                        'AFR', False),
     ],
     'IN': [
-        ('https://economictimes.indiatimes.com/rssfeedstopstories.cms','Economic Times India', False),
+        ('https://economictimes.indiatimes.com/rssfeedstopstories.cms',   'Economic Times India', False),
+        ('https://www.livemint.com/rss/homepage',                          'Livemint', False),
     ],
+    'CA': [
+        ('https://www.theglobeandmail.com/arc/outboundfeeds/rss/category/business/', 'Globe and Mail', False),
+        ('https://financialpost.com/feed',                                 'Financial Post CA', False),
+    ],
+    'AE': [
+        ('https://www.thenationalnews.com/arc/outboundfeeds/rss/category/business/', 'The National UAE', False),
+        ('https://gulfnews.com/rss/business',                              'Gulf News', False),
+    ],
+    'SA': [
+        ('https://arab.news/feed',                                         'Arab News', False),
+    ],
+    'ZA': [
+        ('https://www.businesslive.co.za/rss/',                            'Business Live SA', False),
+    ],
+    'NL': [
+        ('https://feeds.nos.nl/nosjournaal',                               'NOS News NL', False),
+    ],
+    'SE': [
+        ('https://www.di.se/rss',                                          'Dagens Industri SE', False),
+    ],
+    'CH': [
+        ('https://www.swissinfo.ch/eng/rss/news',                          'SwissInfo', False),
+    ],
+    'BR': [
+        ('https://www.valor.com.br/rss',                                   'Valor Economico BR', False),
+    ],
+    'MX': [
+        ('https://www.elfinanciero.com.mx/rss',                            'El Financiero MX', False),
+    ],
+}
+
+# ── Industry-specific trade publication RSS feeds ─────────────────────────────
+# Matched by substring against company.industry (lowercase)
+
+INDUSTRY_RSS: list[tuple[list[str], list[tuple[str, str, bool]]]] = [
+    (
+        ['manufactur', 'factory', 'industrial', 'precision', 'production', 'machining'],
+        [
+            ('https://www.industryweek.com/rss.xml',              'IndustryWeek', False),
+            ('https://www.assemblymag.com/rss/topic/all',          'Assembly Magazine', False),
+            ('https://www.manufacturingglobal.com/rss.xml',        'Manufacturing Global', False),
+        ]
+    ),
+    (
+        ['semiconductor', 'chip', 'wafer', 'pcb', 'sensor', 'optical', 'photonic', 'electronic component'],
+        [
+            ('https://www.eetimes.com/feed/',                       'EE Times', False),
+            ('https://semiwiki.com/feed/',                           'SemiWiki', False),
+            ('https://www.electronicdesign.com/rss.xml',            'Electronic Design', False),
+        ]
+    ),
+    (
+        ['pharma', 'biotech', 'life science', 'medical device', 'diagnostic', 'clinical'],
+        [
+            ('https://www.fiercepharma.com/rss/xml',               'FiercePharma', False),
+            ('https://www.statnews.com/feed/',                       'STAT News', False),
+            ('https://www.biopharmadive.com/feeds/news/',           'BioPharma Dive', False),
+        ]
+    ),
+    (
+        ['healthcare', 'hospital', 'health system'],
+        [
+            ('https://www.fiercehealthcare.com/rss/xml',            'FierceHealthcare', False),
+            ('https://www.healthcaredive.com/feeds/news/',          'Healthcare Dive', False),
+        ]
+    ),
+    (
+        ['software', 'saas', 'cloud', 'platform', 'enterprise tech', 'data', 'cybersecurity'],
+        [
+            ('https://techcrunch.com/feed/',                         'TechCrunch', False),
+            ('https://feeds.arstechnica.com/arstechnica/index',     'Ars Technica', False),
+            ('https://www.darkreading.com/rss.xml',                  'Dark Reading', False),
+        ]
+    ),
+    (
+        ['artificial intelligence', 'machine learning', 'llm', 'deep learning'],
+        [
+            ('https://techcrunch.com/category/artificial-intelligence/feed/', 'TechCrunch AI', False),
+            ('https://venturebeat.com/category/ai/feed/',           'VentureBeat AI', False),
+        ]
+    ),
+    (
+        ['energy', 'oil', 'gas', 'petroleum', 'refin', 'lng'],
+        [
+            ('https://oilprice.com/rss/main',                        'OilPrice', False),
+            ('https://www.energymonitor.ai/feed/',                   'Energy Monitor', False),
+            ('https://www.ogj.com/rss',                              'Oil & Gas Journal', False),
+        ]
+    ),
+    (
+        ['renewable', 'solar', 'wind', 'clean energy', 'battery', 'ev', 'electric vehicle'],
+        [
+            ('https://www.pv-magazine.com/feed/',                    'PV Magazine', False),
+            ('https://electrek.co/feed/',                            'Electrek', False),
+        ]
+    ),
+    (
+        ['retail', 'ecommerce', 'consumer goods', 'fmcg', 'brand'],
+        [
+            ('https://www.retaildive.com/feeds/news/',               'Retail Dive', False),
+            ('https://www.grocerydive.com/feeds/news/',              'Grocery Dive', False),
+        ]
+    ),
+    (
+        ['food', 'beverage', 'agriculture', 'agri', 'farming', 'crop'],
+        [
+            ('https://www.fooddive.com/feeds/news/',                 'Food Dive', False),
+            ('https://www.agweb.com/rss.xml',                        'AgWeb', False),
+        ]
+    ),
+    (
+        ['logistics', 'freight', 'shipping', 'supply chain', 'transport', 'warehouse'],
+        [
+            ('https://www.supplychaindive.com/feeds/news/',          'Supply Chain Dive', False),
+            ('https://www.freightwaves.com/news/feed',               'FreightWaves', False),
+        ]
+    ),
+    (
+        ['defense', 'defence', 'aerospace', 'aviation', 'military'],
+        [
+            ('https://www.defensenews.com/arc/outboundfeeds/rss/',   'Defense News', False),
+            ('https://breakingdefense.com/feed/',                     'Breaking Defense', False),
+        ]
+    ),
+    (
+        ['automotive', 'vehicle', 'car ', 'truck', 'mobility'],
+        [
+            ('https://www.autonews.com/rss.xml',                     'Automotive News', False),
+            ('https://www.greencarcongress.com/atom.xml',            'Green Car Congress', False),
+        ]
+    ),
+    (
+        ['finance', 'banking', 'insurance', 'fintech', 'investment', 'asset management', 'capital markets'],
+        [
+            ('https://www.bankingdive.com/feeds/news/',              'Banking Dive', False),
+            ('https://www.risk.net/rss',                             'Risk.net', False),
+        ]
+    ),
+    (
+        ['construction', 'real estate', 'property', 'infrastructure', 'civil engineering'],
+        [
+            ('https://www.constructiondive.com/feeds/news/',         'Construction Dive', False),
+            ('https://therealdeal.com/feed/',                         'The Real Deal', False),
+        ]
+    ),
+    (
+        ['mining', 'metals', 'steel', 'alumin', 'copper', 'iron ore'],
+        [
+            ('https://www.mining.com/feed/',                          'Mining.com', False),
+            ('https://www.metalbulletin.com/rss',                    'Metal Bulletin', False),
+        ]
+    ),
+]
+
+# ── Revenue countries with EU/US/UK regulatory exposure ──────────────────────
+EU_MEMBER_STATES = {
+    'germany', 'france', 'italy', 'spain', 'netherlands', 'belgium', 'poland',
+    'sweden', 'denmark', 'finland', 'austria', 'czech republic', 'hungary',
+    'romania', 'portugal', 'greece', 'ireland', 'slovakia', 'bulgaria',
+    'croatia', 'slovenia', 'lithuania', 'latvia', 'estonia', 'luxembourg',
+    'malta', 'cyprus',
 }
 
 # ── Per-company scraper ────────────────────────────────────────────────────────
@@ -341,6 +524,54 @@ def scrape_company(supabase, company_id: str) -> int:
     items  = parse_rss(google_news_url(kw_query), is_google=True, max_items=10)
     items += fetch_gdelt(kw_query, max_items=5)
     total += upsert(supabase, company_id, 'industry', industry, '', items)
+
+    # ── 5b. Industry trade publications ───────────────────────────────────────
+    log.info('\n── Industry trade publications ───────────────────')
+    industry_lower = industry.lower()
+    matched_feeds: list[tuple[str, str, bool]] = []
+    for keywords_match, feeds in INDUSTRY_RSS:
+        if any(kw in industry_lower for kw in keywords_match):
+            matched_feeds.extend(feeds)
+            log.info(f'  Matched: {[f[1] for f in feeds]}')
+            break  # one matched group is enough to avoid too many feeds
+    for feed_url, feed_name, is_g in matched_feeds:
+        log.info(f'  Trade feed: {feed_name}')
+        items = parse_rss(feed_url, is_google=is_g, max_items=6)
+        total += upsert(supabase, company_id, 'industry', feed_name, '', items)
+        time.sleep(DELAY)
+
+    # ── 6. Regulatory signals ─────────────────────────────────────────────────
+    log.info('\n── Regulatory signals ────────────────────────────')
+    rev_country_names_lower = {
+        (rc.get('country', '') if isinstance(rc, dict) else str(rc)).lower()
+        for rc in rev_countries
+    }
+    has_eu = any(c in EU_MEMBER_STATES for c in rev_country_names_lower)
+    has_us = any('united states' in c or c == 'usa' or c == 'us' for c in rev_country_names_lower)
+    has_uk = any('united kingdom' in c or c == 'uk' or c == 'britain' for c in rev_country_names_lower)
+
+    if has_eu:
+        log.info('  EU regulatory signals')
+        q = f'European Commission regulation {industry} business directive 2025 2026'
+        items  = parse_rss(google_news_url(q, lang='en'), is_google=True, max_items=5)
+        items += fetch_gdelt(f'European Union regulation {industry}', max_items=3)
+        total += upsert(supabase, company_id, 'industry', 'EU Regulation', '', items)
+        time.sleep(DELAY)
+
+    if has_us:
+        log.info('  US regulatory signals')
+        q = f'FTC SEC FDA OSHA regulation {industry} business rule 2025 2026'
+        items  = parse_rss(google_news_url(q, lang='en'), is_google=True, max_items=5)
+        items += fetch_gdelt(f'United States regulation {industry} government', max_items=3)
+        total += upsert(supabase, company_id, 'industry', 'US Regulation', '', items)
+        time.sleep(DELAY)
+
+    if has_uk:
+        log.info('  UK regulatory signals')
+        q = f'UK government FCA CMA regulation {industry} business 2025 2026'
+        items  = parse_rss(google_news_url(q, lang='en'), is_google=True, max_items=4)
+        total += upsert(supabase, company_id, 'industry', 'UK Regulation', '', items)
+        time.sleep(DELAY)
 
     return total
 
