@@ -27,6 +27,10 @@ CREATE TABLE company_profiles (
 
 CREATE UNIQUE INDEX company_profiles_company_id_idx ON company_profiles(company_id);
 
+-- Migration: products + company_notes (run if upgrading an existing database)
+-- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS products TEXT;
+-- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_notes TEXT;
+
 -- Briefs
 CREATE TABLE briefs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

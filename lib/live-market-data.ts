@@ -162,14 +162,85 @@ async function fetchCommodityByName(name: string): Promise<StoredSparkline | nul
   return null
 }
 
+// ── Signal-driven chart maps ──────────────────────────────────────────────────
+
+const SIGNAL_COUNTRY_ETF: Record<string, { symbol: string; label: string }> = {
+  'japan':       { symbol: 'EWJ',  label: 'Japan (EWJ)'       },
+  'japanese':    { symbol: 'EWJ',  label: 'Japan (EWJ)'       },
+  'germany':     { symbol: 'EWG',  label: 'Germany (EWG)'     },
+  'german':      { symbol: 'EWG',  label: 'Germany (EWG)'     },
+  'india':       { symbol: 'INDA', label: 'India (INDA)'      },
+  'indian':      { symbol: 'INDA', label: 'India (INDA)'      },
+  'france':      { symbol: 'EWQ',  label: 'France (EWQ)'      },
+  'french':      { symbol: 'EWQ',  label: 'France (EWQ)'      },
+  'south korea': { symbol: 'EWY',  label: 'S.Korea (EWY)'     },
+  'korean':      { symbol: 'EWY',  label: 'S.Korea (EWY)'     },
+  'taiwan':      { symbol: 'EWT',  label: 'Taiwan (EWT)'      },
+  'brazil':      { symbol: 'EWZ',  label: 'Brazil (EWZ)'      },
+  'brazilian':   { symbol: 'EWZ',  label: 'Brazil (EWZ)'      },
+  'canada':      { symbol: 'EWC',  label: 'Canada (EWC)'      },
+  'canadian':    { symbol: 'EWC',  label: 'Canada (EWC)'      },
+  'australia':   { symbol: 'EWA',  label: 'Australia (EWA)'   },
+  'australian':  { symbol: 'EWA',  label: 'Australia (EWA)'   },
+  'mexico':      { symbol: 'EWW',  label: 'Mexico (EWW)'      },
+  'swiss':       { symbol: 'EWL',  label: 'Switzerland (EWL)' },
+  'israel':      { symbol: 'EIS',  label: 'Israel (EIS)'      },
+  'israeli':     { symbol: 'EIS',  label: 'Israel (EIS)'      },
+  'china':       { symbol: 'MCHI', label: 'China (MCHI)'      },
+  'chinese':     { symbol: 'MCHI', label: 'China (MCHI)'      },
+  'singapore':   { symbol: 'EWS',  label: 'Singapore (EWS)'   },
+}
+
+const SIGNAL_SECTOR_ETF: Array<{ keywords: string[]; symbol: string; label: string; key: string }> = [
+  { keywords: ['shipping', 'freight', 'container ship', 'maritime', 'logistics disruption'], symbol: 'BDRY', label: 'Dry Freight (BDRY)', key: 'signal_freight'  },
+  { keywords: ['defence', 'defense', 'military', 'weapons', 'armed conflict', 'war'],        symbol: 'ITA',  label: 'Defence (ITA)',      key: 'signal_defence'  },
+  { keywords: ['semiconductor', 'chip shortage', 'wafer', 'tsmc', 'fab capacity'],           symbol: 'SOXX', label: 'Semis (SOXX)',       key: 'signal_semis'    },
+  { keywords: ['solar', 'wind energy', 'renewable', 'clean energy', 'green energy'],         symbol: 'ICLN', label: 'Clean Energy (ICLN)',key: 'signal_clean'    },
+  { keywords: ['oil major', 'refinery', 'upstream', 'downstream', 'lng export'],             symbol: 'XLE',  label: 'Energy (XLE)',       key: 'signal_energy'   },
+  { keywords: ['interest rate hike', 'central bank rate', 'credit tightening', 'lending'],   symbol: 'XLF',  label: 'Financials (XLF)',   key: 'signal_fin'      },
+  { keywords: ['pharma', 'pharmaceutical', 'biotech', 'clinical trial', 'drug approval'],    symbol: 'XLV',  label: 'Healthcare (XLV)',   key: 'signal_health'   },
+  { keywords: ['cybersecurity', 'ransomware', 'data breach', 'cyber attack'],                symbol: 'HACK', label: 'Cyber (HACK)',        key: 'signal_cyber'    },
+]
+
+function pickSignalDrivenCharts(
+  signals: string,
+  profileCountriesLower: string[],
+): { countryETFs: Array<{ symbol: string; label: string; key: string }>; sectorETF: { symbol: string; label: string; key: string } | null } {
+  const lower = signals.toLowerCase()
+  const seenSymbols = new Set<string>()
+  const countryETFs: Array<{ symbol: string; label: string; key: string }> = []
+
+  for (const [term, etf] of Object.entries(SIGNAL_COUNTRY_ETF)) {
+    if (seenSymbols.has(etf.symbol)) continue
+    if (profileCountriesLower.some(c => c.includes(term.split(' ')[0]))) continue
+    if (lower.includes(term)) {
+      countryETFs.push({ ...etf, key: `signal_${etf.symbol.toLowerCase()}` })
+      seenSymbols.add(etf.symbol)
+      if (countryETFs.length >= 2) break
+    }
+  }
+
+  let sectorETF: { symbol: string; label: string; key: string } | null = null
+  for (const entry of SIGNAL_SECTOR_ETF) {
+    if (entry.keywords.some(kw => lower.includes(kw))) {
+      sectorETF = { symbol: entry.symbol, label: entry.label, key: entry.key }
+      break
+    }
+  }
+
+  return { countryETFs, sectorETF }
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 interface MarketDataOptions {
-  stockTicker?: string | null       // company's own stock ticker
-  companyName?: string              // used as label if stockTicker provided
+  stockTicker?: string | null
+  companyName?: string
   competitors?: Array<{ name: string }>
   commodities?: string[]
-  locationCountryNames?: string[]   // operational location country names
+  locationCountryNames?: string[]
+  customers?: Array<{ name: string }>
+  signals?: string
 }
 
 export async function fetchLiveMarketData(
@@ -281,7 +352,6 @@ export async function fetchLiveMarketData(
   // Profile commodities (up to 4)
   const topCommodities = commodities.slice(0, 4)
   for (const name of topCommodities) {
-    // Skip if already covered by macro charts
     const key = name.toLowerCase().trim()
     if (['oil', 'crude', 'gold'].includes(key) && snapshots['oil'] && key !== 'gold') continue
     if (key === 'gold' && snapshots['gold']) continue
@@ -289,6 +359,54 @@ export async function fetchLiveMarketData(
     if (s) {
       const snapKey = `commodity_${key.replace(/[^a-z0-9]/g, '_').slice(0, 20)}`
       snapshots[snapKey] = s
+    }
+  }
+
+  // ── Wave 4: customer stocks + signal-driven contextual charts ────────────
+  await new Promise(r => setTimeout(r, 800))
+
+  const { customers = [], signals = '' } = options
+
+  // Customer stocks — same pattern as competitor stocks
+  for (const cust of customers.slice(0, 3)) {
+    if (!cust.name) continue
+    try {
+      const ticker = await searchFMPTicker(cust.name)
+      if (ticker) {
+        const s = await firstOf(
+          () => fetchStockCandle(ticker, cust.name, ticker),
+          () => fetchFMPStock(ticker, cust.name, ticker),
+        )
+        if (s) {
+          const key = `customer_${cust.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20)}`
+          snapshots[key] = s
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  // Signal-driven charts: country ETFs + one sector ETF based on what's in the news this week
+  if (signals) {
+    const { countryETFs, sectorETF } = pickSignalDrivenCharts(signals, lower)
+
+    for (const etf of countryETFs) {
+      try {
+        const s = await firstOf(
+          () => fetchStockCandle(etf.symbol, etf.label, etf.symbol),
+          () => fetchFMPStock(etf.symbol, etf.label, etf.symbol),
+        )
+        if (s) snapshots[etf.key] = s
+      } catch { /* skip */ }
+    }
+
+    if (sectorETF) {
+      try {
+        const s = await firstOf(
+          () => fetchStockCandle(sectorETF.symbol, sectorETF.label, sectorETF.symbol),
+          () => fetchFMPStock(sectorETF.symbol, sectorETF.label, sectorETF.symbol),
+        )
+        if (s) snapshots[sectorETF.key] = s
+      } catch { /* skip */ }
     }
   }
 

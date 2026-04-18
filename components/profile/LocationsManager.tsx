@@ -82,6 +82,52 @@ export default function LocationsManager() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ city: '', location_types: [] as LocationType[], headcount: '', notes: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+
+  function startEdit(loc: CompanyLocation) {
+    setEditingId(loc.id)
+    setEditForm({
+      city: loc.city ?? '',
+      location_types: loc.location_types ?? [],
+      headcount: loc.headcount ? String(loc.headcount) : '',
+      notes: loc.notes ?? '',
+    })
+    setEditError('')
+  }
+
+  function toggleEditType(t: LocationType) {
+    setEditForm(f => ({
+      ...f,
+      location_types: f.location_types.includes(t)
+        ? f.location_types.filter(x => x !== t)
+        : [...f.location_types, t],
+    }))
+  }
+
+  async function saveEdit(id: string) {
+    if (editForm.location_types.length === 0) { setEditError('Select at least one location type.'); return }
+    setEditSaving(true)
+    setEditError('')
+    const res = await fetch('/api/profile/locations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        city: editForm.city,
+        location_types: editForm.location_types,
+        headcount: editForm.headcount ? Number(editForm.headcount) : null,
+        notes: editForm.notes,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setEditError(data.error ?? 'Failed to save'); setEditSaving(false); return }
+    setLocations(prev => prev.map(l => l.id === id ? data : l))
+    setEditingId(null)
+    setEditSaving(false)
+  }
 
   useEffect(() => {
     fetch('/api/profile/locations')
@@ -253,34 +299,104 @@ export default function LocationsManager() {
           </div>
         ) : (
           locations.map(loc => (
-            <div key={loc.id} className="flex items-center gap-3 px-5 py-3">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-gray-900">
-                    {loc.city ? `${loc.city}, ` : ''}{loc.country_name}
-                  </span>
-                  {(loc.location_types ?? []).map(t => (
-                    <span key={t} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_COLORS[t] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {typeLabel(t)}
+            <div key={loc.id}>
+              <div className="flex items-center gap-3 px-5 py-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      {loc.city ? `${loc.city}, ` : ''}{loc.country_name}
                     </span>
-                  ))}
-                  {loc.headcount && (
-                    <span className="text-[10px] text-gray-400">{loc.headcount.toLocaleString()} employees</span>
+                    {(loc.location_types ?? []).map(t => (
+                      <span key={t} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${TYPE_COLORS[t] ?? 'bg-gray-100 text-gray-600'}`}>
+                        {typeLabel(t)}
+                      </span>
+                    ))}
+                    {loc.headcount && (
+                      <span className="text-[10px] text-gray-400">{loc.headcount.toLocaleString()} employees</span>
+                    )}
+                  </div>
+                  {loc.notes && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{loc.notes}</p>
                   )}
                 </div>
-                {loc.notes && (
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">{loc.notes}</p>
-                )}
+                <button
+                  onClick={() => editingId === loc.id ? setEditingId(null) : startEdit(loc)}
+                  className="shrink-0 text-gray-400 hover:text-gray-700 transition-colors p-1 text-xs"
+                  title="Edit location"
+                >
+                  {editingId === loc.id ? 'Cancel' : 'Edit'}
+                </button>
+                <button
+                  onClick={() => removeLocation(loc.id)}
+                  className="shrink-0 text-gray-300 hover:text-red-500 transition-colors p-1"
+                  title="Remove location"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={() => removeLocation(loc.id)}
-                className="shrink-0 text-gray-300 hover:text-red-500 transition-colors p-1"
-                title="Remove location"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+              {editingId === loc.id && (
+                <div className="px-5 pb-4 bg-gray-50 border-t border-gray-100 space-y-3 pt-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">City (optional)</label>
+                      <input
+                        type="text"
+                        value={editForm.city}
+                        onChange={e => setEditForm(f => ({ ...f, city: e.target.value }))}
+                        className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Employees</label>
+                      <input
+                        type="number"
+                        value={editForm.headcount}
+                        onChange={e => setEditForm(f => ({ ...f, headcount: e.target.value }))}
+                        className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Location Type</label>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                      {LOCATION_TYPES.map(t => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => toggleEditType(t.value)}
+                          className={`text-left px-3 py-2 rounded-lg border text-xs transition-colors ${
+                            editForm.location_types.includes(t.value)
+                              ? 'border-blue-500 bg-blue-50 text-blue-700'
+                              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="font-semibold">{t.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+                    <input
+                      type="text"
+                      value={editForm.notes}
+                      onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  {editError && <p className="text-xs text-red-600">{editError}</p>}
+                  <button
+                    onClick={() => saveEdit(loc.id)}
+                    disabled={editSaving}
+                    className="text-sm font-medium bg-gray-900 hover:bg-gray-700 text-white px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {editSaving ? 'Saving…' : 'Save changes'}
+                  </button>
+                </div>
+              )}
             </div>
           ))
         )}

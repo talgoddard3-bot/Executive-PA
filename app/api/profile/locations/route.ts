@@ -51,6 +51,32 @@ export async function POST(req: Request) {
   return NextResponse.json(data)
 }
 
+export async function PATCH(req: Request) {
+  const companyId = await getSessionCompanyId()
+  if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const body = await req.json()
+  const { id, city, location_types, headcount, notes } = body
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const { data, error } = await service()
+    .from('company_locations')
+    .update({
+      city: city || null,
+      location_type: Array.isArray(location_types) && location_types.length > 0 ? location_types[0] : undefined,
+      location_types: Array.isArray(location_types) ? location_types : undefined,
+      headcount: headcount ? Number(headcount) : null,
+      notes: notes || null,
+    })
+    .eq('id', id)
+    .eq('company_id', companyId)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data)
+}
+
 export async function DELETE(req: Request) {
   const companyId = await getSessionCompanyId()
   if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

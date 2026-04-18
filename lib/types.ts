@@ -42,6 +42,8 @@ export interface CompanyProfile {
   customers: Customer[]
   keywords: string[]
   commodities: string[]
+  products?: string | null
+  company_notes?: string | null
   updated_at: string
 }
 

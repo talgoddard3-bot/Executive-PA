@@ -42,6 +42,8 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           customers: profile.customers as Customer[],
           keywords: profile.keywords,
           commodities: profile.commodities ?? [],
+          products: profile.products,
+          company_notes: profile.company_notes,
         }}
         onCancel={() => setEditing(false)}
       />
@@ -192,6 +194,14 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
         </section>
       )}
 
+      {/* Products */}
+      {profile.products && (
+        <section>
+          <h3 className={sectionHeadingClass}>Products / Services</h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{profile.products}</p>
+        </section>
+      )}
+
       {/* Keywords */}
       {profile.keywords.length > 0 && (
         <section>
@@ -203,6 +213,14 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
               </span>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Company Notes */}
+      {profile.company_notes && (
+        <section>
+          <h3 className={sectionHeadingClass}>Background context for AI</h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap rounded-lg border border-dashed border-gray-200 dark:border-white/10 p-4">{profile.company_notes}</p>
         </section>
       )}
 

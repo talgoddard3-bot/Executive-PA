@@ -76,7 +76,8 @@ export function buildUserPrompt(
   profile: CompanyProfile,
   signals: string,
   language = 'English',
-  locations: CompanyLocation[] = []
+  locations: CompanyLocation[] = [],
+  previousBriefContext = ''
 ): string {
   const revenueLines = profile.revenue_countries
     .map((r) => `  - ${r.country} (${r.sector})`)
@@ -117,11 +118,19 @@ export function buildUserPrompt(
       }).join('\n')
     : '  (none specified)'
 
+  const productsLine = profile.products?.trim()
+    ? `\nProducts / Services:\n${profile.products.trim()}`
+    : ''
+
+  const notesBlock = profile.company_notes?.trim()
+    ? `\n---\nANALYST BACKGROUND NOTES (verified internal knowledge — treat as authoritative context for this company):\n${profile.company_notes.trim()}\n---`
+    : ''
+
   return `${languageInstruction}COMPANY PROFILE
 Company: ${company.name}
 Industry: ${company.industry}
 Business Model: ${companyTypeLabel} — ${marketingContext}
-Keywords: ${profile.keywords.join(', ')}
+Keywords: ${profile.keywords.join(', ')}${productsLine}${notesBlock}
 
 Operational Locations (physical sites — consider local labour, energy, regulation, and logistics impacts):
 ${locationLines}
@@ -138,7 +147,13 @@ ${competitorLines}
 Key Customers:
 ${customerLines}
 
+${previousBriefContext ? `---
+LAST WEEK'S BRIEF (for differentiation only — do NOT repeat):
+${previousBriefContext}
+
+DIFFERENTIATION REQUIREMENT: Compare this week's signals against last week's brief above. For any risk, theme, or event that is ongoing but has NO new development this week, write ONE line: "[Topic] — ongoing, no new development this week." Do not repeat the full analysis. Lead every section with what is NEW or has materially changed. The headline and TLDR must reflect this week's most important CHANGE, not a continuation of last week's framing.
 ---
+` : ''}---
 SIGNALS THIS WEEK:
 ${signals}
 

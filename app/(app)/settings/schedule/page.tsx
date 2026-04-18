@@ -219,20 +219,6 @@ export default function SchedulePage() {
         )}
       </div>
 
-      {/* DB setup note */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-700 space-y-1">
-        <p className="font-semibold">Database setup required</p>
-        <p>Run this SQL in Supabase to create the schedule table:</p>
-        <pre className="bg-amber-100 rounded p-2 mt-1 overflow-x-auto text-[11px]">{`CREATE TABLE brief_schedules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  company_id UUID REFERENCES companies(id) ON DELETE CASCADE UNIQUE,
-  enabled BOOLEAN NOT NULL DEFAULT false,
-  days INTEGER[] NOT NULL DEFAULT '{1}',
-  hour_utc INTEGER NOT NULL DEFAULT 7,
-  recipient_emails TEXT[] NOT NULL DEFAULT '{}',
-  updated_at TIMESTAMPTZ DEFAULT now()
-);`}</pre>
-      </div>
     </div>
   )
 }

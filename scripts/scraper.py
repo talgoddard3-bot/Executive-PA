@@ -178,6 +178,28 @@ def upsert(supabase, company_id: str, signal_type: str,
 
 # ── Location type → topic keywords ───────────────────────────────────────────
 
+# Countries with active conflicts — augment location signals with war/crisis queries
+ACTIVE_CONFLICT_QUERIES = {
+    'IL': [
+        'Israel war conflict manufacturing economy business impact',
+        'Israel conflict industrial supply chain disruption',
+        'Israel defense economy technology sector investment',
+    ],
+    'UA': [
+        'Ukraine war manufacturing economy business impact',
+        'Ukraine conflict supply chain industrial disruption',
+    ],
+    'RU': [
+        'Russia sanctions economy business manufacturing impact',
+    ],
+    'SD': [
+        'Sudan conflict business economy manufacturing disruption',
+    ],
+    'MM': [
+        'Myanmar conflict economy business manufacturing disruption',
+    ],
+}
+
 LOCATION_TOPICS = {
     'manufacturing': 'manufacturing workers labor strike energy factory industrial',
     'sales':         'consumer spending economy retail demand trade regulations',
@@ -301,6 +323,14 @@ def scrape_company(supabase, company_id: str) -> int:
             time.sleep(DELAY)
 
         items += fetch_gdelt(q, country_code=ccode, max_items=3)
+
+        # Extra conflict/crisis queries for at-risk locations
+        for conflict_q in ACTIVE_CONFLICT_QUERIES.get(ccode.upper(), []):
+            log.info(f'    Conflict signal: {conflict_q[:60]}')
+            items += parse_rss(google_news_url(conflict_q, country_code='US', lang='en'), is_google=True, max_items=4)
+            items += fetch_gdelt(conflict_q, max_items=3)
+            time.sleep(DELAY)
+
         total += upsert(supabase, company_id, 'location', cname, cname, items)
         time.sleep(DELAY)
 

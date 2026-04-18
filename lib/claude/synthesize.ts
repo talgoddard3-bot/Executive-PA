@@ -28,18 +28,34 @@ export async function synthesizeBrief(
 
   const locationCountryNames = locations.map((l: { country_name: string }) => l.country_name)
 
-  const [signals, marketSnapshots, userProfileResult, internalSignals] = await Promise.all([
+  // Fetch most recent completed brief for differentiation context
+  const { data: prevBriefs } = await supabase
+    .from('briefs')
+    .select('content, week_of')
+    .eq('company_id', company.id)
+    .eq('status', 'complete')
+    .order('week_of', { ascending: false })
+    .limit(1)
+
+  let previousBriefContext = ''
+  if (prevBriefs && prevBriefs.length > 0) {
+    const prev = prevBriefs[0]
+    const prevContent = prev.content as BriefContent
+    const riskTitles = (prevContent.risk_summary ?? [])
+      .slice(0, 4)
+      .map((r: { title: string }) => `  - ${r.title}`)
+      .join('\n')
+    previousBriefContext = [
+      `Week of ${prev.week_of}`,
+      `Headline: ${prevContent.headline ?? '(none)'}`,
+      `TLDR: ${prevContent.tldr ?? '(none)'}`,
+      riskTitles ? `Risks flagged:\n${riskTitles}` : '',
+    ].filter(Boolean).join('\n')
+  }
+
+  // Signals first — market data fetch needs them for context-aware chart selection
+  const [signals, userProfileResult, internalSignals] = await Promise.all([
     buildLiveSignals(company, profile, locations),
-    fetchLiveMarketData(revenueCountries, {
-      stockTicker: company.stock_ticker ?? undefined,
-      companyName: company.name,
-      competitors: profile.competitors,
-      commodities: profile.commodities,
-      locationCountryNames,
-    }).catch(err => {
-      console.error('[market-data] failed, using empty snapshots:', err)
-      return {} as Record<string, import('@/lib/types').StoredSparkline>
-    }),
     userId
       ? supabase.from('user_profiles').select('language').eq('user_id', userId).single()
       : Promise.resolve({ data: null }),
@@ -50,11 +66,25 @@ export async function synthesizeBrief(
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
-  // Cap signals at ~40k chars to stay within a sensible token budget
   const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
-  // Internal signals are prepended (highest priority context)
   const signalsWithInternal = internalSignals ? internalSignals + cappedSignals : cappedSignals
-  const userPrompt = buildUserPrompt(company, profile, signalsWithInternal, language, locations)
+
+  const profileCustomers = (profile as CompanyProfile & { customers?: { name: string }[] }).customers ?? []
+
+  const marketSnapshots = await fetchLiveMarketData(revenueCountries, {
+    stockTicker: company.stock_ticker ?? undefined,
+    companyName: company.name,
+    competitors: profile.competitors,
+    commodities: profile.commodities,
+    locationCountryNames,
+    customers: profileCustomers,
+    signals: signalsWithInternal,
+  }).catch(err => {
+    console.error('[market-data] failed, using empty snapshots:', err)
+    return {} as Record<string, import('@/lib/types').StoredSparkline>
+  })
+
+  const userPrompt = buildUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

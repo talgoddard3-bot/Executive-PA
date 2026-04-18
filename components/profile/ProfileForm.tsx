@@ -21,6 +21,8 @@ interface ProfileFormProps {
     customers: Customer[]
     keywords: string[]
     commodities: string[]
+    products?: string | null
+    company_notes?: string | null
   }
 }
 
@@ -67,6 +69,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   )
   const [commodities, setCommodities] = useState<string[]>(initialData?.commodities ?? [])
   const [customCommodity, setCustomCommodity] = useState('')
+  const [products, setProducts] = useState(initialData?.products ?? '')
+  const [companyNotes, setCompanyNotes] = useState(initialData?.company_notes ?? '')
 
   function toggleCommodity(item: string) {
     setCommodities(prev =>
@@ -159,6 +163,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           customers,
           keywords: kws,
           commodities,
+          products: products.trim() || null,
+          company_notes: companyNotes.trim() || null,
         }),
       })
       data = await res.json()
@@ -317,6 +323,21 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Products / Services */}
+      <section className="space-y-3">
+        <div>
+          <h3 className={sectionHeadingClass}>Products / Services</h3>
+          <p className="text-xs text-gray-400 mt-0.5">What does the company sell? Describe your main products, services, or platform.</p>
+        </div>
+        <textarea
+          className={inputClass + ' resize-none'}
+          rows={3}
+          value={products}
+          onChange={(e) => setProducts(e.target.value)}
+          placeholder="e.g. High-precision optical sensors for industrial automation and semiconductor inspection. Also sells calibration software and maintenance contracts."
+        />
       </section>
 
       {/* Revenue exposure */}
@@ -525,6 +546,22 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             ))}
           </div>
         )}
+      </section>
+
+      {/* Company Notes */}
+      <section className="space-y-3">
+        <div>
+          <h3 className={sectionHeadingClass}>Background context for AI</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Explain anything specific about this company the AI should treat as fact — nuances, strategic priorities, sensitivities, or context not obvious from public sources.</p>
+        </div>
+        <textarea
+          className={inputClass + ' resize-none'}
+          rows={5}
+          value={companyNotes}
+          onChange={(e) => setCompanyNotes(e.target.value)}
+          placeholder="e.g. Our sole manufacturing site is in northern Israel and has been operating at reduced capacity since Oct 2023. We are heavily dependent on a single customer (Siemens) for ~40% of revenue. The CEO is in active acquisition talks in Q2 2026."
+        />
+        <p className="text-xs text-gray-400">This is injected directly into every brief as verified analyst context. Keep it factual and up to date.</p>
       </section>
 
       {saveError && <p className="text-sm text-red-600">{saveError}</p>}
