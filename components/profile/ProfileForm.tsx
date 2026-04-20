@@ -11,7 +11,7 @@ interface ProfileFormProps {
   initialData?: {
     name: string
     industry: string
-    company_type?: 'B2B' | 'B2C' | 'B2B2C'
+    company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO'
     stock_ticker?: string | null
     website?: string | null
     logoUrl?: string | null
@@ -44,7 +44,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
 
   const [name, setName] = useState(initialData?.name ?? '')
   const [industry, setIndustry] = useState(initialData?.industry ?? '')
-  const [companyType, setCompanyType] = useState<'B2B' | 'B2C' | 'B2B2C'>(initialData?.company_type ?? 'B2B')
+  const [companyType, setCompanyType] = useState<'B2B' | 'B2C' | 'B2B2C' | 'NGO'>(initialData?.company_type ?? 'B2B')
   const [stockTicker, setStockTicker] = useState(initialData?.stock_ticker ?? '')
   const [website, setWebsite] = useState(initialData?.website ?? '')
   const [suggesting, setSuggesting] = useState(false)
@@ -204,8 +204,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         </div>
         <div>
           <label className={labelClass}>Business model</label>
-          <div className="grid grid-cols-3 gap-2">
-            {(['B2B', 'B2C', 'B2B2C'] as const).map((type) => (
+          <div className="grid grid-cols-2 gap-2">
+            {(['B2B', 'B2C', 'B2B2C', 'NGO'] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -224,6 +224,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             {companyType === 'B2B' && 'Sells to other businesses — enterprise sales, procurement cycles, account management'}
             {companyType === 'B2C' && 'Sells directly to consumers — brand, retail, D2C, consumer sentiment'}
             {companyType === 'B2B2C' && 'Sells through business partners to end consumers — both enterprise and consumer signals matter'}
+            {companyType === 'NGO' && 'Non-governmental organization — focus on impact, funding, partnerships, and global issues'}
           </p>
         </div>
 
@@ -307,7 +308,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         <div>
           <label className={labelClass}>Business model</label>
           <div className="flex gap-2">
-            {(['B2B', 'B2C', 'B2B2C'] as const).map((type) => (
+            {(['B2B', 'B2C', 'B2B2C', 'NGO'] as const).map((type) => (
               <button
                 key={type}
                 type="button"

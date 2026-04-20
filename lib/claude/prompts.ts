@@ -102,7 +102,9 @@ export function buildUserPrompt(
       ? 'Consumer-facing — consider direct-to-consumer channels, retail partnerships, and brand sentiment.'
       : companyTypeLabel === 'B2B2C'
         ? 'Hybrid model — consider both enterprise sales cycles and downstream consumer demand signals.'
-        : 'Enterprise sales — consider partnership channels, key account dynamics, and sector-specific procurement cycles.'
+        : companyTypeLabel === 'NGO'
+          ? 'Non-governmental organisation — consider grant funding cycles, donor relations, impact measurement, and policy/advocacy channels.'
+          : 'Enterprise sales — consider partnership channels, key account dynamics, and sector-specific procurement cycles.'
 
   const languageInstruction = language && language !== 'English'
     ? `\nOUTPUT LANGUAGE: Generate ALL text fields in ${language}. The JSON keys must remain in English, but all values (headlines, summaries, details, impacts, notes, etc.) must be written in ${language}.\n`
