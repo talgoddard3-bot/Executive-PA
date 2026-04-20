@@ -113,9 +113,9 @@ export async function PATCH(request: Request) {
       // Create the company row (for solo or first team user)
       const { data: newCompany, error: companyErr } = await supabase
         .from('companies')
-        .insert(
+        .upsert(
           { user_id, name: companyName, industry: 'Unknown' },
-          { onConflict: 'user_id' } // Though unique removed, but to avoid dup
+          { onConflict: 'user_id' }
         )
         .select()
         .single()
