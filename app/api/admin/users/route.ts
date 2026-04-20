@@ -76,22 +76,46 @@ export async function PATCH(request: Request) {
 
   // When approving, auto-create the company row and link it to the user profile
   if (status === 'active' && isValidUUID) {
-    // Fetch current profile to get company_name and check if company already exists
+    // Fetch current profile to get company_name, plan, and check if company already exists
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('company_name, company_id')
+      .select('company_name, company_id, plan')
       .eq('user_id', user_id)
       .single()
 
     if (profile && !profile.company_id) {
       const companyName = profile.company_name?.trim() || 'My Company'
 
-      // Create the company row
+      if (profile.plan === 'team') {
+        // For team, find existing company by name or create new
+        const { data: existingCompany } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('name', companyName)
+          .single()
+
+        if (existingCompany) {
+          // Link to existing company
+          const { error } = await supabase
+            .from('user_profiles')
+            .update({
+              status: 'active',
+              company_id: existingCompany.id,
+              ...(position ? { position } : {}),
+            })
+            .eq('user_id', user_id)
+
+          if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+          return NextResponse.json({ ok: true })
+        }
+      }
+
+      // Create the company row (for solo or first team user)
       const { data: newCompany, error: companyErr } = await supabase
         .from('companies')
-        .upsert(
+        .insert(
           { user_id, name: companyName, industry: 'Unknown' },
-          { onConflict: 'user_id' }
+          { onConflict: 'user_id' } // Though unique removed, but to avoid dup
         )
         .select()
         .single()
@@ -128,4 +152,56 @@ export async function PATCH(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   return NextResponse.json({ ok: true })
+}
+
+export async function POST(request: Request) {
+  if (!await isAdmin()) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const { email, full_name, position, company_name } = body
+
+  if (!email || !full_name || !company_name) {
+    return NextResponse.json({ error: 'email, full_name, and company_name are required' }, { status: 400 })
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Invite the user
+  const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+    data: { full_name },
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/get-started`,
+  })
+
+  if (inviteError || !inviteData.user) {
+    return NextResponse.json({ error: inviteError?.message ?? 'Failed to invite user' }, { status: 500 })
+  }
+
+  const userId = inviteData.user.id
+
+  // Insert into user_profiles
+  const { error: profileError } = await supabase
+    .from('user_profiles')
+    .insert({
+      user_id: userId,
+      full_name,
+      email,
+      position: position || 'Chief Executive Officer',
+      language: 'en',
+      avatar_url: null,
+      status: 'pending',
+      company_name,
+      requested_at: new Date().toISOString(),
+      is_admin: false,
+    })
+
+  if (profileError) {
+    return NextResponse.json({ error: profileError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, user_id: userId })
 }

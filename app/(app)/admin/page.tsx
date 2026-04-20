@@ -65,6 +65,15 @@ export default function AdminPage() {
   const [generating, setGenerating] = useState(false)
   const [genResult, setGenResult] = useState<string | null>(null)
 
+  // Invite form
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    full_name: '',
+    position: 'Chief Executive Officer',
+    company_name: '',
+  })
+  const [inviting, setInviting] = useState(false)
+
   useEffect(() => {
     fetch('/api/admin/users')
       .then(r => r.json())
@@ -88,6 +97,31 @@ export default function AdminPage() {
       setError(data.error ?? `Failed to save (${res.status})`)
     }
     setSaving(null)
+  }
+
+  async function inviteUser() {
+    if (!inviteForm.email.trim() || !inviteForm.full_name.trim() || !inviteForm.company_name.trim()) {
+      setError('Please fill in all fields.')
+      return
+    }
+    setInviting(true)
+    setError('')
+    const res = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inviteForm),
+    })
+    if (res.ok) {
+      setInviteForm({ email: '', full_name: '', position: 'Chief Executive Officer', company_name: '' })
+      // Refresh users
+      const r = await fetch('/api/admin/users')
+      const d = await r.json()
+      setUsers(d.users ?? [])
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error ?? `Failed to invite (${res.status})`)
+    }
+    setInviting(false)
   }
 
   const pending = users.filter(u => u.status === 'pending')
@@ -234,6 +268,50 @@ export default function AdminPage() {
       <p className="mt-4 text-xs text-gray-400">
         Approved users can log in immediately. Position determines which brief sections they see.
       </p>
+
+      {/* Invite User */}
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-5 max-w-md">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-white mb-1">Invite New User</h2>
+        <p className="text-xs text-gray-400 mb-4">Send an invitation email to add a new user to the system.</p>
+        <div className="space-y-3">
+          <input
+            type="email"
+            placeholder="Email"
+            value={inviteForm.email}
+            onChange={e => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={inviteForm.full_name}
+            onChange={e => setInviteForm(prev => ({ ...prev, full_name: e.target.value }))}
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <select
+            value={inviteForm.position}
+            onChange={e => setInviteForm(prev => ({ ...prev, position: e.target.value }))}
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <input
+            type="text"
+            placeholder="Company Name"
+            value={inviteForm.company_name}
+            onChange={e => setInviteForm(prev => ({ ...prev, company_name: e.target.value }))}
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={inviteUser}
+            disabled={inviting}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+          >
+            {inviting && <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+            {inviting ? 'Inviting…' : 'Send Invitation'}
+          </button>
+        </div>
+      </div>
 
       {/* Dev Tools */}
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-sm p-5 max-w-md">

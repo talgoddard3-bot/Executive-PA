@@ -52,7 +52,7 @@ export interface Company {
   user_id: string
   name: string
   industry: string
-  company_type?: 'B2B' | 'B2C' | 'B2B2C'
+  company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO'
   stock_ticker?: string | null
   website?: string | null
   logo_url?: string | null
