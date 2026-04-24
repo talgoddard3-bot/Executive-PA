@@ -44,6 +44,7 @@ export interface CompanyProfile {
   commodities: string[]
   products?: string | null
   company_notes?: string | null
+  stock_ticker?: string | null
   updated_at: string
 }
 
@@ -55,6 +56,7 @@ export interface Company {
   company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO'
   stock_ticker?: string | null
   website?: string | null
+  website_url?: string | null
   logo_url?: string | null
   brand_color?: string | null
   created_at: string

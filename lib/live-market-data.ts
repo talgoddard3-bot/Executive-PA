@@ -71,7 +71,10 @@ async function fetchAVFX(from: string, to: string): Promise<StoredSparkline | nu
       .slice(0, 30).reverse()
       .map(([date, v]) => toDataPoint(date, parseFloat((v as Record<string, string>)['4. close'])))
     return buildSparkline(`${from}/${to}`, `${from}/${to}`, '', data)
-  } catch { return null }
+  } catch (err) {
+    console.warn('[market-data] fetchAVFX failed:', err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 async function fetchAVCommodity(fn: string, label: string, ticker: string, unit: string): Promise<StoredSparkline | null> {
@@ -88,7 +91,10 @@ async function fetchAVCommodity(fn: string, label: string, ticker: string, unit:
       .map((d: Record<string, string>) => toDataPoint(d.date, parseFloat(d.value)))
     if (!entries.length) return null
     return buildSparkline(label, ticker, unit, entries)
-  } catch { return null }
+  } catch (err) {
+    console.warn('[market-data] fetchAVCommodity failed:', err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 // ── Financial Modeling Prep ───────────────────────────────────────────────────
@@ -104,7 +110,10 @@ async function fetchFMP(symbol: string, label: string, ticker: string): Promise<
     if (!hist?.length) return null
     const data = hist.map((d: Record<string, number | string>) => toDataPoint(String(d.date), Number(d.close)))
     return buildSparkline(label, ticker, '', data)
-  } catch { return null }
+  } catch (err) {
+    console.warn('[market-data] fetchFMP failed:', err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 // ── Waterfall helpers ─────────────────────────────────────────────────────────
@@ -144,7 +153,10 @@ async function searchFMPTicker(companyName: string): Promise<string | null> {
       r.name.toLowerCase().includes(companyName.toLowerCase().split(' ')[0])
     ) ?? json[0]
     return (usHit ?? anyHit)?.symbol ?? null
-  } catch { return null }
+  } catch (err) {
+    console.warn('[market-data] searchFMPTicker failed:', err instanceof Error ? err.message : err)
+    return null
+  }
 }
 
 /** Fetch a sparkline for a commodity name (case-insensitive) */
@@ -332,11 +344,11 @@ export async function fetchLiveMarketData(
   }
 
   // Competitor stocks (up to 3, auto-lookup ticker via FMP search)
-  const topCompetitors = competitors.slice(0, 3)
-  for (const comp of topCompetitors) {
-    try {
-      const ticker = await searchFMPTicker(comp.name)
-      if (ticker) {
+  await Promise.allSettled(
+    competitors.slice(0, 3).map(async (comp) => {
+      try {
+        const ticker = await searchFMPTicker(comp.name)
+        if (!ticker) return
         const s = await firstOf(
           () => fetchStockCandle(ticker, comp.name, ticker),
           () => fetchFMPStock(ticker, comp.name, ticker),
@@ -345,9 +357,11 @@ export async function fetchLiveMarketData(
           const key = `competitor_${comp.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20)}`
           snapshots[key] = s
         }
+      } catch (err) {
+        console.warn('[market-data] competitor lookup failed for', comp.name, ':', err instanceof Error ? err.message : err)
       }
-    } catch { /* skip */ }
-  }
+    })
+  )
 
   // Profile commodities (up to 4)
   const topCommodities = commodities.slice(0, 4)
@@ -368,11 +382,12 @@ export async function fetchLiveMarketData(
   const { customers = [], signals = '' } = options
 
   // Customer stocks — same pattern as competitor stocks
-  for (const cust of customers.slice(0, 3)) {
-    if (!cust.name) continue
-    try {
-      const ticker = await searchFMPTicker(cust.name)
-      if (ticker) {
+  await Promise.allSettled(
+    customers.slice(0, 3).map(async (cust) => {
+      if (!cust.name) return
+      try {
+        const ticker = await searchFMPTicker(cust.name)
+        if (!ticker) return
         const s = await firstOf(
           () => fetchStockCandle(ticker, cust.name, ticker),
           () => fetchFMPStock(ticker, cust.name, ticker),
@@ -381,9 +396,11 @@ export async function fetchLiveMarketData(
           const key = `customer_${cust.name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20)}`
           snapshots[key] = s
         }
+      } catch (err) {
+        console.warn('[market-data] customer lookup failed for', cust.name, ':', err instanceof Error ? err.message : err)
       }
-    } catch { /* skip */ }
-  }
+    })
+  )
 
   // Signal-driven charts: country ETFs + one sector ETF based on what's in the news this week
   if (signals) {

@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT, buildUserPrompt } from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
-import { createClient } from '@supabase/supabase-js'
+import { supabaseAdmin as supabase } from '@/lib/supabase/server'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
 
 export async function synthesizeBrief(
@@ -11,13 +11,7 @@ export async function synthesizeBrief(
   profile: CompanyProfile,
   userId?: string
 ): Promise<BriefContent> {
-  // Fetch live signals, market data, and user language preference in parallel
   const revenueCountries = profile.revenue_countries.map(r => r.country)
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
 
   // Fetch operational locations for country-level signals
   const { data: locationsData } = await supabase
@@ -69,15 +63,13 @@ export async function synthesizeBrief(
   const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
   const signalsWithInternal = internalSignals ? internalSignals + cappedSignals : cappedSignals
 
-  const profileCustomers = (profile as CompanyProfile & { customers?: { name: string }[] }).customers ?? []
-
   const marketSnapshots = await fetchLiveMarketData(revenueCountries, {
     stockTicker: company.stock_ticker ?? undefined,
     companyName: company.name,
     competitors: profile.competitors,
     commodities: profile.commodities,
     locationCountryNames,
-    customers: profileCustomers,
+    customers: profile.customers ?? [],
     signals: signalsWithInternal,
   }).catch(err => {
     console.error('[market-data] failed, using empty snapshots:', err)
@@ -89,34 +81,38 @@ export async function synthesizeBrief(
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 12000,
-    messages: [{ role: 'user', content: userPrompt }],
     system: SYSTEM_PROMPT,
+    tools: [
+      {
+        name: 'generate_brief',
+        description: 'Output the complete weekly intelligence brief as structured JSON.',
+        input_schema: {
+          type: 'object' as const,
+          properties: { brief: { type: 'object', description: 'The full BriefContent object' } },
+          required: ['brief'],
+        },
+      },
+    ],
+    tool_choice: { type: 'tool', name: 'generate_brief' },
+    messages: [{ role: 'user', content: userPrompt }],
   })
 
-  if (message.stop_reason === 'max_tokens') {
-    console.warn('[synthesize] Response hit max_tokens — output may be truncated')
+  console.log('[synthesize] tokens used:', {
+    company: company.name,
+    input_tokens: message.usage.input_tokens,
+    output_tokens: message.usage.output_tokens,
+    estimated_cost_usd: (
+      (message.usage.input_tokens * 0.000003) +
+      (message.usage.output_tokens * 0.000015)
+    ).toFixed(4),
+  })
+
+  const toolBlock = message.content.find(b => b.type === 'tool_use')
+  if (!toolBlock || toolBlock.type !== 'tool_use') {
+    throw new Error('Claude did not return a tool_use block')
   }
+  const content = (toolBlock.input as { brief: BriefContent }).brief
 
-  const text = message.content
-    .filter((block) => block.type === 'text')
-    .map((block) => block.text)
-    .join('')
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    console.error('[synthesize] Raw Claude output (first 500 chars):', text.slice(0, 500))
-    throw new Error('Claude did not return valid JSON. Check server logs for raw output.')
-  }
-
-  let content: BriefContent
-  try {
-    content = JSON.parse(jsonMatch[0])
-  } catch (parseErr) {
-    console.error('[synthesize] JSON.parse failed. Raw match (first 500 chars):', jsonMatch[0].slice(0, 500))
-    throw new Error(`Brief JSON was malformed: ${parseErr instanceof Error ? parseErr.message : String(parseErr)}`)
-  }
-
-  // Attach real market snapshots so charts use live data
   if (Object.keys(marketSnapshots).length > 0) {
     content.market_snapshots = marketSnapshots
   }

@@ -605,12 +605,12 @@ def main():
 
     # Clean up signals older than 14 days
     try:
-        supabase.rpc('exec_sql', {
-            'sql': "DELETE FROM raw_signals WHERE fetched_at < now() - interval '14 days'"
-        }).execute()
+        from datetime import timedelta
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+        supabase.table('raw_signals').delete().lt('fetched_at', cutoff).execute()
         log.info('   Old signals pruned (>14 days)')
-    except Exception:
-        pass  # RPC may not be enabled — not critical
+    except Exception as e:
+        log.warning(f'   Signal pruning failed (non-critical): {e}')
 
 
 if __name__ == '__main__':
