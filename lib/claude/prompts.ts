@@ -236,15 +236,15 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
 
   "market_segmentation": [
     {
-      "segment_type": "One of: audience (who buys) | channel (how they're reached) | lifestyle (psychographic values/habits) | needs (unmet functional need this company can solve) | value (price tier or CLV band) | jobs (jobs-to-be-done — the outcome the customer is hiring this product to achieve)",
-      "segment_name": "Short, vivid name — e.g. 'Mid-market sustainability buyers', 'Gen-Z D2C channel', 'Compliance-first SMEs', 'Convenience-driven meal planners'",
-      "description": "1–2 sentences. Who this segment is, what core need or outcome drives them, and how they currently engage with this product category.",
+      "segment_type": "One of: audience (who buys) | channel (how they're reached) | lifestyle (psychographic values/habits) | needs (unmet functional need this company can solve) | value (price tier or CLV band) | jobs (jobs-to-be-done - the outcome the customer is hiring this product to achieve)",
+      "segment_name": "Short, vivid name - e.g. 'Mid-market sustainability buyers', 'Gen-Z D2C channel', 'Compliance-first SMEs', 'Convenience-driven meal planners'",
+      "description": "1-2 sentences. Who this segment is, what core need or outcome drives them, and how they currently engage with this product category.",
       "size_signal": "growing (segment is expanding based on this week's signals) | stable (no material change) | declining (contracting or losing relevance)",
-      "differentiation": "The market engineer's core question: what makes THIS company specifically stronger or better positioned for this segment vs. named competitors? Be concrete — name a product feature, price point, distribution advantage, speed, or brand asset. Do not be generic.",
-      "competitive_vulnerability": "Which competitor currently dominates this segment, and where is their specific weakness? Name the competitor and the gap this company can exploit — e.g. 'Competitor X owns enterprise but ignores SME compliance complexity; our pre-built templates cut onboarding from 8 weeks to 48 hours'.",
-      "signal_source": "The specific news item, trend, or market signal from THIS WEEK that makes this segment newly relevant or shifted — e.g. 'EU AI Act enforcement deadline announced; procurement cycles accelerating' or 'TikTok Shop expansion into grocery creates new D2C distribution window'.",
-      "channel_priority": "high (segment is reachable and valuable right now) | medium (worth pursuing in 1–2 quarters) | low (monitor only)",
-      "urgency": "act-now (revenue at risk or opportunity window closing this week) | monitor (trend developing over 30–90 days) | awareness (background context)"
+      "differentiation": "The market engineer's core question: what makes THIS company specifically stronger or better positioned for this segment vs. named competitors? Be concrete - name a product feature, price point, distribution advantage, speed, or brand asset. Do not be generic.",
+      "competitive_vulnerability": "Which competitor currently dominates this segment, and where is their specific weakness? Name the competitor and the gap this company can exploit - e.g. 'Competitor X owns enterprise but ignores SME compliance complexity; our pre-built templates cut onboarding from 8 weeks to 48 hours'.",
+      "signal_source": "The specific news item, trend, or market signal from THIS WEEK that makes this segment newly relevant or shifted - e.g. 'EU AI Act enforcement deadline announced; procurement cycles accelerating' or 'TikTok Shop expansion into grocery creates new D2C distribution window'.",
+      "channel_priority": "high (segment is reachable and valuable right now) | medium (worth pursuing in 1-2 quarters) | low (monitor only)",
+      "urgency": "act-now (revenue at risk or opportunity window closing this week) | monitor (trend developing over 30-90 days) | awareness (background context)"
     }
   ],
 
