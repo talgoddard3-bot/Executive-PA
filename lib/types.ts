@@ -149,11 +149,15 @@ export interface MarketingOpportunityItem {
 }
 
 export interface MarketSegmentItem {
-  segment_type: 'audience' | 'channel' | 'lifestyle'
+  segment_type: 'audience' | 'channel' | 'lifestyle' | 'needs' | 'value' | 'jobs'
   segment_name: string
   description: string
+  size_signal: 'growing' | 'stable' | 'declining'
   differentiation: string
-  signal: 'growing' | 'stable' | 'declining'
+  competitive_vulnerability: string
+  signal_source: string
+  channel_priority: 'high' | 'medium' | 'low'
+  urgency: 'act-now' | 'monitor' | 'awareness'
 }
 
 export interface FinancialSignalItem {

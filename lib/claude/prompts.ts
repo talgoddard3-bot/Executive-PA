@@ -62,7 +62,7 @@ SECTION SCOPE — HARD BOUNDARIES:
 - geopolitical_news: political events, trade policy, sanctions, regulatory decisions ONLY. Do NOT include competitor moves or M&A here.
 - competitor_intelligence: competitor-specific news ONLY. The same competitor event must NOT appear in marketing_opportunities.
 - marketing_opportunities: channel/BD opportunities from market gaps, customer signals, or trend shifts. Must NOT reference competitors already covered in competitor_intelligence.
-- market_segmentation: audience, channel, and lifestyle segment analysis for THIS company's product/market. Covers WHO buys, HOW they are reached, and WHAT drives their choice. Focus on what makes this company or product DIFFERENT for each segment. Do NOT repeat competitor moves or financial signals — this section is about market structure and positioning.
+- market_segmentation: dynamic segment analysis driven by THIS WEEK's signals. Six types: audience (who buys), channel (how they're reached), lifestyle (psychographic values), needs (unmet functional needs), value (price/LTV tier), jobs (jobs-to-be-done outcome). Each segment must explain what makes this company SPECIFICALLY different vs. named competitors, identify the competitive vulnerability or gap, and anchor the insight in a concrete signal from this week's news. Do NOT repeat competitor moves, financial signals, or marketing opportunities already covered in their own sections — this section is about market STRUCTURE and positioning gaps.
 - ma_watch: M&A, funding rounds, IPOs ONLY. Do NOT appear in geopolitical_news or competitor_intelligence.
 - risk_summary: a consolidated risk register — each item must draw from a DIFFERENT source section. Do NOT introduce new facts — just crystallise the top risks already covered.
 - capital_impact: pure financial consequence narrative — no new facts, only synthesise what is already in financial_news and financial_signals.
@@ -236,11 +236,15 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
 
   "market_segmentation": [
     {
-      "segment_type": "audience or channel or lifestyle",
-      "segment_name": "Name of the segment — e.g. 'Young Families', 'Independent Retailers', 'Health-Conscious Millennials'",
-      "description": "1–2 sentences. Who this segment is, what they need, and how they currently engage with this product category.",
-      "differentiation": "What specifically makes THIS company or product different — or better positioned — for this segment vs. competitors. Be concrete. Reference a product feature, price point, distribution advantage, or brand asset. This is the market engineer's lens: what is the unique angle here?",
-      "signal": "growing (this segment is expanding based on this week's signals), stable (no material change), or declining (segment is contracting or losing relevance)"
+      "segment_type": "One of: audience (who buys) | channel (how they're reached) | lifestyle (psychographic values/habits) | needs (unmet functional need this company can solve) | value (price tier or CLV band) | jobs (jobs-to-be-done — the outcome the customer is hiring this product to achieve)",
+      "segment_name": "Short, vivid name — e.g. 'Mid-market sustainability buyers', 'Gen-Z D2C channel', 'Compliance-first SMEs', 'Convenience-driven meal planners'",
+      "description": "1–2 sentences. Who this segment is, what core need or outcome drives them, and how they currently engage with this product category.",
+      "size_signal": "growing (segment is expanding based on this week's signals) | stable (no material change) | declining (contracting or losing relevance)",
+      "differentiation": "The market engineer's core question: what makes THIS company specifically stronger or better positioned for this segment vs. named competitors? Be concrete — name a product feature, price point, distribution advantage, speed, or brand asset. Do not be generic.",
+      "competitive_vulnerability": "Which competitor currently dominates this segment, and where is their specific weakness? Name the competitor and the gap this company can exploit — e.g. 'Competitor X owns enterprise but ignores SME compliance complexity; our pre-built templates cut onboarding from 8 weeks to 48 hours'.",
+      "signal_source": "The specific news item, trend, or market signal from THIS WEEK that makes this segment newly relevant or shifted — e.g. 'EU AI Act enforcement deadline announced; procurement cycles accelerating' or 'TikTok Shop expansion into grocery creates new D2C distribution window'.",
+      "channel_priority": "high (segment is reachable and valuable right now) | medium (worth pursuing in 1–2 quarters) | low (monitor only)",
+      "urgency": "act-now (revenue at risk or opportunity window closing this week) | monitor (trend developing over 30–90 days) | awareness (background context)"
     }
   ],
 
