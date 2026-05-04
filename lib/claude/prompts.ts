@@ -62,6 +62,7 @@ SECTION SCOPE — HARD BOUNDARIES:
 - geopolitical_news: political events, trade policy, sanctions, regulatory decisions ONLY. Do NOT include competitor moves or M&A here.
 - competitor_intelligence: competitor-specific news ONLY. The same competitor event must NOT appear in marketing_opportunities.
 - marketing_opportunities: channel/BD opportunities from market gaps, customer signals, or trend shifts. Must NOT reference competitors already covered in competitor_intelligence.
+- market_segmentation: audience, channel, and lifestyle segment analysis for THIS company's product/market. Covers WHO buys, HOW they are reached, and WHAT drives their choice. Focus on what makes this company or product DIFFERENT for each segment. Do NOT repeat competitor moves or financial signals — this section is about market structure and positioning.
 - ma_watch: M&A, funding rounds, IPOs ONLY. Do NOT appear in geopolitical_news or competitor_intelligence.
 - risk_summary: a consolidated risk register — each item must draw from a DIFFERENT source section. Do NOT introduce new facts — just crystallise the top risks already covered.
 - capital_impact: pure financial consequence narrative — no new facts, only synthesise what is already in financial_news and financial_signals.
@@ -230,6 +231,16 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "opportunity": "The specific marketing, sales, or channel opportunity this week's signals create",
       "rationale": "Why these signals make this opportunity timely and actionable right now — reference specific data",
       "urgency": "low or medium or high"
+    }
+  ],
+
+  "market_segmentation": [
+    {
+      "segment_type": "audience or channel or lifestyle",
+      "segment_name": "Name of the segment — e.g. 'Young Families', 'Independent Retailers', 'Health-Conscious Millennials'",
+      "description": "1–2 sentences. Who this segment is, what they need, and how they currently engage with this product category.",
+      "differentiation": "What specifically makes THIS company or product different — or better positioned — for this segment vs. competitors. Be concrete. Reference a product feature, price point, distribution advantage, or brand asset. This is the market engineer's lens: what is the unique angle here?",
+      "signal": "growing (this segment is expanding based on this week's signals), stable (no material change), or declining (segment is contracting or losing relevance)"
     }
   ],
 

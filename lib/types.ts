@@ -148,6 +148,14 @@ export interface MarketingOpportunityItem {
   urgency: 'low' | 'medium' | 'high'
 }
 
+export interface MarketSegmentItem {
+  segment_type: 'audience' | 'channel' | 'lifestyle'
+  segment_name: string
+  description: string
+  differentiation: string
+  signal: 'growing' | 'stable' | 'declining'
+}
+
 export interface FinancialSignalItem {
   category: string
   headline: string
@@ -239,6 +247,7 @@ export interface BriefContent {
   geopolitical_news: GeopoliticalItem[]
   competitor_intelligence: CompetitorMoveItem[]
   marketing_opportunities: MarketingOpportunityItem[]
+  market_segmentation: MarketSegmentItem[]
   financial_signals: FinancialSignalItem[]
   operational_intelligence: OperationalAlert[]
   risk_summary: RiskItem[]
