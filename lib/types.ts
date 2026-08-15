@@ -53,7 +53,7 @@ export interface Company {
   user_id: string
   name: string
   industry: string
-  company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO'
+  company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO' | 'Investor'
   stock_ticker?: string | null
   website?: string | null
   website_url?: string | null

@@ -143,28 +143,30 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
         </div>
       </section>
 
-      {/* Supplier Countries */}
-      <section>
-        <h3 className={sectionHeadingClass}>Supplier Countries</h3>
-        <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
-                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Country</th>
-                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Materials / Components</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-              {(profile.supplier_countries as SupplierCountry[]).map((s, i) => (
-                <tr key={i}>
-                  <td className="px-4 py-2.5 text-gray-900 dark:text-white">{s.country}</td>
-                  <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{s.materials}</td>
+      {/* Supplier Countries — not applicable to investment firms with no physical supply chain */}
+      {(profile.supplier_countries ?? []).length > 0 && (
+        <section>
+          <h3 className={sectionHeadingClass}>Supplier Countries</h3>
+          <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5">
+                  <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Country</th>
+                  <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Materials / Components</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+                {(profile.supplier_countries as SupplierCountry[]).map((s, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-2.5 text-gray-900 dark:text-white">{s.country}</td>
+                    <td className="px-4 py-2.5 text-gray-500 dark:text-gray-400">{s.materials}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
       {/* Competitors */}
       <section>

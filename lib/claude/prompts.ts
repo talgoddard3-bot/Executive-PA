@@ -105,7 +105,9 @@ export function buildUserPrompt(
         ? 'Hybrid model — consider both enterprise sales cycles and downstream consumer demand signals.'
         : companyTypeLabel === 'NGO'
           ? 'Non-governmental organisation — consider grant funding cycles, donor relations, impact measurement, and policy/advocacy channels.'
-          : 'Enterprise sales — consider partnership channels, key account dynamics, and sector-specific procurement cycles.'
+          : companyTypeLabel === 'Investor'
+            ? 'Investment firm — consider portfolio company performance, deal pipeline and fund flows, LP relations, and sector/allocation shifts rather than direct product sales.'
+            : 'Enterprise sales — consider partnership channels, key account dynamics, and sector-specific procurement cycles.'
 
   const languageInstruction = language && language !== 'English'
     ? `\nOUTPUT LANGUAGE: Generate ALL text fields in ${language}. The JSON keys must remain in English, but all values (headlines, summaries, details, impacts, notes, etc.) must be written in ${language}.\n`

@@ -3,7 +3,23 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LogoUpload from './LogoUpload'
-import type { RevenueCountry, SupplierCountry, Competitor, Customer } from '@/lib/types'
+import type { RevenueCountry, SupplierCountry, Competitor, Customer, LocationType } from '@/lib/types'
+
+interface SuggestedLocation {
+  city: string
+  country_name: string
+  country_code: string
+  location_types: LocationType[]
+  notes?: string
+}
+
+const LOCATION_TYPE_OPTIONS: { value: LocationType; label: string }[] = [
+  { value: 'hq',            label: 'Headquarters' },
+  { value: 'manufacturing', label: 'Manufacturing' },
+  { value: 'sales',         label: 'Sales Office' },
+  { value: 'r&d',           label: 'R&D Centre' },
+  { value: 'office',        label: 'Regional Office' },
+]
 
 interface ProfileFormProps {
   companyId?: string
@@ -11,7 +27,7 @@ interface ProfileFormProps {
   initialData?: {
     name: string
     industry: string
-    company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO'
+    company_type?: 'B2B' | 'B2C' | 'B2B2C' | 'NGO' | 'Investor'
     stock_ticker?: string | null
     website?: string | null
     logoUrl?: string | null
@@ -44,7 +60,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
 
   const [name, setName] = useState(initialData?.name ?? '')
   const [industry, setIndustry] = useState(initialData?.industry ?? '')
-  const [companyType, setCompanyType] = useState<'B2B' | 'B2C' | 'B2B2C' | 'NGO'>(initialData?.company_type ?? 'B2B')
+  const [companyType, setCompanyType] = useState<'B2B' | 'B2C' | 'B2B2C' | 'NGO' | 'Investor'>(initialData?.company_type ?? 'B2B')
   const [stockTicker, setStockTicker] = useState(initialData?.stock_ticker ?? '')
   const [website, setWebsite] = useState(initialData?.website ?? '')
   const [suggesting, setSuggesting] = useState(false)
@@ -71,6 +87,21 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [customCommodity, setCustomCommodity] = useState('')
   const [products, setProducts] = useState(initialData?.products ?? '')
   const [companyNotes, setCompanyNotes] = useState(initialData?.company_notes ?? '')
+  const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([])
+
+  function updateLocation(i: number, field: keyof SuggestedLocation, value: string) {
+    setSuggestedLocations((prev) => { const u = [...prev]; u[i] = { ...u[i], [field]: value }; return u })
+  }
+  function toggleLocationType(i: number, type: LocationType) {
+    setSuggestedLocations((prev) => {
+      const u = [...prev]
+      const types = u[i].location_types.includes(type)
+        ? u[i].location_types.filter((t) => t !== type)
+        : [...u[i].location_types, type]
+      u[i] = { ...u[i], location_types: types }
+      return u
+    })
+  }
 
   function toggleCommodity(item: string) {
     setCommodities(prev =>
@@ -96,7 +127,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
     const res = await fetch('/api/profile/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, industry }),
+      body: JSON.stringify({ name, industry, company_type: companyType, website: website.trim() || undefined }),
     })
 
     let data: Record<string, unknown> = {}
@@ -121,6 +152,9 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
     setKeywords((data.keywords as string[]) ?? [])
     setKeywordsRaw(((data.keywords as string[]) ?? []).join(', '))
     setCommodities((data.commodities as string[]) ?? [])
+    setProducts((data.products as string) ?? '')
+    setCompanyNotes((data.company_notes as string) ?? '')
+    setSuggestedLocations((data.locations as SuggestedLocation[]) ?? [])
     setStep(2)
     setSuggesting(false)
   }
@@ -165,6 +199,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           commodities,
           products: products.trim() || null,
           company_notes: companyNotes.trim() || null,
+          locations: suggestedLocations.filter((l) => l.country_name.trim() && l.country_code.trim()),
         }),
       })
       data = await res.json()
@@ -204,8 +239,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         </div>
         <div>
           <label className={labelClass}>Business model</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['B2B', 'B2C', 'B2B2C', 'NGO'] as const).map((type) => (
+          <div className="grid grid-cols-3 gap-2">
+            {(['B2B', 'B2C', 'B2B2C', 'NGO', 'Investor'] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -225,6 +260,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             {companyType === 'B2C' && 'Sells directly to consumers — brand, retail, D2C, consumer sentiment'}
             {companyType === 'B2B2C' && 'Sells through business partners to end consumers — both enterprise and consumer signals matter'}
             {companyType === 'NGO' && 'Non-governmental organization — focus on impact, funding, partnerships, and global issues'}
+            {companyType === 'Investor' && 'Invests in or advises companies — portfolio performance, deal flow, fund/LP relations, and sector allocation matter more than direct sales'}
           </p>
         </div>
 
@@ -266,7 +302,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           {suggesting ? (
             <span className="flex items-center justify-center gap-2">
               <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Analysing your company…
+              Researching your company…
             </span>
           ) : (
             'Generate profile suggestions →'
@@ -274,7 +310,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         </button>
 
         <p className="text-xs text-gray-400 text-center">
-          AI will suggest your revenue markets, suppliers, and competitors.
+          AI will search the web for real background, offices, competitors, customers, and revenue markets.
           You can review and adjust everything before saving.
         </p>
       </form>
@@ -307,8 +343,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         </div>
         <div>
           <label className={labelClass}>Business model</label>
-          <div className="flex gap-2">
-            {(['B2B', 'B2C', 'B2B2C', 'NGO'] as const).map((type) => (
+          <div className="flex flex-wrap gap-2">
+            {(['B2B', 'B2C', 'B2B2C', 'NGO', 'Investor'] as const).map((type) => (
               <button
                 key={type}
                 type="button"
@@ -324,6 +360,70 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Suggested Locations */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className={sectionHeadingClass}>Offices &amp; Locations</h3>
+            <p className="text-xs text-gray-400 mt-0.5">AI suggested — review, adjust, or remove. Saved into Operational Locations.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuggestedLocations((p) => [...p, { city: '', country_name: '', country_code: '', location_types: ['office'] }])}
+            className="text-xs text-gray-500 hover:text-gray-900"
+          >
+            + Add location
+          </button>
+        </div>
+        {suggestedLocations.length === 0 && (
+          <p className="text-xs text-gray-400">No locations suggested — add one manually, or fill this in later from the Company Profile page.</p>
+        )}
+        {suggestedLocations.map((loc, i) => (
+          <div key={i} className="rounded-lg border border-gray-200 p-3 space-y-2">
+            <div className="grid grid-cols-12 gap-2 items-start">
+              <div className="col-span-4">
+                {i === 0 && <label className={labelClass}>City</label>}
+                <input className={inputClass} value={loc.city} onChange={(e) => updateLocation(i, 'city', e.target.value)} placeholder="Tel Aviv" />
+              </div>
+              <div className="col-span-4">
+                {i === 0 && <label className={labelClass}>Country</label>}
+                <input className={inputClass} value={loc.country_name} onChange={(e) => updateLocation(i, 'country_name', e.target.value)} placeholder="Israel" />
+              </div>
+              <div className="col-span-3">
+                {i === 0 && <label className={labelClass}>Country code</label>}
+                <input className={inputClass} value={loc.country_code} onChange={(e) => updateLocation(i, 'country_code', e.target.value.toUpperCase())} placeholder="IL" maxLength={2} />
+              </div>
+              <div className="col-span-1 flex items-end pb-0.5">
+                {i === 0 && <div className={labelClass + ' opacity-0'}>·</div>}
+                <button type="button" onClick={() => setSuggestedLocations((p) => p.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500 text-xl leading-none">×</button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {LOCATION_TYPE_OPTIONS.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => toggleLocationType(i, t.value)}
+                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                    loc.location_types.includes(t.value)
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <input
+              className={inputClass}
+              value={loc.notes ?? ''}
+              onChange={(e) => updateLocation(i, 'notes', e.target.value)}
+              placeholder="Notes (optional) — e.g. main manufacturing site, ~200 employees"
+            />
+          </div>
+        ))}
       </section>
 
       {/* Products / Services */}
@@ -370,34 +470,36 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         ))}
       </section>
 
-      {/* Supplier countries */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className={sectionHeadingClass}>Supplier Countries</h3>
-            <p className="text-xs text-gray-400 mt-0.5">AI suggested — adjust as needed</p>
+      {/* Supplier countries — not applicable to investment firms with no physical supply chain */}
+      {companyType !== 'Investor' && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className={sectionHeadingClass}>Supplier Countries</h3>
+              <p className="text-xs text-gray-400 mt-0.5">AI suggested — adjust as needed</p>
+            </div>
+            <button type="button" onClick={() => setSupplierCountries((p) => [...p, { country: '', materials: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
+              + Add country
+            </button>
           </div>
-          <button type="button" onClick={() => setSupplierCountries((p) => [...p, { country: '', materials: '' }])} className="text-xs text-gray-500 hover:text-gray-900">
-            + Add country
-          </button>
-        </div>
-        {supplierCountries.map((s, i) => (
-          <div key={i} className="grid grid-cols-12 gap-2 items-start">
-            <div className="col-span-5">
-              {i === 0 && <label className={labelClass}>Country</label>}
-              <input className={inputClass} value={s.country} onChange={(e) => updateSupplier(i, 'country', e.target.value)} placeholder="Taiwan" />
+          {supplierCountries.map((s, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-start">
+              <div className="col-span-5">
+                {i === 0 && <label className={labelClass}>Country</label>}
+                <input className={inputClass} value={s.country} onChange={(e) => updateSupplier(i, 'country', e.target.value)} placeholder="Taiwan" />
+              </div>
+              <div className="col-span-6">
+                {i === 0 && <label className={labelClass}>Materials / components</label>}
+                <input className={inputClass} value={s.materials} onChange={(e) => updateSupplier(i, 'materials', e.target.value)} placeholder="Semiconductors" />
+              </div>
+              <div className="col-span-1 flex items-end pb-0.5">
+                {i === 0 && <div className={labelClass + ' opacity-0'}>·</div>}
+                <button type="button" onClick={() => setSupplierCountries((p) => p.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500 text-xl leading-none">×</button>
+              </div>
             </div>
-            <div className="col-span-6">
-              {i === 0 && <label className={labelClass}>Materials / components</label>}
-              <input className={inputClass} value={s.materials} onChange={(e) => updateSupplier(i, 'materials', e.target.value)} placeholder="Semiconductors" />
-            </div>
-            <div className="col-span-1 flex items-end pb-0.5">
-              {i === 0 && <div className={labelClass + ' opacity-0'}>·</div>}
-              <button type="button" onClick={() => setSupplierCountries((p) => p.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-500 text-xl leading-none">×</button>
-            </div>
-          </div>
-        ))}
-      </section>
+          ))}
+        </section>
+      )}
 
       {/* Competitors */}
       <section className="space-y-3">
@@ -494,60 +596,62 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
         />
       </section>
 
-      {/* Commodities */}
-      <section className="space-y-3">
-        <div>
-          <h3 className={sectionHeadingClass}>Commodity Exposure</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Select commodities that affect your input costs or supply chain</p>
-        </div>
-        {COMMODITY_PRESETS.map(({ group, items }) => (
-          <div key={group}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{group}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {items.map(item => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => toggleCommodity(item)}
-                  className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
-                    commodities.includes(item)
-                      ? 'bg-gray-900 text-white border-gray-900'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
-                  }`}
-                >
-                  {item}
-                </button>
+      {/* Commodities — not applicable to investment firms with no physical supply chain */}
+      {companyType !== 'Investor' && (
+        <section className="space-y-3">
+          <div>
+            <h3 className={sectionHeadingClass}>Commodity Exposure</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Select commodities that affect your input costs or supply chain</p>
+          </div>
+          {COMMODITY_PRESETS.map(({ group, items }) => (
+            <div key={group}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{group}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {items.map(item => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => toggleCommodity(item)}
+                    className={`text-xs px-2.5 py-1 rounded-full border font-medium transition-colors ${
+                      commodities.includes(item)
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <input
+              className={inputClass + ' flex-1'}
+              value={customCommodity}
+              onChange={e => setCustomCommodity(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomCommodity() } }}
+              placeholder="Add custom commodity…"
+            />
+            <button
+              type="button"
+              onClick={addCustomCommodity}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-gray-400 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {commodities.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {commodities.map(c => (
+                <span key={c} className="inline-flex items-center gap-1 rounded-full bg-gray-900 text-white px-2.5 py-1 text-xs font-medium">
+                  {c}
+                  <button type="button" onClick={() => setCommodities(prev => prev.filter(x => x !== c))} className="opacity-60 hover:opacity-100 leading-none">×</button>
+                </span>
               ))}
             </div>
-          </div>
-        ))}
-        <div className="flex gap-2 mt-2">
-          <input
-            className={inputClass + ' flex-1'}
-            value={customCommodity}
-            onChange={e => setCustomCommodity(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomCommodity() } }}
-            placeholder="Add custom commodity…"
-          />
-          <button
-            type="button"
-            onClick={addCustomCommodity}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-gray-400 transition-colors"
-          >
-            Add
-          </button>
-        </div>
-        {commodities.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {commodities.map(c => (
-              <span key={c} className="inline-flex items-center gap-1 rounded-full bg-gray-900 text-white px-2.5 py-1 text-xs font-medium">
-                {c}
-                <button type="button" onClick={() => setCommodities(prev => prev.filter(x => x !== c))} className="opacity-60 hover:opacity-100 leading-none">×</button>
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
+          )}
+        </section>
+      )}
 
       {/* Company Notes */}
       <section className="space-y-3">
