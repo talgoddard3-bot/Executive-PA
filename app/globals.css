@@ -43,14 +43,20 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Form controls default to a fixed dark, readable text color rather than
-   inheriting body's theme-switched --foreground. Most inputs across the app
-   sit on a fixed light background regardless of dark mode, so an inherited
-   light-mode-bright foreground color makes typed text invisible. Components
-   that explicitly opt into dark styling (e.g. dark:text-white) still win —
+/* Form controls default to a fixed light background + dark text rather than
+   inheriting body's theme-switched --foreground or letting the browser apply
+   its own native dark-mode form styling. Most inputs across the app sit on a
+   fixed light background regardless of this app's dark mode toggle, so either
+   an inherited bright foreground color OR a browser-guessed dark native
+   background (independent of our .dark class, driven by OS color-scheme
+   preference) makes typed text invisible. color-scheme: light stops browsers
+   from guessing at all. Components that explicitly opt into dark styling
+   (e.g. dark:text-white, or the always-dark get-started page) still win —
    their utility classes carry higher CSS specificity than this tag rule. */
 input, textarea, select {
   color: #171717;
+  background-color: #ffffff;
+  color-scheme: light;
 }
 
 /* Hide scrollbar while keeping scroll functionality */
