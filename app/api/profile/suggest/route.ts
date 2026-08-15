@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-  const { name, industry, company_type, website } = await request.json()
+  const { name, industry, company_type, website, custom_instructions } = await request.json()
 
   if (!name || !industry) {
     return NextResponse.json({ error: 'name and industry are required' }, { status: 400 })
@@ -23,6 +23,8 @@ Before answering, use the web_search tool to research the actual company: search
 
 Judge the real shape of the business from its name, industry, and business model — do not default to a "manufacturer" archetype unless the industry actually is manufacturing (e.g. an investment firm has portfolio companies and LPs, not suppliers and factories; a software company has cloud infrastructure costs, not raw materials).
 
+If the user provides additional research instructions, treat them as the highest-priority guidance — search the specific sources they name, and weight the profile toward the angle they describe, before filling in anything else generically.
+
 After researching, respond with ONLY the final JSON object as your last message — no commentary before or after it.`,
     messages: [
       {
@@ -31,7 +33,7 @@ After researching, respond with ONLY the final JSON object as your last message 
 Industry: ${industry}
 Business model: ${company_type ?? 'B2B'}
 ${website ? `Website: ${website}` : ''}
-
+${custom_instructions ? `\nUser's research instructions (follow closely — these override generic defaults below where they conflict):\n${custom_instructions}\n` : ''}
 Research this company using web search, then return a JSON object matching this exact schema:
 
 {

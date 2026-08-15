@@ -65,6 +65,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [website, setWebsite] = useState(initialData?.website ?? '')
   const [suggesting, setSuggesting] = useState(false)
   const [suggestError, setSuggestError] = useState('')
+  const [customInstructions, setCustomInstructions] = useState('')
 
   const [step, setStep] = useState<1 | 2>(initialData ? 2 : 1)
   const [revenueCountries, setRevenueCountries] = useState<RevenueCountry[]>(
@@ -119,15 +120,20 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  async function handleSuggest(e: React.FormEvent) {
-    e.preventDefault()
+  async function runSuggest(advanceToStep2: boolean) {
     setSuggesting(true)
     setSuggestError('')
 
     const res = await fetch('/api/profile/suggest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, industry, company_type: companyType, website: website.trim() || undefined }),
+      body: JSON.stringify({
+        name,
+        industry,
+        company_type: companyType,
+        website: website.trim() || undefined,
+        custom_instructions: customInstructions.trim() || undefined,
+      }),
     })
 
     let data: Record<string, unknown> = {}
@@ -155,8 +161,13 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
     setProducts((data.products as string) ?? '')
     setCompanyNotes((data.company_notes as string) ?? '')
     setSuggestedLocations((data.locations as SuggestedLocation[]) ?? [])
-    setStep(2)
+    if (advanceToStep2) setStep(2)
     setSuggesting(false)
+  }
+
+  async function handleSuggest(e: React.FormEvent) {
+    e.preventDefault()
+    await runSuggest(true)
   }
 
   function updateRevenue(i: number, field: keyof RevenueCountry, value: string | number) {
@@ -292,6 +303,20 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           <p className="mt-1 text-xs text-gray-400">Used to scan your site for company context during brief generation.</p>
         </div>
 
+        <div>
+          <label className={labelClass}>
+            Research instructions <span className="font-normal text-gray-400">(optional)</span>
+          </label>
+          <textarea
+            className={inputClass + ' resize-none'}
+            rows={3}
+            value={customInstructions}
+            onChange={(e) => setCustomInstructions(e.target.value)}
+            placeholder="e.g. Focus on their 2025 annual report and investor relations page. They are a REIT — emphasise property portfolio and occupancy rates over product sales."
+          />
+          <p className="mt-1 text-xs text-gray-400">Steer what the AI looks for or which sources it prioritises.</p>
+        </div>
+
         {suggestError && <p className="text-sm text-red-600">{suggestError}</p>}
 
         <button
@@ -320,6 +345,33 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   // ── STEP 2 ──────────────────────────────────────────────────────────────────
   return (
     <form onSubmit={handleSave} className="space-y-10 max-w-2xl">
+
+      {/* AI Research — re-run suggestions without starting over */}
+      <section className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div>
+          <h3 className={sectionHeadingClass}>AI Research</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Re-run web research for {name || 'this company'} — overwrites the fields below with fresh suggestions. Point it at specific sources or angles if useful.
+          </p>
+        </div>
+        <textarea
+          className={inputClass + ' resize-none bg-white'}
+          rows={2}
+          value={customInstructions}
+          onChange={(e) => setCustomInstructions(e.target.value)}
+          placeholder="e.g. Check their latest annual report and investor relations page. They are a REIT — emphasise property portfolio and occupancy rates."
+        />
+        {suggestError && <p className="text-sm text-red-600">{suggestError}</p>}
+        <button
+          type="button"
+          onClick={() => runSuggest(false)}
+          disabled={suggesting || !name.trim() || !industry.trim()}
+          className="flex items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {suggesting && <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+          {suggesting ? 'Researching…' : 'Regenerate with AI →'}
+        </button>
+      </section>
 
       {/* Company */}
       <section className="space-y-4">
