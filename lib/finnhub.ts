@@ -87,11 +87,19 @@ export async function finnhubSearch(query: string): Promise<SearchResult[]> {
   return data?.result ?? []
 }
 
-/** Resolve a company name to its primary US ticker symbol */
+/**
+ * Resolve a company name to a Finnhub symbol. Finnhub uses a dot-suffix for
+ * non-US exchanges (e.g. TEVA.TA for Tel Aviv) — earlier this excluded any
+ * suffixed symbol outright, which silently broke lookups for companies that
+ * are only listed on a non-US exchange. Prefer a plain "Common Stock" match
+ * (typically the primary US listing when one exists) but fall back to the
+ * first real stock match rather than discarding foreign listings entirely.
+ */
 export async function resolveSymbol(companyName: string): Promise<string | null> {
   const results = await finnhubSearch(companyName)
-  const stock = results.find(r => r.type === 'Common Stock' && !r.symbol.includes('.'))
-  return stock?.symbol ?? results[0]?.symbol ?? null
+  const usListing = results.find(r => r.type === 'Common Stock' && !r.symbol.includes('.'))
+  const anyListing = results.find(r => r.type === 'Common Stock')
+  return usListing?.symbol ?? anyListing?.symbol ?? results[0]?.symbol ?? null
 }
 
 // ── Company news ──────────────────────────────────────────────────────────────
@@ -147,12 +155,22 @@ export interface CompetitorSignal {
   news: FinnhubNewsItem[]
 }
 
+export interface CompetitorInput {
+  name: string
+  ticker?: string | null
+}
+
+/**
+ * Use a competitor's stored ticker directly when we have one (fast, exact —
+ * no ambiguity) rather than always re-resolving by name search. Only falls
+ * back to name search when no ticker was captured on the profile.
+ */
 export async function fetchCompetitorSignals(
-  competitorNames: string[],
+  competitors: CompetitorInput[],
 ): Promise<CompetitorSignal[]> {
   return Promise.all(
-    competitorNames.slice(0, 5).map(async (name) => {
-      const symbol = await resolveSymbol(name)
+    competitors.slice(0, 5).map(async ({ name, ticker }) => {
+      const symbol = ticker?.trim() || await resolveSymbol(name)
       const [quote, news] = await Promise.all([
         symbol ? finnhubQuote(symbol) : Promise.resolve(null),
         symbol ? finnhubCompanyNews(symbol, 7) : Promise.resolve([]),

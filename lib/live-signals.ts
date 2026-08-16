@@ -11,6 +11,39 @@ import { createClient } from '@supabase/supabase-js'
 const NEWS_API_BASE = 'https://newsapi.org/v2/everything'
 const NEWSDATA_BASE = 'https://newsdata.io/api/1/latest'
 
+// Finnhub-style exchange suffix → disclosure-system search terms. News APIs
+// index general press coverage, not primary filings, but most material
+// regulatory disclosures on non-US exchanges get reported by financial press
+// under these terms — this sharpens the query toward that coverage instead
+// of generic news for companies with no US listing to anchor the search on.
+const EXCHANGE_DISCLOSURE_TERMS: Record<string, string> = {
+  TA: 'TASE Maya disclosure',
+  L:  'LSE RNS announcement',
+  DE: 'Deutsche Börse Ad-hoc disclosure',
+  F:  'Deutsche Börse Ad-hoc disclosure',
+  HK: 'HKEX disclosure filing',
+  T:  'Tokyo Stock Exchange TDnet disclosure',
+  KS: 'Korea Exchange KIND disclosure',
+  KQ: 'Korea Exchange KIND disclosure',
+  PA: 'Euronext Paris regulated disclosure',
+  AS: 'Euronext Amsterdam regulated disclosure',
+  SW: 'SIX Swiss Exchange disclosure',
+  AX: 'ASX announcement',
+  TO: 'TSX disclosure',
+  NS: 'NSE India disclosure',
+  BO: 'BSE India disclosure',
+  SS: 'Shanghai Stock Exchange disclosure',
+  SZ: 'Shenzhen Stock Exchange disclosure',
+  SA: 'B3 Brazil disclosure',
+}
+
+function exchangeSearchHint(ticker?: string | null): string {
+  if (!ticker) return ''
+  const suffix = ticker.split('.')[1]?.toUpperCase()
+  const terms = suffix ? EXCHANGE_DISCLOSURE_TERMS[suffix] : undefined
+  return terms ? ` OR (${terms})` : ''
+}
+
 interface Article {
   title: string
   description?: string
@@ -175,9 +208,9 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
   // ── Competitor signals (Finnhub stock data + news, NewsAPI fallback) ─────
   lines.push('\n[COMPETITIVE SIGNALS — Finnhub live data + NewsAPI this week]')
   const [finnhubCompetitors, newsCompetitorResults] = await Promise.all([
-    fetchCompetitorSignals(profile.competitors.slice(0, 4).map(c => c.name)),
+    fetchCompetitorSignals(profile.competitors.slice(0, 4).map(c => ({ name: c.name, ticker: c.ticker }))),
     Promise.all(profile.competitors.slice(0, 4).map(comp =>
-      fetchNews(`"${comp.name}"`, 2).then(articles => ({ comp, articles }))
+      fetchNews(`"${comp.name}"${exchangeSearchHint(comp.ticker)}`, 2).then(articles => ({ comp, articles }))
     )),
   ])
   for (const sig of finnhubCompetitors) {
@@ -324,9 +357,10 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
 
   // ── Company-specific press coverage ─────────────────────────────────────
   lines.push(`\n[COMPANY PRESS COVERAGE — articles directly about "${company.name}" this week]`)
+  const companyExchangeHint = exchangeSearchHint(company.stock_ticker)
   const [companyDirectArticles, companyNewsDataArticles] = await Promise.all([
-    fetchNews(`"${company.name}"`, 5),
-    fetchNewsData(`"${company.name}"`, 'business', 3),
+    fetchNews(`"${company.name}"${companyExchangeHint}`, 5),
+    fetchNewsData(`"${company.name}"${companyExchangeHint}`, 'business', 3),
   ])
   const seenCompanyNews = new Set<string>()
   for (const a of [...companyDirectArticles, ...companyNewsDataArticles]) {

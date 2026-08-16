@@ -46,7 +46,7 @@ Research this company using web search, then return a JSON object matching this 
     { "country": "string", "materials": "string" }
   ],
   "competitors": [
-    { "name": "string", "notes": "string" }
+    { "name": "string", "ticker": "string, optional — see ticker format rule below", "notes": "string" }
   ],
   "customers": [
     { "name": "string", "notes": "string" }
@@ -62,7 +62,7 @@ Rules:
 - products, company_notes: grounded in what you actually found — prefer specific, real detail over generic filler. If little is found, keep it short rather than inventing detail.
 - locations: real known offices, headquarters, manufacturing sites, or R&D centres — as many as you can verify (often just HQ for a smaller company). location_types must only use the five listed values.
 - revenue_countries: 3–5 countries where this company is most likely to sell or invest, sector is the specific vertical within the industry for that market
-- competitors: 3–5 real company names that actually compete with it, with a one-line note on each
+- competitors: 3–5 real company names that actually compete with it, with a one-line note on each. Include a ticker only if publicly traded and you found it — omit the field entirely for private companies rather than guessing. Ticker format: plain symbol for a US-primary listing (e.g. "MSFT"); for a company listed only on a non-US exchange, use the Finnhub-style dot-suffix format instead of a bare local ticker — e.g. "BIG.TA" for Tel Aviv, "BP.L" for London, "SAP.DE" for Xetra, "0700.HK" for Hong Kong, "7203.T" for Tokyo, "005930.KS" for Korea, "BNP.PA" for Euronext Paris. If unsure of the exact exchange suffix, omit the ticker rather than guessing wrong.
 - customers: 3–5 real or realistic examples of who this company serves — for an investor/fund, use notable portfolio companies or LP types instead of buyers; otherwise use real company names that would plausibly buy from it, with a note on what they buy or why they're a customer
 - keywords: 5–8 terms specific to this company's actual focus areas (products, technology, or — for an investor — investment thesis and sector focus)
 ${hasPhysicalSupplyChain ? `- supplier_countries: 2–4 countries with realistic materials or components sourced from there
