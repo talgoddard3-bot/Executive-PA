@@ -39,6 +39,8 @@ interface ProfileFormProps {
     commodities: string[]
     products?: string | null
     company_notes?: string | null
+    vision?: string | null
+    mission?: string | null
   }
 }
 
@@ -88,6 +90,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [customCommodity, setCustomCommodity] = useState('')
   const [products, setProducts] = useState(initialData?.products ?? '')
   const [companyNotes, setCompanyNotes] = useState(initialData?.company_notes ?? '')
+  const [vision, setVision] = useState(initialData?.vision ?? '')
+  const [mission, setMission] = useState(initialData?.mission ?? '')
   const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([])
 
   function updateLocation(i: number, field: keyof SuggestedLocation, value: string) {
@@ -160,6 +164,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
     setCommodities((data.commodities as string[]) ?? [])
     setProducts((data.products as string) ?? '')
     setCompanyNotes((data.company_notes as string) ?? '')
+    setVision((data.vision as string) ?? '')
+    setMission((data.mission as string) ?? '')
     setSuggestedLocations((data.locations as SuggestedLocation[]) ?? [])
     if (advanceToStep2) setStep(2)
     setSuggesting(false)
@@ -210,6 +216,8 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           commodities,
           products: products.trim() || null,
           company_notes: companyNotes.trim() || null,
+          vision: vision.trim() || null,
+          mission: mission.trim() || null,
           locations: suggestedLocations.filter((l) => l.country_name.trim() && l.country_code.trim()),
         }),
       })
@@ -411,6 +419,34 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
               </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Vision & Mission */}
+      <section className="space-y-3">
+        <div>
+          <h3 className={sectionHeadingClass}>Vision &amp; Mission</h3>
+          <p className="text-xs text-gray-400 mt-0.5">The company's own published statements — grounds strategic recommendations in what leadership has actually committed to, not generic advice.</p>
+        </div>
+        <div>
+          <label className={labelClass}>Vision <span className="font-normal text-gray-400">(optional)</span></label>
+          <textarea
+            className={inputClass + ' resize-none'}
+            rows={2}
+            value={vision}
+            onChange={(e) => setVision(e.target.value)}
+            placeholder="e.g. To be the leading provider of precision sensing technology in industrial automation worldwide."
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Mission <span className="font-normal text-gray-400">(optional)</span></label>
+          <textarea
+            className={inputClass + ' resize-none'}
+            rows={2}
+            value={mission}
+            onChange={(e) => setMission(e.target.value)}
+            placeholder="e.g. We design and deliver reliable precision instruments that help manufacturers improve quality and reduce waste."
+          />
         </div>
       </section>
 

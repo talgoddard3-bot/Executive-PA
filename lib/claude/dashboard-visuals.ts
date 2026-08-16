@@ -16,6 +16,7 @@ VISUAL SELECTION RESTRICTIONS:
 - Only use Strategic Impact Score when there is a clearly dominant signal.
 - Only use Company Exposure Map when company-specific affected areas are concrete and named.
 - Only use Decision Radar when leadership action is directly implied, not merely interesting.
+- Only use BCG Growth-Share Matrix when at least 3 distinct product lines, market segments, or business units are identifiable this week (from market segmentation or company context) — never force a single-product company into this framework.
 
 AVAILABLE VISUAL TYPES (choose only from these):
 1. Strategic Impact Score — one dominant signal with business importance score
@@ -25,6 +26,7 @@ AVAILABLE VISUAL TYPES (choose only from these):
 5. Decision Radar — leadership action required
 6. Competitive Pressure Map — competitor actions are strategically important
 7. Strategic Momentum Tracker — main value is trend direction over time
+8. BCG Growth-Share Matrix — the company has multiple identifiable product lines, market segments, or business units worth comparing on growth vs. relative market share, and portfolio resource allocation is the key takeaway
 
 Return valid JSON only. No markdown. No explanation outside JSON.
 
@@ -49,7 +51,8 @@ Risk Heatmap: { "risks": [{ "category": "regulation|supply_chain|competition|dem
 Opportunity Radar: { "opportunities": [{ "area": "...", "strength": "high", "why": "..." }] }
 Decision Radar: { "decisions": [{ "issue": "...", "urgency": "immediate|decide soon|monitor", "function": "CEO / Strategy", "why": "..." }] }
 Competitive Pressure Map: { "pressures": [{ "competitor": "...", "level": "high", "why": "..." }] }
-Strategic Momentum Tracker: { "momentum_items": [{ "theme": "...", "momentum": "accelerating|stable|weakening", "why": "..." }] }`
+Strategic Momentum Tracker: { "momentum_items": [{ "theme": "...", "momentum": "accelerating|stable|weakening", "why": "..." }] }
+BCG Growth-Share Matrix: { "items": [{ "name": "...", "category": "star|cash-cow|question-mark|dog", "market_growth": "high|low", "relative_market_share": "high|low", "why": "..." }] } — category must be consistent with market_growth/relative_market_share (star = high/high, cash-cow = low/high, question-mark = high/low, dog = low/low)`
 
 export async function generateDashboardVisuals(
   content: BriefContent,
@@ -131,6 +134,10 @@ function buildBriefSummary(content: BriefContent, companyName: string): string {
   add('M&A', (content.ma_watch ?? []).map(m =>
     `${m.type.toUpperCase()}: ${m.headline} (${m.relevance})`
   ).slice(0, 3))
+
+  add('MARKET SEGMENTS', (content.market_segmentation ?? []).map(s =>
+    `${s.segment_name} (${s.segment_type}, ${s.size_signal}): ${s.description?.slice(0, 100) ?? ''}`
+  ).slice(0, 6))
 
   add('DECISIONS', (content.decision_framing ?? []).map(d =>
     d.question

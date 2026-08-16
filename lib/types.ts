@@ -44,6 +44,8 @@ export interface CompanyProfile {
   commodities: string[]
   products?: string | null
   company_notes?: string | null
+  vision?: string | null
+  mission?: string | null
   stock_ticker?: string | null
   updated_at: string
 }
@@ -295,6 +297,7 @@ export type DashboardVisualType =
   | 'Decision Radar'
   | 'Competitive Pressure Map'
   | 'Strategic Momentum Tracker'
+  | 'BCG Growth-Share Matrix'
 
 export interface StrategicImpactScoreData {
   score: number
@@ -322,6 +325,15 @@ export interface CompetitivePressureMapData {
 export interface StrategicMomentumTrackerData {
   momentum_items: { theme: string; momentum: 'accelerating' | 'stable' | 'weakening'; why: string }[]
 }
+export interface BCGGrowthShareMatrixData {
+  items: {
+    name: string
+    category: 'star' | 'cash-cow' | 'question-mark' | 'dog'
+    market_growth: 'high' | 'low'
+    relative_market_share: 'high' | 'low'
+    why: string
+  }[]
+}
 
 export type DashboardVisualData =
   | StrategicImpactScoreData
@@ -331,6 +343,7 @@ export type DashboardVisualData =
   | DecisionRadarData
   | CompetitivePressureMapData
   | StrategicMomentumTrackerData
+  | BCGGrowthShareMatrixData
 
 export interface DashboardVisual {
   visual_type: DashboardVisualType

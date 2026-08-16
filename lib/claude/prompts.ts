@@ -131,11 +131,19 @@ export function buildUserPrompt(
     ? `\n---\nANALYST BACKGROUND NOTES (verified internal knowledge — treat as authoritative context for this company):\n${profile.company_notes.trim()}\n---`
     : ''
 
+  const visionMissionLines = [
+    profile.vision?.trim() ? `Vision: ${profile.vision.trim()}` : '',
+    profile.mission?.trim() ? `Mission: ${profile.mission.trim()}` : '',
+  ].filter(Boolean).join('\n')
+  const visionMissionBlock = visionMissionLines
+    ? `\nCorporate Identity (this company's own stated direction — decision_framing and scenario_modeling should note when a recommendation directly serves or conflicts with this):\n${visionMissionLines}\n`
+    : ''
+
   return `${languageInstruction}COMPANY PROFILE
 Company: ${company.name}
 Industry: ${company.industry}
 Business Model: ${companyTypeLabel} — ${marketingContext}
-Keywords: ${profile.keywords.join(', ')}${productsLine}${notesBlock}
+Keywords: ${profile.keywords.join(', ')}${productsLine}${visionMissionBlock}${notesBlock}
 
 Operational Locations (physical sites — consider local labour, energy, regulation, and logistics impacts):
 ${locationLines}
@@ -370,7 +378,7 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
 
   "weekly_actions": [
     {
-      "action": "Specific, concrete action — what to do, with whom, by when. Start with a verb. Name real people, teams, or counterparties where possible. E.g. 'Call Frankfurt sales lead this week to assess Q2 pipeline impact from procurement freeze' — not 'Review European exposure'.",
+      "action": "A SMART objective, not a vague intention. Specific: name the real people/teams/counterparties and the exact step. Measurable: include a number, threshold, or concrete deliverable — not just 'assess' or 'review' with nothing to check against. Time-related: a real deadline (this week, by Friday, before the board meeting) — never open-ended. Must be Achievable and Realistic given this company's actual size and resources — do not prescribe actions only a much larger company could execute. E.g. 'Call Frankfurt sales lead by Friday to quantify Q2 pipeline impact from the procurement freeze and get a revised forecast' — not 'Review European exposure'.",
       "owner": "CEO or CFO or CMO or CTO or CBPO or VP HR or All",
       "priority": "high or medium or low",
       "section": "Which section triggered this action e.g. Competitor Intel, Risk Register, Geopolitical"

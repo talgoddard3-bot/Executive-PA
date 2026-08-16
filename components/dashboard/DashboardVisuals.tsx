@@ -11,6 +11,7 @@ import type {
   DecisionRadarData,
   CompetitivePressureMapData,
   StrategicMomentumTrackerData,
+  BCGGrowthShareMatrixData,
 } from '@/lib/types'
 
 // ── Level / severity styling ──────────────────────────────────────────────────
@@ -238,6 +239,56 @@ function StrategicMomentumTracker({ data }: { data: StrategicMomentumTrackerData
   )
 }
 
+const BCG_QUADRANT_STYLE: Record<string, string> = {
+  star:            'bg-emerald-50 border-emerald-200',
+  'cash-cow':      'bg-blue-50 border-blue-200',
+  'question-mark': 'bg-amber-50 border-amber-200',
+  dog:             'bg-gray-50 border-gray-200',
+}
+const BCG_QUADRANT_LABEL: Record<string, string> = {
+  star:            'Stars',
+  'cash-cow':      'Cash Cows',
+  'question-mark': 'Question Marks',
+  dog:             'Dogs',
+}
+const BCG_CHIP_STYLE: Record<string, string> = {
+  star:            'bg-emerald-600 text-white',
+  'cash-cow':      'bg-blue-600 text-white',
+  'question-mark': 'bg-amber-500 text-white',
+  dog:             'bg-gray-400 text-white',
+}
+const BCG_QUADRANTS = ['star', 'question-mark', 'cash-cow', 'dog'] as const
+
+function BCGGrowthShareMatrix({ data }: { data: BCGGrowthShareMatrixData }) {
+  const byCategory = (cat: string) => data.items.filter(i => i.category === cat)
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-widest text-gray-400 px-0.5">
+        <span>↑ Market Growth</span>
+        <span>Relative Market Share →</span>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {BCG_QUADRANTS.map(cat => (
+          <div key={cat} className={`rounded-lg border p-2.5 min-h-[90px] ${BCG_QUADRANT_STYLE[cat]}`}>
+            <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-1.5">{BCG_QUADRANT_LABEL[cat]}</p>
+            <div className="space-y-1.5">
+              {byCategory(cat).length === 0 && <span className="text-[10px] text-gray-300 italic">—</span>}
+              {byCategory(cat).map((it, i) => (
+                <div key={i}>
+                  <span className={`inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded mb-0.5 ${BCG_CHIP_STYLE[cat]}`}>
+                    {it.name}
+                  </span>
+                  <p className="text-[9px] text-gray-500 leading-snug">{it.why}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Visual card wrapper ───────────────────────────────────────────────────────
 
 const VISUAL_ICON: Record<string, string> = {
@@ -248,6 +299,7 @@ const VISUAL_ICON: Record<string, string> = {
   'Decision Radar':              '⚑',
   'Competitive Pressure Map':    '⚔',
   'Strategic Momentum Tracker':  '📈',
+  'BCG Growth-Share Matrix':     '▦',
 }
 
 function VisualCard({ visual }: { visual: DashboardVisual }) {
@@ -303,6 +355,9 @@ function VisualCard({ visual }: { visual: DashboardVisual }) {
         )}
         {visual.visual_type === 'Strategic Momentum Tracker' && (
           <StrategicMomentumTracker data={visual.data as StrategicMomentumTrackerData} />
+        )}
+        {visual.visual_type === 'BCG Growth-Share Matrix' && (
+          <BCGGrowthShareMatrix data={visual.data as BCGGrowthShareMatrixData} />
         )}
       </div>
     </div>

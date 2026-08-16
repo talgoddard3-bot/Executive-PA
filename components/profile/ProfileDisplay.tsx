@@ -44,6 +44,8 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           commodities: profile.commodities ?? [],
           products: profile.products,
           company_notes: profile.company_notes,
+          vision: profile.vision,
+          mission: profile.mission,
         }}
         onCancel={() => setEditing(false)}
       />
@@ -119,6 +121,25 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           )}
         </div>
       </div>
+
+      {/* Vision & Mission */}
+      {(profile.vision || profile.mission) && (
+        <section className="space-y-3">
+          <h3 className={sectionHeadingClass}>Vision &amp; Mission</h3>
+          {profile.vision && (
+            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">Vision</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 italic">&ldquo;{profile.vision}&rdquo;</p>
+            </div>
+          )}
+          {profile.mission && (
+            <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1.5">Mission</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 italic">&ldquo;{profile.mission}&rdquo;</p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Revenue Exposure */}
       <section>

@@ -39,6 +39,8 @@ Research this company using web search, then return a JSON object matching this 
 {
   "products": "string — 2-4 sentences describing what the company actually makes, sells, or does, based on real information found",
   "company_notes": "string — 2-5 sentences of real background: founding/history, ownership or public/private status, notable strategic context, dependencies or sensitivities an analyst should know",
+  "vision": "string, optional — the company's actual published vision statement, quoted or closely paraphrased from its own investor relations page, annual report, 10-K/20-F front matter, or About page. Omit entirely if you cannot find one actually published by the company — do not invent one.",
+  "mission": "string, optional — the company's actual published mission statement, same sourcing rule as vision. Omit entirely rather than inventing one.",
   "revenue_countries": [
     { "country": "string", "sector": "string" }
   ],
@@ -60,6 +62,7 @@ Research this company using web search, then return a JSON object matching this 
 
 Rules:
 - products, company_notes: grounded in what you actually found — prefer specific, real detail over generic filler. If little is found, keep it short rather than inventing detail.
+- vision, mission: only include if you find the company's own actual published wording (investor relations, annual report, About page). A company that doesn't publish these — common for smaller or private companies — should simply have these fields omitted, not filled with a guess.
 - locations: real known offices, headquarters, manufacturing sites, or R&D centres — as many as you can verify (often just HQ for a smaller company). location_types must only use the five listed values.
 - revenue_countries: 3–5 countries where this company is most likely to sell or invest, sector is the specific vertical within the industry for that market
 - competitors: 3–5 real company names that actually compete with it, with a one-line note on each. Include a ticker only if publicly traded and you found it — omit the field entirely for private companies rather than guessing. Ticker format: plain symbol for a US-primary listing (e.g. "MSFT"); for a company listed only on a non-US exchange, use the Finnhub-style dot-suffix format instead of a bare local ticker — e.g. "BIG.TA" for Tel Aviv, "BP.L" for London, "SAP.DE" for Xetra, "0700.HK" for Hong Kong, "7203.T" for Tokyo, "005930.KS" for Korea, "BNP.PA" for Euronext Paris. If unsure of the exact exchange suffix, omit the ticker rather than guessing wrong.

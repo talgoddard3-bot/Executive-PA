@@ -49,6 +49,10 @@ CREATE UNIQUE INDEX company_profiles_company_id_idx ON company_profiles(company_
 -- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS products TEXT;
 -- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS company_notes TEXT;
 
+-- Migration: vision + mission (run if upgrading an existing database)
+-- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS vision TEXT;
+-- ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS mission TEXT;
+
 -- Briefs
 CREATE TABLE briefs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
