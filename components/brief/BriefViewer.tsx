@@ -138,6 +138,7 @@ const SECTION_HEADER: Record<string, { bar: string; bg: string }> = {
   'brief-scenario':   { bar: 'bg-slate-700',    bg: 'bg-slate-50/40' },
   'brief-decisions':  { bar: 'bg-gray-800',     bg: 'bg-gray-50/60' },
   'brief-capital':    { bar: 'bg-blue-800',     bg: 'bg-blue-50/30' },
+  'brief-internal':   { bar: 'bg-amber-800',    bg: 'bg-amber-50/50' },
 }
 
 // ── Brief section ─────────────────────────────────────────────────────────────
@@ -524,11 +525,14 @@ export default function BriefViewer({
     ...(content.ma_watch?.length            ? [{ id: 'brief-ma',           label: 'M&A Watch',                audience: 'BD',   audienceColor: AUDIENCE_COLORS.BD   }] : []),
     ...(content.customer_intelligence?.length ? [{ id: 'brief-customers',  label: 'Customer Intelligence',    audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.company_news?.length        ? [{ id: 'brief-company-news', label: 'Company News',             audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
+    ...(content.internal_intelligence?.length ? [{ id: 'brief-internal',   label: 'Internal Intelligence',    audience: 'INTERNAL', audienceColor: AUDIENCE_COLORS.INTERNAL }] : []),
   ]
 
-  // Filter TOC to match visible sections
+  // Filter TOC to match visible sections — Internal Intelligence, like the
+  // executive summary, is company-provided data relevant across every role,
+  // so it's never hidden by the role filter.
   const tocSections = allTocSections.filter(
-    s => allowedAudiences === 'all' || allowedAudiences.includes(s.audience) || s.id === 'brief-summary'
+    s => allowedAudiences === 'all' || allowedAudiences.includes(s.audience) || s.id === 'brief-summary' || s.id === 'brief-internal'
   )
 
   return (
@@ -651,6 +655,51 @@ export default function BriefViewer({
 
         {/* ── All sections — single full-width column, priority order ─── */}
         <div className="space-y-8">
+
+          {/* Internal Intelligence — company-provided data, always visible regardless of role filter */}
+          {(content.internal_intelligence ?? []).length > 0 && (
+            <BriefSection id="brief-internal" label="Internal Intelligence" audience="INTERNAL">
+              <div className="flex items-center gap-1.5 -mt-1 mb-3 text-[11px] text-amber-800">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                From notes and documents your team added — not from external sources.
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {(content.internal_intelligence ?? []).map((item, i) => (
+                  <div key={i} className="bg-white rounded-xl border border-amber-200 hover:border-amber-300 hover:shadow-md transition-all p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                        {item.category}
+                      </span>
+                      <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border ${urgencyBadge[item.urgency]}`}>
+                        {item.urgency}
+                      </span>
+                    </div>
+                    {briefId ? (
+                      <Link href={`/briefs/${briefId}/article/internal_intelligence/${i}`} className="group">
+                        <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700 transition-colors leading-snug">{item.headline}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="text-sm font-semibold text-gray-900 leading-snug">{item.headline}</h3>
+                    )}
+                    <p className="text-xs text-gray-600 leading-relaxed line-clamp-3 flex-1"><RichText text={item.detail} /></p>
+                    {item.detail.length > 140 && briefId && (
+                      <Link href={`/briefs/${briefId}/article/internal_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
+                    )}
+                    <div className="mt-1">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Action</div>
+                      <p className="text-xs text-gray-700">{item.action}</p>
+                    </div>
+                    {item.source_title && (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 mt-1">
+                        {item.source_type === 'document' ? '📄' : '📝'} {item.source_title}
+                      </span>
+                    )}
+                    {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="internal_intelligence" itemIndex={i} compact /></div>}
+                  </div>
+                ))}
+              </div>
+            </BriefSection>
+          )}
 
           {/* 1. Competitor Intelligence */}
           {content.competitor_intelligence?.length > 0 && showSection('CMO') && (

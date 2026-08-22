@@ -70,7 +70,8 @@ SECTION SCOPE — HARD BOUNDARIES:
 - hr_intelligence: talent market, hiring trends, workforce signals ONLY. No overlap with operational_intelligence.
 - tech_intelligence: technology product/platform/infrastructure developments ONLY. No overlap with competitor_intelligence.
 - scenario_modeling: forward-looking what-if analysis ONLY. Do NOT describe events already reported in other sections — only their future consequences.
-- decision_framing: current CEO decision points ONLY. Must NOT repeat scenario descriptions from scenario_modeling.`
+- decision_framing: current CEO decision points ONLY. Must NOT repeat scenario descriptions from scenario_modeling.
+- internal_intelligence: sourced EXCLUSIVELY from the INTERNAL SIGNALS block (company-provided notes and documents) — never from web/news signals. This is the one section explicitly marked as internally-sourced to the reader, so it must never contain anything that isn't actually present in that block. If the INTERNAL SIGNALS block is empty or absent, return an empty array — do not invent internal data to fill this section. Other sections may still be quietly informed by internal context, but internal_intelligence is the only place it is surfaced and attributed as internal.`
 
 export function buildUserPrompt(
   company: Company,
@@ -336,6 +337,18 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "source": "Publication name e.g. Bloomberg, TechCrunch, Forbes",
       "source_url": "Homepage URL of the publication e.g. https://bloomberg.com, https://techcrunch.com, https://ft.com",
       "date": "Date if known e.g. 3 Mar 2026"
+    }
+  ],
+
+  "internal_intelligence": [
+    {
+      "category": "Financials or Sales or Marketing or Legal/Contract or Customer Intel or Risk Flag or Opportunity or General",
+      "headline": "What this internal signal says — plain statement of the fact",
+      "detail": "2–3 sentences. If the INTERNAL SIGNALS block gives you a connection to an external event covered elsewhere in this brief, say so explicitly — but do not restate the external event's own headline verbatim.",
+      "source_type": "note or document",
+      "source_title": "The note's category, or the document's title, that this came from",
+      "action": "Specific action this internal signal calls for",
+      "urgency": "high or medium or low"
     }
   ],
 

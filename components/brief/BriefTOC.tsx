@@ -17,6 +17,7 @@ const AUDIENCE_COLORS: Record<string, string> = {
   CTO:  'text-cyan-600 bg-cyan-50',
   HR:   'text-pink-600 bg-pink-50',
   BD:   'text-indigo-600 bg-indigo-50',
+  INTERNAL: 'text-amber-700 bg-amber-100',
 }
 
 export default function BriefTOC({ sections }: { sections: TOCSection[] }) {

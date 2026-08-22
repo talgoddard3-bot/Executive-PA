@@ -61,7 +61,23 @@ async function analyzeFile(fileType: string, title: string, userDesc: string, by
   if (IMAGE_TYPES.includes(fileType)) return analyzeImage(fileType, title, userDesc, bytes)
   if (EXCEL_TYPES.includes(fileType))  return analyzeExcel(title, userDesc, bytes)
   if (TEXT_TYPES.includes(fileType))   return analyzeText(title, userDesc, bytes.toString('utf-8').slice(0, 8000))
+  if (fileType === 'pdf')              return analyzePDF(title, userDesc, bytes)
   return `[Not auto-analyzed] ${userDesc}`
+}
+
+async function analyzePDF(title: string, userDesc: string, bytes: Buffer): Promise<string> {
+  const msg = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 700,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: bytes.toString('base64') } },
+        { type: 'text', text: `Business document titled "${title}".${userDesc ? ` Context: ${userDesc}` : ''} Extract key figures, terms, dates, and actionable business signals from this document (financials, contract terms, sales/marketing data — whatever is relevant). Concise bullet points only.` },
+      ],
+    }],
+  })
+  return msg.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('')
 }
 
 async function analyzeImage(fileType: string, title: string, userDesc: string, bytes: Buffer): Promise<string> {

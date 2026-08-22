@@ -16,6 +16,8 @@ interface Doc {
   id: string
   title: string
   description: string
+  category: string
+  processing_status?: string
   file_type: string
   file_size: number | null
   expires_at: string
@@ -27,13 +29,24 @@ interface Brief {
   weekOf: string
 }
 
-const NOTE_CATEGORIES = ['Sales Signal', 'Customer Intel', 'Risk Flag', 'Opportunity', 'General'] as const
+const NOTE_CATEGORIES = ['Sales Signal', 'Customer Intel', 'Risk Flag', 'Opportunity', 'Financial Signal', 'General'] as const
 const CATEGORY_COLORS: Record<string, string> = {
-  'Sales Signal':   'bg-blue-50 text-blue-700 border-blue-200',
-  'Customer Intel': 'bg-violet-50 text-violet-700 border-violet-200',
-  'Risk Flag':      'bg-red-50 text-red-700 border-red-200',
-  'Opportunity':    'bg-emerald-50 text-emerald-700 border-emerald-200',
-  'General':        'bg-gray-100 text-gray-600 border-gray-200',
+  'Sales Signal':      'bg-blue-50 text-blue-700 border-blue-200',
+  'Customer Intel':    'bg-violet-50 text-violet-700 border-violet-200',
+  'Risk Flag':         'bg-red-50 text-red-700 border-red-200',
+  'Opportunity':       'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Financial Signal':  'bg-amber-50 text-amber-700 border-amber-200',
+  'General':           'bg-gray-100 text-gray-600 border-gray-200',
+}
+
+const DOC_CATEGORIES = ['Financials', 'Sales', 'Marketing', 'Legal/Contract', 'Article/Research', 'Other'] as const
+const DOC_CATEGORY_COLORS: Record<string, string> = {
+  'Financials':        'bg-amber-50 text-amber-700 border-amber-200',
+  'Sales':             'bg-blue-50 text-blue-700 border-blue-200',
+  'Marketing':         'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Legal/Contract':    'bg-red-50 text-red-700 border-red-200',
+  'Article/Research':  'bg-violet-50 text-violet-700 border-violet-200',
+  'Other':             'bg-gray-100 text-gray-600 border-gray-200',
 }
 
 function formatDate(iso: string) {
@@ -137,6 +150,7 @@ function NoteForm({ onAdded, briefs }: { onAdded: (note: Note) => void; briefs: 
 function DocUpload({ onAdded }: { onAdded: (doc: Doc) => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [category, setCategory] = useState<string>('Other')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState('')
@@ -181,6 +195,7 @@ function DocUpload({ onAdded }: { onAdded: (doc: Doc) => void }) {
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
+          category,
           storagePath,
           fileType,
           fileSize: file.size,
@@ -191,9 +206,17 @@ function DocUpload({ onAdded }: { onAdded: (doc: Doc) => void }) {
         onAdded(doc)
         setTitle('')
         setDescription('')
+        setCategory('Other')
         setFile(null)
-        setProgress('')
         if (fileRef.current) fileRef.current.value = ''
+
+        // Step 4: kick off content extraction in the background — don't block the form on it
+        setProgress('Analysing file…')
+        fetch('/api/internal/process-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ docId: doc.id }),
+        }).finally(() => setProgress(''))
       } else {
         setProgress('Failed to save metadata.')
       }
@@ -235,6 +258,23 @@ function DocUpload({ onAdded }: { onAdded: (doc: Doc) => void }) {
         />
       </div>
 
+      <div className="flex gap-2 flex-wrap">
+        {DOC_CATEGORIES.map(cat => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setCategory(cat)}
+            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-colors ${
+              category === cat
+                ? DOC_CATEGORY_COLORS[cat]
+                : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
       <input
         type="text"
         value={title}
@@ -246,11 +286,11 @@ function DocUpload({ onAdded }: { onAdded: (doc: Doc) => void }) {
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
-        placeholder="Key insight or summary (this is what the AI sees — be specific)"
+        placeholder="Optional context to help the AI interpret this file"
         rows={2}
         className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white placeholder-gray-400"
       />
-      <p className="text-[10px] text-gray-400 -mt-1">The AI only reads your description above. Raw file contents are never sent to the AI.</p>
+      <p className="text-[10px] text-gray-400 -mt-1">On upload, Claude extracts key figures and insights from the file once — that extracted summary (not the original file) is what feeds into your briefs.</p>
 
       <div className="flex items-center justify-between">
         {progress && <p className="text-xs text-blue-600">{progress}</p>}
@@ -368,9 +408,14 @@ export default function InternalPageClient({
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm divide-y divide-gray-100">
               {docs.map(doc => (
                 <div key={doc.id} className="flex items-start gap-3 p-4">
-                  <span className="shrink-0 text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded uppercase mt-0.5">
-                    {doc.file_type}
-                  </span>
+                  <div className="flex flex-col gap-1 items-start shrink-0 mt-0.5">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${DOC_CATEGORY_COLORS[doc.category] ?? DOC_CATEGORY_COLORS.Other}`}>
+                      {doc.category ?? 'Other'}
+                    </span>
+                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded uppercase">
+                      {doc.file_type}
+                    </span>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-800">{doc.title}</p>
                     {doc.description && (
@@ -379,6 +424,9 @@ export default function InternalPageClient({
                     <p className="text-[10px] text-gray-400 mt-1">
                       {doc.file_size ? formatSize(doc.file_size) + ' · ' : ''}
                       Added {formatDate(doc.created_at)} · expires {formatDate(doc.expires_at)}
+                      {doc.processing_status === 'processing' && ' · analysing…'}
+                      {doc.processing_status === 'failed' && ' · analysis failed'}
+                      {(!doc.processing_status || doc.processing_status === 'pending') && ' · not yet analysed'}
                     </p>
                   </div>
                   <button
@@ -396,7 +444,7 @@ export default function InternalPageClient({
           ) : (
             <div className="bg-white rounded-xl border border-dashed border-gray-300 p-10 text-center">
               <p className="text-sm text-gray-500">No documents uploaded yet.</p>
-              <p className="text-xs text-gray-400 mt-1">Upload files above — only your description is shared with the AI.</p>
+              <p className="text-xs text-gray-400 mt-1">Upload files above — Claude extracts the key insights once, and only that summary feeds into your briefs.</p>
             </div>
           )}
         </div>

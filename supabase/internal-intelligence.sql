@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS internal_notes (
   company_id   UUID         NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   user_id      UUID         NOT NULL REFERENCES auth.users(id),
   category     TEXT         NOT NULL DEFAULT 'General'
-                            CHECK (category IN ('Sales Signal','Customer Intel','Risk Flag','Opportunity','General')),
+                            CHECK (category IN ('Sales Signal','Customer Intel','Risk Flag','Opportunity','Financial Signal','General')),
   content      TEXT         NOT NULL,
   expires_at   TIMESTAMPTZ  DEFAULT (now() + INTERVAL '60 days'),
   archived     BOOLEAN      NOT NULL DEFAULT false,
@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS uploaded_documents (
   user_id       UUID         NOT NULL REFERENCES auth.users(id),
   title         TEXT         NOT NULL,
   description   TEXT         NOT NULL DEFAULT '',    -- what this file contains / key insight
+  category      TEXT         NOT NULL DEFAULT 'Other'
+                            CHECK (category IN ('Financials','Sales','Marketing','Legal/Contract','Article/Research','Other')),
   storage_path  TEXT         NOT NULL,               -- path inside bucket: {company_id}/{uuid}.ext
   file_type     TEXT         NOT NULL,               -- 'pdf', 'xlsx', 'png', 'txt', etc.
   file_size     INTEGER,                             -- bytes
@@ -67,6 +69,14 @@ CREATE POLICY "uploaded_documents_company_policy"
   USING (company_id IN (
     SELECT company_id FROM user_profiles WHERE user_id = auth.uid()
   ));
+
+-- ── Migration: category on uploaded_documents + expanded note categories ───────
+-- (run if upgrading a database created before this column/value existed)
+-- ALTER TABLE uploaded_documents ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT 'Other'
+--   CHECK (category IN ('Financials','Sales','Marketing','Legal/Contract','Article/Research','Other'));
+-- ALTER TABLE internal_notes DROP CONSTRAINT IF EXISTS internal_notes_category_check;
+-- ALTER TABLE internal_notes ADD CONSTRAINT internal_notes_category_check
+--   CHECK (category IN ('Sales Signal','Customer Intel','Risk Flag','Opportunity','Financial Signal','General'));
 
 -- ── Indexes ───────────────────────────────────────────────────────────────────
 CREATE INDEX IF NOT EXISTS article_feedback_company_brief ON article_feedback(company_id, brief_id);

@@ -16,7 +16,7 @@ export async function GET() {
 
   const { data, error } = await service()
     .from('uploaded_documents')
-    .select('id, title, description, processed_content, processing_status, file_type, file_size, expires_at, created_at, target_brief_id')
+    .select('id, title, description, category, processed_content, processing_status, file_type, file_size, expires_at, created_at, target_brief_id')
     .eq('company_id', user.companyId)
     .eq('archived', false)
     .gte('expires_at', new Date().toISOString())
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const user = await getSessionUser()
   if (!user?.companyId || !user.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { title, description, storagePath, fileType, fileSize, expiresInDays = 90, briefId } = await request.json()
+  const { title, description, category, storagePath, fileType, fileSize, expiresInDays = 90, briefId } = await request.json()
   if (!title?.trim() || !storagePath) return NextResponse.json({ error: 'title and storagePath required' }, { status: 400 })
 
   const expiresAt = new Date()
@@ -45,6 +45,7 @@ export async function POST(request: Request) {
       user_id:      user.userId,
       title:        title.trim(),
       description:  description?.trim() ?? '',
+      category:     category ?? 'Other',
       storage_path: storagePath,
       file_type:    fileType,
       file_size:        fileSize ?? null,

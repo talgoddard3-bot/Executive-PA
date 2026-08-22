@@ -24,7 +24,7 @@ export default async function InternalPage() {
       .order('created_at', { ascending: false }),
     supabase
       .from('uploaded_documents')
-      .select('id, title, description, processed_content, processing_status, file_type, file_size, expires_at, created_at')
+      .select('id, title, description, category, processed_content, processing_status, file_type, file_size, expires_at, created_at')
       .eq('company_id', user.companyId)
       .eq('archived', false)
       .gte('expires_at', now)

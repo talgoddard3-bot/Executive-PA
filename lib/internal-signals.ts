@@ -43,7 +43,7 @@ export async function buildInternalSignals(companyId: string): Promise<string> {
     // Active, non-expired document descriptions
     db
       .from('uploaded_documents')
-      .select('title, description, processed_content, file_type, created_at')
+      .select('title, description, processed_content, processing_status, file_type, category, created_at')
       .eq('company_id', companyId)
       .eq('archived', false)
       .gte('expires_at', now)
@@ -69,13 +69,20 @@ export async function buildInternalSignals(companyId: string): Promise<string> {
     sections.push(`INTERNAL NOTES (added by company users, highest priority):\n${lines.join('\n')}`)
   }
 
-  // ── Uploaded document descriptions ────────────────────────────────────────
+  // ── Uploaded documents — extracted content, not raw files ─────────────────
+  // processed_content is an AI-extracted bullet summary produced at upload time
+  // (see /api/internal/process-file) — the raw file itself is never sent here.
   const docs = docsResult.data ?? []
   if (docs.length > 0) {
-    const lines = docs.map(d =>
-      `- "${sanitize(d.title)}" (${d.file_type}): ${sanitize(d.description) || '(no description provided)'}`
-    )
-    sections.push(`INTERNAL DOCUMENTS (summaries only — files not shared with AI):\n${lines.join('\n')}`)
+    const lines = docs.map(d => {
+      const category = d.category ? `[${d.category}] ` : ''
+      const header = `- ${category}"${sanitize(d.title)}" (${d.file_type})${d.description ? ` — ${sanitize(d.description)}` : ''}`
+      if (d.processing_status === 'done' && d.processed_content) {
+        return `${header}\n${sanitize(d.processed_content)}`
+      }
+      return `${header}\n  (not yet analysed — extracted content unavailable this week)`
+    })
+    sections.push(`INTERNAL DOCUMENTS (extracted content — raw files never shared with AI, only the analysis below):\n${lines.join('\n\n')}`)
   }
 
   // ── Article feedback signals ───────────────────────────────────────────────

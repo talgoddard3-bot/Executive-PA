@@ -239,6 +239,16 @@ export interface WeeklyAction {
   section: string
 }
 
+export interface InternalIntelItem {
+  category: 'Financials' | 'Sales' | 'Marketing' | 'Legal/Contract' | 'Customer Intel' | 'Risk Flag' | 'Opportunity' | 'General'
+  headline: string
+  detail: string
+  source_type: 'note' | 'document'
+  source_title?: string          // note category or document title this was drawn from
+  action: string
+  urgency: 'high' | 'medium' | 'low'
+}
+
 export interface BriefContent {
   headline: string
   tldr?: string
@@ -263,6 +273,7 @@ export interface BriefContent {
   ma_watch: MAItem[]
   company_news: CompanyNewsItem[]
   customer_intelligence: CustomerIntelItem[]
+  internal_intelligence?: InternalIntelItem[]
   decision_framing: DecisionFrame[]
   scenario_modeling: Scenario[]
   weekly_actions?: WeeklyAction[]

@@ -24,6 +24,7 @@ const SECTION_META: Record<string, { label: string; audience: string; color: str
   operational_intelligence: { label: 'Operational Intelligence',audience: 'CBPO', color: 'bg-amber-50 text-amber-700',   backAnchor: 'brief-ops' },
   customer_intelligence:    { label: 'Customer Intelligence',   audience: 'CEO',  color: 'bg-teal-50 text-teal-700',     backAnchor: 'brief-customers' },
   risk_summary:             { label: 'Risk Summary',            audience: 'CEO',  color: 'bg-red-50 text-red-700',        backAnchor: 'brief-risk' },
+  internal_intelligence:    { label: 'Internal Intelligence',   audience: 'All',  color: 'bg-amber-50 text-amber-700',    backAnchor: 'brief-internal' },
 }
 
 // Only show market charts where they are directly relevant to the article
@@ -187,6 +188,16 @@ function extractArticle(section: string, item: Record<string, any>): ArticleData
         impactLevel: item.severity,
         impactColor: levelColor(item.severity),
         signal: item.detail,
+      }
+    case 'internal_intelligence':
+      return {
+        headline: item.headline,
+        sectionSubtitle: `${item.category}${item.source_title ? ' · ' + item.source_title : ''}`,
+        impactLevel: item.urgency,
+        impactColor: levelColor(item.urgency),
+        signal: item.detail,
+        recommendedAction: item.action,
+        recommendedActionLabel: 'Action',
       }
     default:
       return { headline: String(item.headline ?? 'Article') }
