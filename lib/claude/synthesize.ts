@@ -3,6 +3,7 @@ import { SYSTEM_PROMPT, buildUserPrompt } from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
+import { checkAndUpdateIRReport } from '@/lib/investor-relations'
 import { supabaseAdmin as supabase } from '@/lib/supabase/server'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
 

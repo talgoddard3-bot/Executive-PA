@@ -2,8 +2,9 @@ import { createClient } from '@supabase/supabase-js'
 import { getSessionUser } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
 import { anthropic } from '@/lib/claude/client'
+import { truncatePdfPages } from '@/lib/pdf-utils'
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 function service() {
   return createClient(
@@ -66,6 +67,26 @@ async function analyzeFile(fileType: string, title: string, userDesc: string, by
 }
 
 async function analyzePDF(title: string, userDesc: string, bytes: Buffer): Promise<string> {
+  // Large merged filings can tokenize well past Claude's 200K context window even
+  // when under the API's 32MB/100-page hard limits — a dense scanned page alone can
+  // run several thousand tokens. Truncate to where the real content lives, and if a
+  // first pass is still too dense, retry once with a much smaller page budget.
+  const first = await truncatePdfPages(bytes, 40)
+  const note = first.truncated ? ` [Note: analysis covers the first 40 of ${first.originalPages} pages — the document was too large to process in full.]` : ''
+
+  try {
+    return await callClaudePDF(first.bytes, title, userDesc, note)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (!message.includes('too long') && !message.includes('maximum')) throw err
+
+    const retry = await truncatePdfPages(bytes, 12)
+    const retryNote = ` [Note: this document is unusually dense — analysis covers only the first 12 of ${retry.originalPages || first.originalPages} pages.]`
+    return await callClaudePDF(retry.bytes, title, userDesc, retryNote)
+  }
+}
+
+async function callClaudePDF(bytes: Buffer, title: string, userDesc: string, note: string): Promise<string> {
   const msg = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 700,
@@ -77,7 +98,8 @@ async function analyzePDF(title: string, userDesc: string, bytes: Buffer): Promi
       ],
     }],
   })
-  return msg.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('')
+  const text = msg.content.filter(b => b.type === 'text').map(b => (b as { text: string }).text).join('')
+  return text + note
 }
 
 async function analyzeImage(fileType: string, title: string, userDesc: string, bytes: Buffer): Promise<string> {

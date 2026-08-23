@@ -49,6 +49,7 @@ ACTION fields (impact, relevance, cfo_action, cto_action, mitigation, bd_action,
 - Decision framing: the decisions THIS CEO actually faces THIS week. Name each option by its real trade-off, not A/B/C. If the data favours one option, say which and why
 - Severity and probability must be calibrated — if it is a quiet week, reflect that. Not everything is high risk
 - competitor_intelligence: ONLY include a competitor with a CONCRETE news story or announcement from the signals. Do not fabricate. An empty array is preferred over invented items
+- customer_intelligence: ONLY include a customer with a CONCRETE news story or development from the signals this week. If a customer's signal says "No major news this week" or similar, SKIP that customer entirely — do not create an entry restating that there's no news. Do not fabricate. An empty array is preferred over filler items
 - M&A Watch: surface deals that shift competitive dynamics or create partnership opportunities. Translate every deal into a specific BD or defensive action
 - Company News: only articles that directly name this company. exec_note must specify an action (amplify, respond publicly, monitor, escalate) — not an observation
 - Source fields: cite the publication type (e.g. "Reuters", "Financial Times", "Bloomberg")

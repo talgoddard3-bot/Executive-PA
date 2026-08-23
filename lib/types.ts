@@ -47,6 +47,11 @@ export interface CompanyProfile {
   vision?: string | null
   mission?: string | null
   stock_ticker?: string | null
+  ir_page_url?: string | null
+  ir_last_report_url?: string | null
+  ir_last_report_title?: string | null
+  ir_last_report_summary?: string | null
+  ir_last_checked_at?: string | null
   updated_at: string
 }
 
