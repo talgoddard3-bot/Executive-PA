@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 
 function signToken(userId: string): string {
-  const secret = process.env.ADMIN_APPROVE_SECRET ?? 'fallback-dev-secret'
+  const secret = process.env.ADMIN_APPROVE_SECRET
+  if (!secret) throw new Error('ADMIN_APPROVE_SECRET is not configured')
   return createHmac('sha256', secret).update(userId).digest('hex')
 }
 
