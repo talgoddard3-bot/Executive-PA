@@ -57,15 +57,25 @@ function RichText({ text, className }: { text: string; className?: string }) {
   )
 }
 
-function SourceTag({ source }: { source?: string }) {
+function SourceTag({ source, url }: { source?: string; url?: string }) {
   if (!source) return null
+  const icon = (
+    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+    </svg>
+  )
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-[10px] text-blue-500 hover:text-blue-700 hover:underline mt-1.5">
+        {icon}{source}
+      </a>
+    )
+  }
   return (
     <span className="inline-flex items-center gap-1 text-[10px] text-gray-400 mt-1.5">
-      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-      </svg>
-      {source}
+      {icon}{source}
     </span>
   )
 }
@@ -78,6 +88,159 @@ function CountryLabel({ name }: { name: string }) {
       {flag && <span className="mr-1">{flag}</span>}
       {name}
     </span>
+  )
+}
+
+// ── What Changed — computed diff vs. previous brief (lib/claude/what-changed.ts) ──
+
+const CHANGE_ICON: Record<string, string> = {
+  up: '↑', down: '↓', new: '⚡', resolved: '✓',
+}
+const CHANGE_COLOR: Record<string, string> = {
+  up:       'text-red-600 bg-red-50 border-red-200',
+  down:     'text-emerald-600 bg-emerald-50 border-emerald-200',
+  new:      'text-amber-600 bg-amber-50 border-amber-200',
+  resolved: 'text-gray-500 bg-gray-50 border-gray-200',
+}
+
+function WhatChangedBlock({ items }: { items: BriefContent['what_changed'] }) {
+  if (!items || items.length === 0) return null
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-4 mb-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2.5">
+        What Changed Since Last Brief
+      </p>
+      <ul className="space-y-1.5">
+        {items.map((it, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm">
+            <span className={`shrink-0 mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full border text-[11px] font-bold ${CHANGE_COLOR[it.direction] ?? CHANGE_COLOR.new}`}>
+              {CHANGE_ICON[it.direction] ?? '→'}
+            </span>
+            <span className="text-gray-700 dark:text-gray-300 leading-snug">
+              <span className="font-medium text-gray-900 dark:text-white">{it.title}</span>
+              {it.detail && it.type !== 'urgency_shift' && <span className="text-gray-500 dark:text-gray-400"> — {it.detail}</span>}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// ── Strategic Lens strip — compact read of each active framework ─────────────
+
+function StrategicLensStrip({ content, briefId }: { content: BriefContent; briefId?: string }) {
+  const rows: { label: string; read: string; href: string }[] = []
+
+  const swotThreats = content.swot?.threats?.length ?? 0
+  const swotOpps = content.swot?.opportunities?.length ?? 0
+  if (swotThreats + swotOpps > 0) {
+    rows.push({ label: 'SWOT', read: `${swotThreats} threat${swotThreats === 1 ? '' : 's'}, ${swotOpps} opportunit${swotOpps === 1 ? 'y' : 'ies'}`, href: '#brief-swot' })
+  }
+
+  const pestelCount = content.pestel
+    ? Object.values(content.pestel).reduce((n, arr) => n + (arr?.length ?? 0), 0)
+    : 0
+  if (pestelCount > 0) {
+    rows.push({ label: 'PESTEL', read: `${pestelCount} macro-environment signal${pestelCount === 1 ? '' : 's'} this week`, href: '#brief-pestel' })
+  }
+
+  if (content.five_forces?.forces?.length) {
+    const highest = [...content.five_forces.forces].sort((a, b) =>
+      (b.level === 'high' ? 2 : b.level === 'medium' ? 1 : 0) - (a.level === 'high' ? 2 : a.level === 'medium' ? 1 : 0)
+    )[0]
+    const label: Record<string, string> = { rivalry: 'Rivalry', new_entrants: 'New entrants', supplier_power: 'Supplier power', buyer_power: 'Buyer power', substitutes: 'Substitutes' }
+    rows.push({ label: 'Five Forces', read: `${label[highest.force] ?? highest.force}: ${highest.level}${highest.change !== 'unchanged' ? ` (${highest.change === 'up' ? '↑' : '↓'})` : ''}`, href: '#brief-five-forces' })
+  }
+
+  if (briefId && content.dashboard_visuals?.dashboard_visuals?.some(v => v.visual_type === 'BCG Growth-Share Matrix')) {
+    rows.push({ label: 'BCG Matrix', read: 'Portfolio view — see dashboard', href: `/briefs/${briefId}` })
+  }
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4">
+      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1">Strategic Lens</span>
+      {rows.map((r) => (
+        <a key={r.label} href={r.href}
+          className="inline-flex items-center gap-1.5 text-[11px] rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-2.5 py-1 text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
+          <span className="font-semibold text-gray-900 dark:text-white">{r.label}</span>
+          <span className="text-gray-400">·</span>
+          {r.read}
+        </a>
+      ))}
+    </div>
+  )
+}
+
+// ── PESTEL panel ───────────────────────────────────────────────────────────
+
+type PESTELDimension = keyof NonNullable<BriefContent['pestel']>
+
+const PESTEL_LABELS: Record<PESTELDimension, string> = {
+  political: 'Political', economic: 'Economic', social: 'Social',
+  technological: 'Technological', environmental: 'Environmental', legal: 'Legal',
+}
+
+function PESTELPanel({ pestel }: { pestel: NonNullable<BriefContent['pestel']> }) {
+  const dims = (Object.keys(PESTEL_LABELS) as PESTELDimension[])
+    .filter(k => (pestel[k]?.length ?? 0) > 0)
+  if (dims.length === 0) return null
+
+  return (
+    <BriefSection id="brief-pestel" label="PESTEL — Macro Environment" audience="CEO">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {dims.map(dim => (
+          <div key={dim} className="bg-white rounded-lg border border-gray-200 p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">{PESTEL_LABELS[dim]}</p>
+            <ul className="space-y-1.5">
+              {(pestel[dim] ?? []).map((item, i) => (
+                <li key={i} className="text-xs text-gray-700 leading-relaxed">
+                  <RichText text={item.point} />
+                  <span className="block text-[10px] text-gray-400 mt-0.5">{item.source}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </BriefSection>
+  )
+}
+
+// ── Five Forces panel ─────────────────────────────────────────────────────
+
+const FORCE_LABELS: Record<string, string> = {
+  rivalry: 'Industry Rivalry', new_entrants: 'Threat of New Entrants', supplier_power: 'Supplier Power',
+  buyer_power: 'Buyer Power', substitutes: 'Threat of Substitutes',
+}
+const FORCE_LEVEL_COLOR: Record<string, string> = {
+  high: 'bg-red-100 text-red-700 border-red-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  low: 'bg-gray-100 text-gray-600 border-gray-200',
+}
+
+function FiveForcesPanel({ fiveForces }: { fiveForces: NonNullable<BriefContent['five_forces']> }) {
+  if (!fiveForces.forces || fiveForces.forces.length === 0) return null
+
+  return (
+    <BriefSection id="brief-five-forces" label="Porter's Five Forces" audience="CEO">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        {fiveForces.forces.map((f, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-gray-900">{FORCE_LABELS[f.force] ?? f.force}</span>
+              <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border uppercase tracking-wide ${FORCE_LEVEL_COLOR[f.level]}`}>
+                {f.level}{f.change !== 'unchanged' && (f.change === 'up' ? ' ↑' : ' ↓')}
+              </span>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">{f.rationale}</p>
+            <SourceTag source={f.source} />
+          </div>
+        ))}
+      </div>
+    </BriefSection>
   )
 }
 
@@ -139,6 +302,8 @@ const SECTION_HEADER: Record<string, { bar: string; bg: string }> = {
   'brief-decisions':  { bar: 'bg-gray-800',     bg: 'bg-gray-50/60' },
   'brief-capital':    { bar: 'bg-blue-800',     bg: 'bg-blue-50/30' },
   'brief-internal':   { bar: 'bg-amber-800',    bg: 'bg-amber-50/50' },
+  'brief-pestel':     { bar: 'bg-fuchsia-700',  bg: 'bg-fuchsia-50/40' },
+  'brief-five-forces':{ bar: 'bg-rose-700',     bg: 'bg-rose-50/40' },
 }
 
 // ── Brief section ─────────────────────────────────────────────────────────────
@@ -514,6 +679,10 @@ export default function BriefViewer({
   const allowedAudiences = ROLE_MAP[roleFilter]
   const allTocSections: TOCSection[] = [
     { id: 'brief-summary',    label: 'Executive Summary',      audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO },
+    ...(((content.swot?.strengths?.length ?? 0) + (content.swot?.weaknesses?.length ?? 0) + (content.swot?.opportunities?.length ?? 0) + (content.swot?.threats?.length ?? 0)) > 0
+      ? [{ id: 'brief-swot',        label: 'SWOT Analysis',            audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
+    ...(content.pestel               ? [{ id: 'brief-pestel',      label: 'PESTEL',                    audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
+    ...(content.five_forces?.forces?.length ? [{ id: 'brief-five-forces', label: "Porter's Five Forces",     audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.financial_news?.length       ? [{ id: 'brief-fin-news',    label: 'Financial News',           audience: 'CFO',  audienceColor: AUDIENCE_COLORS.CFO }] : []),
     ...(content.geopolitical_news?.length    ? [{ id: 'brief-geo',         label: 'Geopolitical Signals',     audience: 'CEO',  audienceColor: AUDIENCE_COLORS.CEO }] : []),
     ...(content.competitor_intelligence?.length ? [{ id: 'brief-comp',     label: 'Competitor Intelligence',  audience: 'CMO',  audienceColor: AUDIENCE_COLORS.CMO }] : []),
@@ -637,6 +806,9 @@ export default function BriefViewer({
           )}
         </div>
 
+        <WhatChangedBlock items={content.what_changed} />
+        <StrategicLensStrip content={content} briefId={briefId} />
+
         {/* ── Role filter bar ─────────────────────────────────────────── */}
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1">View as</span>
@@ -655,6 +827,18 @@ export default function BriefViewer({
 
         {/* ── All sections — single full-width column, priority order ─── */}
         <div className="space-y-8">
+
+          {/* SWOT — strategic synthesis, always visible regardless of role filter */}
+          {((content.swot?.strengths?.length ?? 0) + (content.swot?.weaknesses?.length ?? 0) +
+            (content.swot?.opportunities?.length ?? 0) + (content.swot?.threats?.length ?? 0)) > 0 && (
+            <SWOTPanel swot={content.swot} brandColor={accent} />
+          )}
+
+          {/* PESTEL — macro environment, gated: only rendered when the model found real evidence */}
+          {content.pestel && <PESTELPanel pestel={content.pestel} />}
+
+          {/* Five Forces — industry structure, gated: only rendered when the model found real evidence */}
+          {content.five_forces && <FiveForcesPanel fiveForces={content.five_forces} />}
 
           {/* Internal Intelligence — company-provided data, always visible regardless of role filter */}
           {(content.internal_intelligence ?? []).length > 0 && (
@@ -752,7 +936,7 @@ export default function BriefViewer({
                     {item.detail.length > 140 && briefId && (
                       <Link href={`/briefs/${briefId}/article/geopolitical_news/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                     {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="geopolitical_news" itemIndex={i} compact /></div>}
                   </div>
                 ))}
@@ -827,7 +1011,7 @@ export default function BriefViewer({
                     {item.detail.length > 140 && briefId && (
                       <Link href={`/briefs/${briefId}/article/financial_news/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                     {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="financial_news" itemIndex={i} compact /></div>}
                   </div>
                 ))}
@@ -893,7 +1077,7 @@ export default function BriefViewer({
                       <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Exec Note</div>
                       <p className="text-xs text-gray-700">{item.exec_note}</p>
                     </div>
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                   </div>
                 ))}
               </div>
@@ -939,7 +1123,7 @@ export default function BriefViewer({
                     {item.detail.length > 140 && briefId && (
                       <Link href={`/briefs/${briefId}/article/ma_watch/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                     {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="ma_watch" itemIndex={i} compact /></div>}
                   </div>
                 ))}
@@ -1030,7 +1214,7 @@ export default function BriefViewer({
                     {item.detail.length > 140 && briefId && (
                       <Link href={`/briefs/${briefId}/article/tech_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                     {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="tech_intelligence" itemIndex={i} compact /></div>}
                   </div>
                 ))}
@@ -1066,7 +1250,7 @@ export default function BriefViewer({
                     {item.detail.length > 140 && briefId && (
                       <Link href={`/briefs/${briefId}/article/hr_intelligence/${i}`} className="mt-auto inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-full transition-colors self-start">Full analysis <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg></Link>
                     )}
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                     {briefId && <div className="mt-1"><FeedbackButtons briefId={briefId} section="hr_intelligence" itemIndex={i} compact /></div>}
                   </div>
                 ))}
@@ -1107,7 +1291,7 @@ export default function BriefViewer({
                       <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-0.5">Revenue Impact</div>
                       <p className="text-xs text-gray-700"><RichText text={item.revenue_impact} /></p>
                     </div>
-                    <SourceTag source={item.source} />
+                    <SourceTag source={item.source} url={item.source_url} />
                   </div>
                 ))}
               </div>

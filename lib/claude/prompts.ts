@@ -53,6 +53,7 @@ ACTION fields (impact, relevance, cfo_action, cto_action, mitigation, bd_action,
 - M&A Watch: surface deals that shift competitive dynamics or create partnership opportunities. Translate every deal into a specific BD or defensive action
 - Company News: only articles that directly name this company. exec_note must specify an action (amplify, respond publicly, monitor, escalate) — not an observation
 - Source fields: cite the publication type (e.g. "Reuters", "Financial Times", "Bloomberg")
+- Citations: signal lines that were fetched from a real source carry a literal "[URL: ...]" token. When the fact behind a section item traces back to a line with a "[URL: ...]" token, copy that URL EXACTLY into that item's "source_url" field and copy a short verbatim excerpt (max ~200 chars) from that line into "source_excerpt". Never invent, guess, or reconstruct a URL. If the item synthesizes multiple signals or none of them carried a "[URL: ...]" token, omit source_url and source_excerpt entirely rather than fabricating one.
 
 ━━━ STRICT NO-REPEAT RULES — EACH SECTION HAS ONE JOB ━━━
 Each signal or event belongs in EXACTLY ONE section. Never echo the same event, company, or data point in two sections.
@@ -68,6 +69,8 @@ SECTION SCOPE — HARD BOUNDARIES:
 - risk_summary: a consolidated risk register — each item must draw from a DIFFERENT source section. Do NOT introduce new facts — just crystallise the top risks already covered.
 - capital_impact: pure financial consequence narrative — no new facts, only synthesise what is already in financial_news and financial_signals.
 - swot: strategic synthesis only — each point must reference its source section. Do NOT introduce new events.
+- pestel: macro-environment synthesis only, drawn from geopolitical_news, financial_news, and financial_signals. Only include a dimension (political/economic/social/technological/environmental/legal) when this week's signals actually support it — omit dimensions with no evidence rather than filling every one. Do NOT introduce new events.
+- five_forces: industry-structure synthesis only, drawn from competitor_intelligence, ma_watch, and market_segmentation. Only assess a force when there is a concrete signal behind it — omit forces with no evidence. If a force's level hasn't materially changed this week, set "change" to "unchanged" rather than forcing a direction. Do NOT introduce new events.
 - hr_intelligence: talent market, hiring trends, workforce signals ONLY. No overlap with operational_intelligence.
 - tech_intelligence: technology product/platform/infrastructure developments ONLY. No overlap with competitor_intelligence.
 - scenario_modeling: forward-looking what-if analysis ONLY. Do NOT describe events already reported in other sections — only their future consequences.
@@ -207,13 +210,38 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
     ]
   },
 
+  "pestel": {
+    "_instructions": "Only include dimensions with real evidence from this week's signals. Omit any dimension entirely (do not include the key) if there's nothing to say. If NONE of the six dimensions have evidence, omit the whole pestel key.",
+    "political": [{ "point": "Political/regulatory development with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "economic": [{ "point": "Macroeconomic development with **bold** on the key figure", "source": "Section or signal it came from" }],
+    "social": [{ "point": "Social/demographic shift with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "technological": [{ "point": "Technology shift with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "environmental": [{ "point": "Environmental/climate development with **bold** on the key fact — only if it materially affects regulation, capex, supply chain, or customers", "source": "Section or signal it came from" }],
+    "legal": [{ "point": "Legal/compliance development with **bold** on the key fact", "source": "Section or signal it came from" }]
+  },
+
+  "five_forces": {
+    "_instructions": "Only assess a force when this week's signals (or the known competitor list) actually support a read. If fewer than 2 competitors are known and there's no supplier/buyer signal, omit the whole five_forces key.",
+    "forces": [
+      {
+        "force": "rivalry or new_entrants or supplier_power or buyer_power or substitutes",
+        "level": "low or medium or high",
+        "change": "up or down or unchanged — versus what you'd reasonably assess a few weeks ago based on this week's evidence",
+        "rationale": "1–2 sentences of concrete evidence, not a generic industry statement",
+        "source": "Section or signal it came from"
+      }
+    ]
+  },
+
   "financial_news": [
     {
       "market": "Country — Sector",
       "headline": "Specific, factual headline",
       "detail": "2–3 sentences with **bold** on the key figure",
       "impact": "Direct impact on this company's revenue or costs in that market",
-      "source": "Publication name e.g. Reuters"
+      "source": "Publication name e.g. Reuters",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -223,7 +251,9 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "headline": "Specific, factual headline",
       "detail": "2–3 sentences with **bold** on the key fact",
       "relevance": "Why this matters to this company's specific exposure",
-      "source": "Publication name e.g. Financial Times"
+      "source": "Publication name e.g. Financial Times",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -233,7 +263,10 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "type": "product_launch or pricing or partnership or expansion or other",
       "headline": "What they did",
       "detail": "2–3 sentences of context",
-      "threat_level": "low or medium or high"
+      "threat_level": "low or medium or high",
+      "source": "Publication name e.g. Reuters",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -286,7 +319,9 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "company_impact": "How this affects our company's ability to attract, retain, or develop talent — specific to this industry and our markets",
       "action": "Specific HR or people-strategy action to consider — compensation review, headcount planning, talent pipeline, retention programme, etc.",
       "signal_type": "competitor or market or regulatory or economic",
-      "source": "Publication name e.g. Financial Times, Bloomberg, HR Dive"
+      "source": "Publication name e.g. Financial Times, Bloomberg, HR Dive",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -297,7 +332,9 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "detail": "2–3 sentences with **bold** on the key product, model name, or capability. Focus on what is new and why it matters technically.",
       "cto_action": "Specific technology decision or evaluation the CTO should consider — adopt, pilot, monitor, or defend against",
       "relevance": "direct (affects our stack/operations now) or watch (worth evaluating in 6 months) or awareness (good to know)",
-      "source": "Publication name e.g. TechCrunch, Wired, MIT Technology Review"
+      "source": "Publication name e.g. TechCrunch, Wired, MIT Technology Review",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -312,7 +349,9 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "strategic_read": "What this deal signals about where capital and consolidation is flowing in this sector — name the trend explicitly",
       "bd_action": "One concrete BD, partnership, or defensive action our company should consider given this deal — be specific and actionable",
       "relevance": "direct (our exact market or customer base), adjacent (related space we operate in or sell to), or watch (sector signal)",
-      "source": "Publication name e.g. Bloomberg, Financial Times, TechCrunch, Reuters"
+      "source": "Publication name e.g. Bloomberg, Financial Times, TechCrunch, Reuters",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -324,7 +363,9 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "revenue_impact": "Concrete impact on our revenue or relationship — are they cutting spend, expanding, under financial stress, or growing into new markets we serve?",
       "signal_type": "spending_cut or growth or financial_distress or strategic_shift or leadership_change or general",
       "sentiment": "positive or neutral or negative (for our business relationship)",
-      "source": "Publication name e.g. Bloomberg, Reuters"
+      "source": "Publication name e.g. Bloomberg, Reuters",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
     }
   ],
 
@@ -336,7 +377,8 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "category": "Product Launch or Partnership or Financial Results or Leadership or Legal / Regulatory or Brand / PR or General Coverage",
       "exec_note": "Why leadership should care — reputational implication, investor signal, or PR action required. Be specific.",
       "source": "Publication name e.g. Bloomberg, TechCrunch, Forbes",
-      "source_url": "Homepage URL of the publication e.g. https://bloomberg.com, https://techcrunch.com, https://ft.com",
+      "source_url": "Exact URL copied from a [URL: ...] token in the signals for this article, if it had one — otherwise omit this field. Never invent a homepage URL.",
+      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field",
       "date": "Date if known e.g. 3 Mar 2026"
     }
   ],

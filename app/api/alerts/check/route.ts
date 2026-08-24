@@ -11,7 +11,6 @@ const supabase = createClient(
 )
 
 const anthropic = new Anthropic()
-const resend    = new Resend(process.env.RESEND_API_KEY)
 
 interface RawSignal {
   id: string
@@ -177,6 +176,7 @@ async function sendBreakingAlert(
 </body>
 </html>`
 
+  const resend = new Resend(process.env.RESEND_API_KEY)
   await resend.emails.send({
     from: process.env.EMAIL_FROM ?? 'Company Brief <alerts@companybrief.net>',
     to: recipients,

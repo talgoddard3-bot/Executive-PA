@@ -46,6 +46,7 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
           company_notes: profile.company_notes,
           vision: profile.vision,
           mission: profile.mission,
+          ir_page_url: profile.ir_page_url,
         }}
         onCancel={() => setEditing(false)}
       />
@@ -138,6 +139,26 @@ export default function ProfileDisplay({ company, profile }: ProfileDisplayProps
               <p className="text-sm text-gray-700 dark:text-gray-300 italic">&ldquo;{profile.mission}&rdquo;</p>
             </div>
           )}
+        </section>
+      )}
+
+      {/* Investor Relations */}
+      {profile.ir_page_url && (
+        <section>
+          <h3 className={sectionHeadingClass}>Investor Relations</h3>
+          <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-4 space-y-1.5">
+            <a href={profile.ir_page_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline break-all">
+              {profile.ir_page_url}
+            </a>
+            {profile.ir_last_report_title ? (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Last report seen: <span className="text-gray-700 dark:text-gray-300">{profile.ir_last_report_title}</span>
+                {profile.ir_last_checked_at && ` — checked ${new Date(profile.ir_last_checked_at).toLocaleDateString()}`}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-gray-500">Checked on the next brief generation — no report seen yet.</p>
+            )}
+          </div>
         </section>
       )}
 

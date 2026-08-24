@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { userId, companyId: sessionCompanyId } = session
 
     const body = await request.json()
-    const { companyId, name, industry, company_type, stock_ticker, website, revenue_countries, supplier_countries, competitors, customers, keywords, commodities, products, company_notes, vision, mission, locations } = body
+    const { companyId, name, industry, company_type, stock_ticker, website, revenue_countries, supplier_countries, competitors, customers, keywords, commodities, products, company_notes, vision, mission, ir_page_url, locations } = body
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     const { error: profileErr } = await supabase
       .from('company_profiles')
       .upsert(
-        { company_id: cId, revenue_countries, supplier_countries, competitors, customers: customers ?? [], keywords, commodities: commodities ?? [], products: products ?? null, company_notes: company_notes ?? null, vision: vision ?? null, mission: mission ?? null, updated_at: new Date().toISOString() },
+        { company_id: cId, revenue_countries, supplier_countries, competitors, customers: customers ?? [], keywords, commodities: commodities ?? [], products: products ?? null, company_notes: company_notes ?? null, vision: vision ?? null, mission: mission ?? null, ir_page_url: ir_page_url ?? null, updated_at: new Date().toISOString() },
         { onConflict: 'company_id' }
       )
 

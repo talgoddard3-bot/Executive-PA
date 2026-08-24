@@ -41,6 +41,7 @@ interface ProfileFormProps {
     company_notes?: string | null
     vision?: string | null
     mission?: string | null
+    ir_page_url?: string | null
   }
 }
 
@@ -92,6 +93,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
   const [companyNotes, setCompanyNotes] = useState(initialData?.company_notes ?? '')
   const [vision, setVision] = useState(initialData?.vision ?? '')
   const [mission, setMission] = useState(initialData?.mission ?? '')
+  const [irPageUrl, setIrPageUrl] = useState(initialData?.ir_page_url ?? '')
   const [suggestedLocations, setSuggestedLocations] = useState<SuggestedLocation[]>([])
 
   function updateLocation(i: number, field: keyof SuggestedLocation, value: string) {
@@ -166,6 +168,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
     setCompanyNotes((data.company_notes as string) ?? '')
     setVision((data.vision as string) ?? '')
     setMission((data.mission as string) ?? '')
+    setIrPageUrl((data.ir_page_url as string) ?? '')
     setSuggestedLocations((data.locations as SuggestedLocation[]) ?? [])
     if (advanceToStep2) setStep(2)
     setSuggesting(false)
@@ -218,6 +221,7 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
           company_notes: companyNotes.trim() || null,
           vision: vision.trim() || null,
           mission: mission.trim() || null,
+          ir_page_url: irPageUrl.trim() || null,
           locations: suggestedLocations.filter((l) => l.country_name.trim() && l.country_code.trim()),
         }),
       })
@@ -447,6 +451,19 @@ export default function ProfileForm({ companyId, initialData, onCancel }: Profil
             onChange={(e) => setMission(e.target.value)}
             placeholder="e.g. We design and deliver reliable precision instruments that help manufacturers improve quality and reduce waste."
           />
+        </div>
+        <div>
+          <label className={labelClass}>
+            Investor Relations page <span className="font-normal text-gray-400">(optional — public companies only)</span>
+          </label>
+          <input
+            className={inputClass}
+            value={irPageUrl}
+            onChange={(e) => setIrPageUrl(e.target.value)}
+            placeholder="https://investors.yourcompany.com"
+            type="url"
+          />
+          <p className="mt-1 text-xs text-gray-400">Checked each week for a new annual/quarterly report — key figures and disclosures get folded into the brief automatically.</p>
         </div>
       </section>
 

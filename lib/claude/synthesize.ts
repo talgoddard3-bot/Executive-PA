@@ -4,6 +4,7 @@ import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
 import { checkAndUpdateIRReport } from '@/lib/investor-relations'
+import { computeWhatChanged } from './what-changed'
 import { supabaseAdmin as supabase } from '@/lib/supabase/server'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
 
@@ -33,9 +34,11 @@ export async function synthesizeBrief(
     .limit(1)
 
   let previousBriefContext = ''
+  let previousBriefContent: BriefContent | null = null
   if (prevBriefs && prevBriefs.length > 0) {
     const prev = prevBriefs[0]
     const prevContent = prev.content as BriefContent
+    previousBriefContent = prevContent
     const riskTitles = (prevContent.risk_summary ?? [])
       .slice(0, 4)
       .map((r: { title: string }) => `  - ${r.title}`)
@@ -49,7 +52,7 @@ export async function synthesizeBrief(
   }
 
   // Signals first — market data fetch needs them for context-aware chart selection
-  const [signals, userProfileResult, internalSignals] = await Promise.all([
+  const [signals, userProfileResult, internalSignals, irReportBlock] = await Promise.all([
     buildLiveSignals(company, profile, locations),
     userId
       ? supabase.from('user_profiles').select('language').eq('user_id', userId).single()
@@ -58,11 +61,15 @@ export async function synthesizeBrief(
       console.warn('[internal-signals] failed, skipping:', err)
       return ''
     }),
+    checkAndUpdateIRReport(company.id, company.name, profile).catch(err => {
+      console.warn('[investor-relations] check failed, skipping:', err)
+      return ''
+    }),
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
   const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
-  const signalsWithInternal = internalSignals ? internalSignals + cappedSignals : cappedSignals
+  const signalsWithInternal = (internalSignals || '') + cappedSignals + irReportBlock
 
   const marketSnapshots = await fetchLiveMarketData(revenueCountries, {
     stockTicker: company.stock_ticker ?? undefined,
@@ -117,6 +124,8 @@ export async function synthesizeBrief(
   if (Object.keys(marketSnapshots).length > 0) {
     content.market_snapshots = marketSnapshots
   }
+
+  content.what_changed = computeWhatChanged(content, previousBriefContent)
 
   return content
 }

@@ -93,6 +93,8 @@ export interface FinancialNewsItem {
   detail: string
   impact: string
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface GeopoliticalItem {
@@ -101,6 +103,8 @@ export interface GeopoliticalItem {
   detail: string
   relevance: string
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface CompetitorMoveItem {
@@ -109,6 +113,9 @@ export interface CompetitorMoveItem {
   headline: string
   detail: string
   threat_level: 'low' | 'medium' | 'high'
+  source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface CustomerIntelItem {
@@ -119,6 +126,8 @@ export interface CustomerIntelItem {
   signal_type: 'spending_cut' | 'growth' | 'financial_distress' | 'strategic_shift' | 'leadership_change' | 'general'
   sentiment: 'positive' | 'neutral' | 'negative'
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface RiskItem {
@@ -189,6 +198,8 @@ export interface HRIntelItem {
   action: string
   signal_type: 'competitor' | 'market' | 'regulatory' | 'economic'
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface MAItem {
@@ -202,6 +213,8 @@ export interface MAItem {
   bd_action: string
   relevance: 'direct' | 'adjacent' | 'watch'
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface TechIntelItem {
@@ -211,6 +224,8 @@ export interface TechIntelItem {
   cto_action: string
   relevance: 'direct' | 'watch' | 'awareness'
   source?: string
+  source_url?: string
+  source_excerpt?: string
 }
 
 export interface SWOTItem {
@@ -226,6 +241,45 @@ export interface SWOTAnalysis {
   threats:       SWOTItem[]
 }
 
+// ── Strategic Framework Engine (Phase 1: PESTEL + Five Forces) ─────────────
+// Same pattern as SWOT: structured, evidence-required, allowed to be sparse
+// or entirely absent when there isn't enough this-week evidence to support it.
+
+export interface PESTELItem {
+  point: string
+  source: string
+}
+
+export interface PESTELAnalysis {
+  political?: PESTELItem[]
+  economic?: PESTELItem[]
+  social?: PESTELItem[]
+  technological?: PESTELItem[]
+  environmental?: PESTELItem[]
+  legal?: PESTELItem[]
+}
+
+export interface FiveForcesAssessment {
+  force: 'rivalry' | 'new_entrants' | 'supplier_power' | 'buyer_power' | 'substitutes'
+  level: 'low' | 'medium' | 'high'
+  change: 'up' | 'down' | 'unchanged'
+  rationale: string
+  source: string
+}
+
+export interface FiveForcesAnalysis {
+  forces: FiveForcesAssessment[]
+}
+
+// ── What Changed — computed in code from the current vs. previous brief,
+// never LLM-generated prose. See lib/claude/what-changed.ts.
+export interface WhatChangedItem {
+  type: 'risk_new' | 'risk_resolved' | 'swot_new' | 'competitor_move' | 'urgency_shift' | 'five_forces_shift'
+  title: string
+  direction: 'up' | 'down' | 'new' | 'resolved'
+  detail: string
+}
+
 export interface CompanyNewsItem {
   headline: string
   summary: string
@@ -234,6 +288,7 @@ export interface CompanyNewsItem {
   exec_note: string
   source?: string
   source_url?: string
+  source_excerpt?: string
   date?: string
 }
 
@@ -264,6 +319,9 @@ export interface BriefContent {
   so_what?: string              // 1-paragraph opinionated decision-maker insight
   executive_summary: string
   swot: SWOTAnalysis
+  pestel?: PESTELAnalysis
+  five_forces?: FiveForcesAnalysis
+  what_changed?: WhatChangedItem[]
   financial_news: FinancialNewsItem[]
   geopolitical_news: GeopoliticalItem[]
   competitor_intelligence: CompetitorMoveItem[]

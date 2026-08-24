@@ -41,6 +41,7 @@ Research this company using web search, then return a JSON object matching this 
   "company_notes": "string — 2-5 sentences of real background: founding/history, ownership or public/private status, notable strategic context, dependencies or sensitivities an analyst should know",
   "vision": "string, optional — the company's actual published vision statement, quoted or closely paraphrased from its own investor relations page, annual report, 10-K/20-F front matter, or About page. Omit entirely if you cannot find one actually published by the company — do not invent one.",
   "mission": "string, optional — the company's actual published mission statement, same sourcing rule as vision. Omit entirely rather than inventing one.",
+  "ir_page_url": "string, optional — the URL of this company's own official Investor Relations / Financial Results / Shareholder Information page (search for '<company name> investor relations' or '<company name> ir'). Must be a page on the company's own domain, not a third-party finance site (not Yahoo Finance, not a stock screener). Omit entirely if the company is private and has no such page, or if you cannot verify one actually exists.",
   "revenue_countries": [
     { "country": "string", "sector": "string" }
   ],
@@ -63,6 +64,7 @@ Research this company using web search, then return a JSON object matching this 
 Rules:
 - products, company_notes: grounded in what you actually found — prefer specific, real detail over generic filler. If little is found, keep it short rather than inventing detail.
 - vision, mission: only include if you find the company's own actual published wording (investor relations, annual report, About page). A company that doesn't publish these — common for smaller or private companies — should simply have these fields omitted, not filled with a guess.
+- ir_page_url: only include a real, verified URL on the company's own domain. Never guess a URL pattern (e.g. do not assume {domain}/investors exists without having actually found it) — omit the field if you didn't land on and confirm the page via search.
 - locations: real known offices, headquarters, manufacturing sites, or R&D centres — as many as you can verify (often just HQ for a smaller company). location_types must only use the five listed values.
 - revenue_countries: 3–5 countries where this company is most likely to sell or invest, sector is the specific vertical within the industry for that market
 - competitors: 3–5 real company names that actually compete with it, with a one-line note on each. Include a ticker only if publicly traded and you found it — omit the field entirely for private companies rather than guessing. Ticker format: plain symbol for a US-primary listing (e.g. "MSFT"); for a company listed only on a non-US exchange, use the Finnhub-style dot-suffix format instead of a bare local ticker — e.g. "BIG.TA" for Tel Aviv, "BP.L" for London, "SAP.DE" for Xetra, "0700.HK" for Hong Kong, "7203.T" for Tokyo, "005930.KS" for Korea, "BNP.PA" for Euronext Paris. If unsure of the exact exchange suffix, omit the ticker rather than guessing wrong.

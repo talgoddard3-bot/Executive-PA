@@ -48,6 +48,7 @@ interface Article {
   title: string
   description?: string
   source: { name: string }
+  url?: string
 }
 
 async function fetchNews(q: string, pageSize = 3): Promise<Article[]> {
@@ -95,6 +96,7 @@ async function fetchNewsData(q: string, category = 'business', size = 3): Promis
         title: a.title,
         description: a.description ?? undefined,
         source: { name: a.source_name ?? a.source_id ?? 'Newsdata.io' },
+        url: a.link ?? undefined,
       }))
   } catch {
     return []
@@ -103,7 +105,8 @@ async function fetchNewsData(q: string, category = 'business', size = 3): Promis
 
 function fmt(a: Article): string {
   const desc = a.description ? ` ${a.description}` : ''
-  return `${a.source.name}: "${a.title}".${desc}`
+  const link = a.url ? ` [URL: ${a.url}]` : ''
+  return `${a.source.name}: "${a.title}".${desc}${link}`
 }
 
 async function fetchRawSignals(companyId: string): Promise<string> {
@@ -115,7 +118,7 @@ async function fetchRawSignals(companyId: string): Promise<string> {
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data } = await supabase
       .from('raw_signals')
-      .select('signal_type, entity_name, title, summary, source_name')
+      .select('signal_type, entity_name, title, summary, source_name, url')
       .eq('company_id', companyId)
       .gte('fetched_at', since)
       .order('fetched_at', { ascending: false })
@@ -131,7 +134,8 @@ async function fetchRawSignals(companyId: string): Promise<string> {
       groups[t] ??= {}
       groups[t][e] ??= []
       const desc = row.summary ? ` ${String(row.summary).slice(0, 120)}` : ''
-      groups[t][e].push(`  - ${row.source_name}: "${row.title}".${desc}`)
+      const link = row.url ? ` [URL: ${row.url}]` : ''
+      groups[t][e].push(`  - ${row.source_name}: "${row.title}".${desc}${link}`)
     }
 
     const lines: string[] = [
@@ -221,7 +225,7 @@ export async function buildLiveSignals(company: Company, profile: CompanyProfile
       lines.push(`  Stock: $${sig.quote.c.toFixed(2)} ${dir}${Math.abs(sig.quote.dp).toFixed(1)}% WTD`)
     }
     if (sig.news.length > 0) {
-      sig.news.slice(0, 2).forEach(n => lines.push(`  - ${n.source}: "${n.headline}"`))
+      sig.news.slice(0, 2).forEach(n => lines.push(`  - ${n.source}: "${n.headline}"${n.url ? ` [URL: ${n.url}]` : ''}`))
     } else if (newsMatch && newsMatch.articles.length > 0) {
       newsMatch.articles.forEach(a => lines.push(`  - ${fmt(a)}`))
     } else {
