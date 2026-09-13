@@ -196,6 +196,8 @@ export function buildCoreUserPrompt(
 ---
 Produce the core sections of a strategic intelligence brief as a single JSON object (strategic frameworks like SWOT/PESTEL/Five Forces are generated separately — do not include them here). Return ONLY the JSON — no markdown, no explanation.
 
+HARD CAP — every array-type section below (financial_news, geopolitical_news, competitor_intelligence, marketing_opportunities, market_segmentation, financial_signals, operational_intelligence, hr_intelligence, tech_intelligence, ma_watch, customer_intelligence, company_news, risk_summary, decision_framing, scenario_modeling, weekly_actions) may contain AT MOST 3 items, ranked most-important-first — never more, even if more signals exist. market_segmentation specifically: at most 2 items. This is a hard constraint, not a suggestion: pick the 3 most consequential items per section and skip the rest. A short, sharp brief is the goal, not exhaustive coverage.
+
 {
   "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Think Economist cover or Bloomberg terminal alert — not a sentence, not a question. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle' or 'Micro-Epsilon Targets Core Market as Semiconductor Boom Accelerates'. Never vague, never generic.",
 
@@ -261,15 +263,15 @@ Produce the core sections of a strategic intelligence brief as a single JSON obj
 
   "market_segmentation": [
     {
-      "segment_type": "One of: audience (who buys) | channel (how they're reached) | lifestyle (psychographic values/habits) | needs (unmet functional need this company can solve) | value (price tier or CLV band) | jobs (jobs-to-be-done - the outcome the customer is hiring this product to achieve)",
-      "segment_name": "Short, vivid name - e.g. 'Mid-market sustainability buyers', 'Gen-Z D2C channel', 'Compliance-first SMEs', 'Convenience-driven meal planners'",
-      "description": "1-2 sentences. Who this segment is, what core need or outcome drives them, and how they currently engage with this product category.",
-      "size_signal": "growing (segment is expanding based on this week's signals) | stable (no material change) | declining (contracting or losing relevance)",
-      "differentiation": "The market engineer's core question: what makes THIS company specifically stronger or better positioned for this segment vs. named competitors? Be concrete - name a product feature, price point, distribution advantage, speed, or brand asset. Do not be generic.",
-      "competitive_vulnerability": "Which competitor currently dominates this segment, and where is their specific weakness? Name the competitor and the gap this company can exploit - e.g. 'Competitor X owns enterprise but ignores SME compliance complexity; our pre-built templates cut onboarding from 8 weeks to 48 hours'.",
-      "signal_source": "The specific news item, trend, or market signal from THIS WEEK that makes this segment newly relevant or shifted - e.g. 'EU AI Act enforcement deadline announced; procurement cycles accelerating' or 'TikTok Shop expansion into grocery creates new D2C distribution window'.",
-      "channel_priority": "high (segment is reachable and valuable right now) | medium (worth pursuing in 1-2 quarters) | low (monitor only)",
-      "urgency": "act-now (revenue at risk or opportunity window closing this week) | monitor (trend developing over 30-90 days) | awareness (background context)"
+      "segment_type": "One of: audience | channel | lifestyle | needs | value | jobs",
+      "segment_name": "Short, vivid name",
+      "description": "1 sentence: who this segment is and what drives them.",
+      "size_signal": "growing | stable | declining",
+      "differentiation": "1 sentence: what makes THIS company specifically stronger for this segment vs. a named competitor. Be concrete, not generic.",
+      "competitive_vulnerability": "1 sentence: name the competitor who dominates this segment and their specific weakness.",
+      "signal_source": "The specific signal from THIS WEEK that makes this segment newly relevant.",
+      "channel_priority": "high | medium | low",
+      "urgency": "act-now | monitor | awareness"
     }
   ],
 
@@ -439,6 +441,8 @@ export function buildFrameworksUserPrompt(
   return `${context}
 ---
 Produce ONLY the strategic-framework sections below as a single JSON object, synthesised from the signals above — do not introduce new events beyond what the signals support. Return ONLY the JSON — no markdown, no explanation.
+
+HARD CAP: each SWOT quadrant (strengths/weaknesses/opportunities/threats) may contain AT MOST 2 items. PESTEL: at most 1 item per dimension. Five Forces: assess at most the 2 most relevant forces, not all 5. Pick the most consequential, skip the rest.
 
 {
   "swot": {

@@ -71,7 +71,7 @@ export async function synthesizeBrief(
   ])
 
   const language = userProfileResult.data?.language ?? 'English'
-  const cappedSignals = signals.length > 40000 ? signals.slice(0, 40000) + '\n[signals truncated]' : signals
+  const cappedSignals = signals.length > 25000 ? signals.slice(0, 25000) + '\n[signals truncated]' : signals
   const signalsWithInternal = (internalSignals || '') + cappedSignals + irReportBlock
 
   const marketSnapshots = await fetchLiveMarketData(revenueCountries, {
