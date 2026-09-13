@@ -143,11 +143,11 @@ export async function synthesizeBrief(
   // 300s function ceiling.
   const argsForSlices = [company, profile, signalsWithInternal, language, locations, previousBriefContext] as const
   const slices: BriefSlice[] = [
-    { name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 4000 },
-    { name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 3000 },
-    { name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 3000 },
-    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 4500 },
-    { name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 3000 },
+    { name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 6000 },
+    { name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 6000 },
+    { name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 6000 },
+    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 6000 },
+    { name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 5000 },
   ]
 
   const results = await Promise.all(slices.map(generateSlice))
