@@ -19,9 +19,22 @@ interface BriefSlice {
   name: string
   prompt: string
   maxTokens: number
+  // Top-level keys the model must use inside "brief" — declared in the tool's
+  // JSON schema (not just prose) so the model is structurally constrained,
+  // not just asked nicely. Without this, the loose `{ type: 'object' }`
+  // schema previously used let Claude invent an entirely different, wrong
+  // shape for one slice on a real production run.
+  requiredKeys: string[]
+  // Allowed but not mandatory — e.g. pestel/five_forces, which the prompt
+  // explicitly permits omitting when there's no real evidence. Listed here
+  // (not in requiredKeys) so the schema still recognises them by name
+  // without forcing the model to fabricate one when it should be omitted.
+  optionalKeys?: string[]
 }
 
 async function generateSlice(slice: BriefSlice): Promise<{ name: string; brief: Record<string, unknown>; inputTokens: number; outputTokens: number }> {
+  const properties = Object.fromEntries([...slice.requiredKeys, ...(slice.optionalKeys ?? [])].map(k => [k, {}]))
+
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: slice.maxTokens,
@@ -32,7 +45,15 @@ async function generateSlice(slice: BriefSlice): Promise<{ name: string; brief: 
         description: `Output the ${slice.name} sections of the weekly intelligence brief as structured JSON.`,
         input_schema: {
           type: 'object' as const,
-          properties: { brief: { type: 'object', description: 'The relevant BriefContent fields for this slice' } },
+          properties: {
+            brief: {
+              type: 'object',
+              description: 'The relevant BriefContent fields for this slice — use exactly these top-level keys, no others, no renaming.',
+              properties,
+              required: slice.requiredKeys,
+              additionalProperties: false,
+            },
+          },
           required: ['brief'],
         },
       },
@@ -143,11 +164,26 @@ export async function synthesizeBrief(
   // 300s function ceiling.
   const argsForSlices = [company, profile, signalsWithInternal, language, locations, previousBriefContext] as const
   const slices: BriefSlice[] = [
-    { name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 6000 },
-    { name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 6000 },
-    { name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 6000 },
-    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 6000 },
-    { name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 5000 },
+    {
+      name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 6000,
+      requiredKeys: ['headline', 'sector_tags', 'region_tags', 'urgency', 'read_time', 'tldr', 'executive_summary', 'so_what', 'risk_summary', 'capital_impact', 'decision_framing', 'scenario_modeling', 'weekly_actions'],
+    },
+    {
+      name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 6000,
+      requiredKeys: ['financial_news', 'geopolitical_news', 'financial_signals', 'operational_intelligence', 'market_segmentation', 'marketing_opportunities'],
+    },
+    {
+      name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 6000,
+      requiredKeys: ['competitor_intelligence', 'ma_watch', 'customer_intelligence', 'company_news'],
+    },
+    {
+      name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 6000,
+      requiredKeys: ['hr_intelligence', 'tech_intelligence', 'internal_intelligence'],
+    },
+    {
+      name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 5000,
+      requiredKeys: ['swot'], optionalKeys: ['pestel', 'five_forces'],
+    },
   ]
 
   const results = await Promise.all(slices.map(generateSlice))
