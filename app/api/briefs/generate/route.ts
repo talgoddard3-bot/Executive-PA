@@ -41,7 +41,8 @@ export async function POST(request: Request) {
         .single()
 
       if (schedErr || !schedule) {
-        return NextResponse.json({ error: 'Schedule not found' }, { status: 404 })
+        console.error('[generate] schedule lookup failed:', { scheduleId: body.scheduleId, schedErr })
+        return NextResponse.json({ error: 'Schedule not found', detail: schedErr?.message }, { status: 404 })
       }
 
       const company = schedule.companies as Company & { company_profiles?: CompanyProfile[] }
