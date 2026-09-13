@@ -78,13 +78,17 @@ SECTION SCOPE — HARD BOUNDARIES:
 - decision_framing: current CEO decision points ONLY. Must NOT repeat scenario descriptions from scenario_modeling.
 - internal_intelligence: sourced EXCLUSIVELY from the INTERNAL SIGNALS block (company-provided notes and documents) — never from web/news signals. This is the one section explicitly marked as internally-sourced to the reader, so it must never contain anything that isn't actually present in that block. If the INTERNAL SIGNALS block is empty or absent, return an empty array — do not invent internal data to fill this section. Other sections may still be quietly informed by internal context, but internal_intelligence is the only place it is surfaced and attributed as internal.`
 
-export function buildUserPrompt(
+// Shared context block used by both the core-content call and the
+// strategic-frameworks call — they run in parallel (see synthesize.ts) so
+// wall-clock time is bounded by the larger of the two instead of their sum,
+// which matters on Vercel Hobby's 300s function ceiling.
+function buildContextBlock(
   company: Company,
   profile: CompanyProfile,
   signals: string,
-  language = 'English',
-  locations: CompanyLocation[] = [],
-  previousBriefContext = ''
+  language: string,
+  locations: CompanyLocation[],
+  previousBriefContext: string
 ): string {
   const revenueLines = profile.revenue_countries
     .map((r) => `  - ${r.country} (${r.sector})`)
@@ -175,9 +179,22 @@ DIFFERENTIATION REQUIREMENT: Compare this week's signals against last week's bri
 ` : ''}---
 SIGNALS THIS WEEK:
 ${signals}
+`
+}
 
+// ── Core content call — everything except the strategic frameworks ─────────
+export function buildCoreUserPrompt(
+  company: Company,
+  profile: CompanyProfile,
+  signals: string,
+  language = 'English',
+  locations: CompanyLocation[] = [],
+  previousBriefContext = ''
+): string {
+  const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
+  return `${context}
 ---
-Produce a strategic intelligence brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
+Produce the core sections of a strategic intelligence brief as a single JSON object (strategic frameworks like SWOT/PESTEL/Five Forces are generated separately — do not include them here). Return ONLY the JSON — no markdown, no explanation.
 
 {
   "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Think Economist cover or Bloomberg terminal alert — not a sentence, not a question. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle' or 'Micro-Epsilon Targets Core Market as Semiconductor Boom Accelerates'. Never vague, never generic.",
@@ -195,44 +212,6 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
   "executive_summary": "3–4 sentence lede. Lead with the dominant risk or opportunity, then the market context, then the company-specific implication, then the decision pressure it creates. Reference specific revenue percentages, competitor names, and market figures from the signals.",
 
   "so_what": "The most important paragraph in the brief. 3–5 sentences. Directly address the CEO: what does all of this week's intelligence mean for their company RIGHT NOW? Be opinionated — do not hedge. Name the single most important action or decision this week. Example: 'The ASML restriction is the clearest signal yet that your semiconductor customers will cut orders in H2. The window to lock in Q3 contracts is this month, not next quarter. Move the APAC negotiation to a board-level conversation this week and price in a 15% volume buffer.'",
-
-  "swot": {
-    "strengths": [
-      { "point": "Company advantage this week with **bold** on the key asset", "source": "Section it came from" }
-    ],
-    "weaknesses": [
-      { "point": "Exposed vulnerability with **bold** on the key risk factor", "source": "Section it came from" }
-    ],
-    "opportunities": [
-      { "point": "Specific opportunity with **bold** on the key action", "source": "Section it came from", "urgency": "high or medium or low" }
-    ],
-    "threats": [
-      { "point": "Specific threat with **bold** on the key danger", "source": "Section it came from", "urgency": "high or medium or low" }
-    ]
-  },
-
-  "pestel": {
-    "_instructions": "Only include dimensions with real evidence from this week's signals. Omit any dimension entirely (do not include the key) if there's nothing to say. If NONE of the six dimensions have evidence, omit the whole pestel key.",
-    "political": [{ "point": "Political/regulatory development with **bold** on the key fact", "source": "Section or signal it came from" }],
-    "economic": [{ "point": "Macroeconomic development with **bold** on the key figure", "source": "Section or signal it came from" }],
-    "social": [{ "point": "Social/demographic shift with **bold** on the key fact", "source": "Section or signal it came from" }],
-    "technological": [{ "point": "Technology shift with **bold** on the key fact", "source": "Section or signal it came from" }],
-    "environmental": [{ "point": "Environmental/climate development with **bold** on the key fact — only if it materially affects regulation, capex, supply chain, or customers", "source": "Section or signal it came from" }],
-    "legal": [{ "point": "Legal/compliance development with **bold** on the key fact", "source": "Section or signal it came from" }]
-  },
-
-  "five_forces": {
-    "_instructions": "Only assess a force when this week's signals (or the known competitor list) actually support a read. If fewer than 2 competitors are known and there's no supplier/buyer signal, omit the whole five_forces key.",
-    "forces": [
-      {
-        "force": "rivalry or new_entrants or supplier_power or buyer_power or substitutes",
-        "level": "low or medium or high",
-        "change": "up or down or unchanged — versus what you'd reasonably assess a few weeks ago based on this week's evidence",
-        "rationale": "1–2 sentences of concrete evidence, not a generic industry statement",
-        "source": "Section or signal it came from"
-      }
-    ]
-  },
 
   "financial_news": [
     {
@@ -441,5 +420,63 @@ Produce a strategic intelligence brief as a single JSON object. Return ONLY the 
       "section": "Which section triggered this action e.g. Competitor Intel, Risk Register, Geopolitical"
     }
   ]
+}`
+}
+
+// ── Strategic frameworks call — SWOT / PESTEL / Five Forces, run in
+// parallel with the core content call above (see synthesize.ts). Needs the
+// same company/signals context to synthesize independently from real
+// evidence, but a much smaller output budget.
+export function buildFrameworksUserPrompt(
+  company: Company,
+  profile: CompanyProfile,
+  signals: string,
+  language = 'English',
+  locations: CompanyLocation[] = [],
+  previousBriefContext = ''
+): string {
+  const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
+  return `${context}
+---
+Produce ONLY the strategic-framework sections below as a single JSON object, synthesised from the signals above — do not introduce new events beyond what the signals support. Return ONLY the JSON — no markdown, no explanation.
+
+{
+  "swot": {
+    "strengths": [
+      { "point": "Company advantage this week with **bold** on the key asset", "source": "Section it came from" }
+    ],
+    "weaknesses": [
+      { "point": "Exposed vulnerability with **bold** on the key risk factor", "source": "Section it came from" }
+    ],
+    "opportunities": [
+      { "point": "Specific opportunity with **bold** on the key action", "source": "Section it came from", "urgency": "high or medium or low" }
+    ],
+    "threats": [
+      { "point": "Specific threat with **bold** on the key danger", "source": "Section it came from", "urgency": "high or medium or low" }
+    ]
+  },
+
+  "pestel": {
+    "_instructions": "Only include dimensions with real evidence from this week's signals. Omit any dimension entirely (do not include the key) if there's nothing to say. If NONE of the six dimensions have evidence, omit the whole pestel key.",
+    "political": [{ "point": "Political/regulatory development with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "economic": [{ "point": "Macroeconomic development with **bold** on the key figure", "source": "Section or signal it came from" }],
+    "social": [{ "point": "Social/demographic shift with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "technological": [{ "point": "Technology shift with **bold** on the key fact", "source": "Section or signal it came from" }],
+    "environmental": [{ "point": "Environmental/climate development with **bold** on the key fact — only if it materially affects regulation, capex, supply chain, or customers", "source": "Section or signal it came from" }],
+    "legal": [{ "point": "Legal/compliance development with **bold** on the key fact", "source": "Section or signal it came from" }]
+  },
+
+  "five_forces": {
+    "_instructions": "Only assess a force when this week's signals (or the known competitor list) actually support a read. If fewer than 2 competitors are known and there's no supplier/buyer signal, omit the whole five_forces key.",
+    "forces": [
+      {
+        "force": "rivalry or new_entrants or supplier_power or buyer_power or substitutes",
+        "level": "low or medium or high",
+        "change": "up or down or unchanged — versus what you'd reasonably assess a few weeks ago based on this week's evidence",
+        "rationale": "1–2 sentences of concrete evidence, not a generic industry statement",
+        "source": "Section or signal it came from"
+      }
+    ]
+  }
 }`
 }

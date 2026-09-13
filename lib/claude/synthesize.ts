@@ -1,5 +1,5 @@
 import { anthropic } from './client'
-import { SYSTEM_PROMPT, buildUserPrompt } from './prompts'
+import { SYSTEM_PROMPT, buildCoreUserPrompt, buildFrameworksUserPrompt } from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
@@ -87,42 +87,82 @@ export async function synthesizeBrief(
     return {} as Record<string, import('@/lib/types').StoredSparkline>
   })
 
-  const userPrompt = buildUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
+  const coreUserPrompt = buildCoreUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
+  const frameworksUserPrompt = buildFrameworksUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 12000,
-    system: SYSTEM_PROMPT,
-    tools: [
-      {
-        name: 'generate_brief',
-        description: 'Output the complete weekly intelligence brief as structured JSON.',
-        input_schema: {
-          type: 'object' as const,
-          properties: { brief: { type: 'object', description: 'The full BriefContent object' } },
-          required: ['brief'],
+  // Core content and strategic frameworks run as two parallel Claude calls
+  // instead of one sequential mega-call — same total content, but wall-clock
+  // time is bounded by the larger of the two rather than their sum. This
+  // matters on Vercel Hobby's 300s function ceiling.
+  const [coreMessage, frameworksMessage] = await Promise.all([
+    anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 10000,
+      system: SYSTEM_PROMPT,
+      tools: [
+        {
+          name: 'generate_brief_core',
+          description: 'Output the core sections of the weekly intelligence brief as structured JSON.',
+          input_schema: {
+            type: 'object' as const,
+            properties: { brief: { type: 'object', description: 'The core BriefContent fields (everything except swot/pestel/five_forces)' } },
+            required: ['brief'],
+          },
         },
-      },
-    ],
-    tool_choice: { type: 'tool', name: 'generate_brief' },
-    messages: [{ role: 'user', content: userPrompt }],
-  })
+      ],
+      tool_choice: { type: 'tool', name: 'generate_brief_core' },
+      messages: [{ role: 'user', content: coreUserPrompt }],
+    }),
+    anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 3000,
+      system: SYSTEM_PROMPT,
+      tools: [
+        {
+          name: 'generate_brief_frameworks',
+          description: 'Output the strategic framework sections (SWOT, PESTEL, Five Forces) as structured JSON.',
+          input_schema: {
+            type: 'object' as const,
+            properties: { brief: { type: 'object', description: 'An object with swot, pestel, and five_forces fields' } },
+            required: ['brief'],
+          },
+        },
+      ],
+      tool_choice: { type: 'tool', name: 'generate_brief_frameworks' },
+      messages: [{ role: 'user', content: frameworksUserPrompt }],
+    }),
+  ])
 
   console.log('[synthesize] tokens used:', {
     company: company.name,
-    input_tokens: message.usage.input_tokens,
-    output_tokens: message.usage.output_tokens,
+    core_input_tokens: coreMessage.usage.input_tokens,
+    core_output_tokens: coreMessage.usage.output_tokens,
+    frameworks_input_tokens: frameworksMessage.usage.input_tokens,
+    frameworks_output_tokens: frameworksMessage.usage.output_tokens,
     estimated_cost_usd: (
-      (message.usage.input_tokens * 0.000003) +
-      (message.usage.output_tokens * 0.000015)
+      ((coreMessage.usage.input_tokens + frameworksMessage.usage.input_tokens) * 0.000003) +
+      ((coreMessage.usage.output_tokens + frameworksMessage.usage.output_tokens) * 0.000015)
     ).toFixed(4),
   })
 
-  const toolBlock = message.content.find(b => b.type === 'tool_use')
-  if (!toolBlock || toolBlock.type !== 'tool_use') {
-    throw new Error('Claude did not return a tool_use block')
+  const coreToolBlock = coreMessage.content.find(b => b.type === 'tool_use')
+  if (!coreToolBlock || coreToolBlock.type !== 'tool_use') {
+    throw new Error('Claude did not return a tool_use block for core content')
   }
-  const content = (toolBlock.input as { brief: BriefContent }).brief
+  const frameworksToolBlock = frameworksMessage.content.find(b => b.type === 'tool_use')
+  if (!frameworksToolBlock || frameworksToolBlock.type !== 'tool_use') {
+    throw new Error('Claude did not return a tool_use block for strategic frameworks')
+  }
+
+  const coreBrief = (coreToolBlock.input as { brief: Omit<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
+  const frameworks = (frameworksToolBlock.input as { brief: Pick<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
+
+  const content: BriefContent = {
+    ...coreBrief,
+    swot: frameworks.swot,
+    pestel: frameworks.pestel,
+    five_forces: frameworks.five_forces,
+  }
 
   if (Object.keys(marketSnapshots).length > 0) {
     content.market_snapshots = marketSnapshots
