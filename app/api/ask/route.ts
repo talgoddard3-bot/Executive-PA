@@ -115,20 +115,27 @@ ${context}`
 
     const stream = new ReadableStream({
       async start(controller) {
-        const response = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
-          stream: true,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: message }],
-        })
+        try {
+          const response = await anthropic.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 600,
+            stream: true,
+            system: systemPrompt,
+            messages: [{ role: 'user', content: message }],
+          })
 
-        for await (const event of response) {
-          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-            controller.enqueue(new TextEncoder().encode(event.delta.text))
+          for await (const event of response) {
+            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+              controller.enqueue(new TextEncoder().encode(event.delta.text))
+            }
           }
+        } catch (err) {
+          console.error('[api/ask] stream error:', err)
+          const msg = err instanceof Error ? err.message : 'The assistant hit an error generating a response.'
+          controller.enqueue(new TextEncoder().encode(`\n\n_Something went wrong: ${msg}_`))
+        } finally {
+          controller.close()
         }
-        controller.close()
       },
     })
 

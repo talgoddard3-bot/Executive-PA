@@ -82,10 +82,12 @@ export async function POST(request: Request) {
         const trendInsights = await generateTrendInsights(company.id, content, weekOf)
         if (trendInsights) content.trend_insights = trendInsights
 
-        await supabase
+        const { error: updateErr } = await supabase
           .from('briefs')
           .update({ status: 'complete', content, generated_at: generatedAt })
           .eq('id', brief.id)
+
+        if (updateErr) throw new Error(`Failed to persist completed brief: ${updateErr.message}`)
 
         const recipients: string[] = schedule.recipient_emails ?? []
         if (recipients.length > 0) {
@@ -168,10 +170,12 @@ export async function POST(request: Request) {
       const trendInsights = await generateTrendInsights(company.id, content, weekOf)
       if (trendInsights) content.trend_insights = trendInsights
 
-      await supabase
+      const { error: updateErr } = await supabase
         .from('briefs')
         .update({ status: 'complete', content, generated_at: new Date().toISOString() })
         .eq('id', brief.id)
+
+      if (updateErr) throw new Error(`Failed to persist completed brief: ${updateErr.message}`)
 
       return NextResponse.json({ briefId: brief.id, status: 'complete' })
     } catch (synthErr) {
