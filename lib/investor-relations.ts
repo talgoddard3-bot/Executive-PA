@@ -121,7 +121,7 @@ export async function checkAndUpdateIRReport(
     if (!latest) return ''
 
     if (latest.url === profile.ir_last_report_url && profile.ir_last_report_summary) {
-      return formatBlock(companyName, latest.label, profile.ir_last_report_summary)
+      return formatIRBlock(companyName, latest.label, profile.ir_last_report_summary)
     }
 
     const fileRes = await fetch(latest.url, {
@@ -144,13 +144,13 @@ export async function checkAndUpdateIRReport(
       })
       .eq('company_id', companyId)
 
-    return formatBlock(companyName, latest.label, summary)
+    return formatIRBlock(companyName, latest.label, summary)
   } catch (err) {
     console.warn('[investor-relations] check failed:', err)
     return ''
   }
 }
 
-function formatBlock(companyName: string, reportLabel: string | null | undefined, summary: string): string {
+export function formatIRBlock(companyName: string, reportLabel: string | null | undefined, summary: string): string {
   return `\n\n[OFFICIAL FINANCIAL REPORT — from ${companyName}'s own investor relations page${reportLabel ? `, "${reportLabel}"` : ''}]\n${summary}\n`
 }

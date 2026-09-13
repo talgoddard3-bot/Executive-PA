@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT, buildUserPrompt } from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
-import { checkAndUpdateIRReport } from '@/lib/investor-relations'
+import { formatIRBlock } from '@/lib/investor-relations'
 import { computeWhatChanged } from './what-changed'
 import { supabaseAdmin as supabase } from '@/lib/supabase/server'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
@@ -51,18 +51,21 @@ export async function synthesizeBrief(
     ].filter(Boolean).join('\n')
   }
 
+  // IR reports are checked by a separate daily cron (app/api/investor-relations/check)
+  // so a slow/large annual report never risks pushing this synthesis call past
+  // Vercel's function time limit — just read whatever it last cached here.
+  const irReportBlock = profile.ir_last_report_summary
+    ? formatIRBlock(company.name, profile.ir_last_report_title, profile.ir_last_report_summary)
+    : ''
+
   // Signals first — market data fetch needs them for context-aware chart selection
-  const [signals, userProfileResult, internalSignals, irReportBlock] = await Promise.all([
+  const [signals, userProfileResult, internalSignals] = await Promise.all([
     buildLiveSignals(company, profile, locations),
     userId
       ? supabase.from('user_profiles').select('language').eq('user_id', userId).single()
       : Promise.resolve({ data: null }),
     buildInternalSignals(company.id).catch(err => {
       console.warn('[internal-signals] failed, skipping:', err)
-      return ''
-    }),
-    checkAndUpdateIRReport(company.id, company.name, profile).catch(err => {
-      console.warn('[investor-relations] check failed, skipping:', err)
       return ''
     }),
   ])

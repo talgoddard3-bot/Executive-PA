@@ -7,6 +7,10 @@
     {
       "path": "/api/alerts/check",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/investor-relations/check",
+      "schedule": "0 20 * * *"
     }
   ]
 }
