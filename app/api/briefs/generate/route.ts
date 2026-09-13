@@ -1,10 +1,36 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { synthesizeBrief } from '@/lib/claude/synthesize'
 import { generateTrendInsights } from '@/lib/claude/trend-insights'
 import { sendBriefEmail } from '@/lib/email'
 import { getSessionUser } from '@/lib/get-company'
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import type { Company, CompanyProfile } from '@/lib/types'
+
+// Cross-week trend narrative is a second, separate Claude call — real value,
+// but not worth risking the core brief for. Runs after the core brief is
+// already saved as 'complete', so a slow or killed background continuation
+// can never take the whole week's brief down with it.
+function scheduleTrendInsights(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any, any, any>,
+  briefId: string,
+  companyId: string,
+  content: import('@/lib/types').BriefContent,
+  weekOf: string
+) {
+  after(async () => {
+    try {
+      const trendInsights = await generateTrendInsights(companyId, content, weekOf)
+      if (!trendInsights) return
+      await supabase
+        .from('briefs')
+        .update({ content: { ...content, trend_insights: trendInsights } })
+        .eq('id', briefId)
+    } catch (err) {
+      console.error('[generate] background trend-insights update failed:', err)
+    }
+  })
+}
 
 function getMondayOfWeek(date: Date): string {
   const d = new Date(date)
@@ -80,15 +106,14 @@ export async function POST(request: Request) {
         const content = await synthesizeBrief(company, profile)
         const generatedAt = new Date().toISOString()
 
-        const trendInsights = await generateTrendInsights(company.id, content, weekOf)
-        if (trendInsights) content.trend_insights = trendInsights
-
         const { error: updateErr } = await supabase
           .from('briefs')
           .update({ status: 'complete', content, generated_at: generatedAt })
           .eq('id', brief.id)
 
         if (updateErr) throw new Error(`Failed to persist completed brief: ${updateErr.message}`)
+
+        scheduleTrendInsights(supabase, brief.id, company.id, content, weekOf)
 
         const recipients: string[] = schedule.recipient_emails ?? []
         if (recipients.length > 0) {
@@ -168,15 +193,14 @@ export async function POST(request: Request) {
     try {
       const content = await synthesizeBrief(company as Company, profile as CompanyProfile, userId)
 
-      const trendInsights = await generateTrendInsights(company.id, content, weekOf)
-      if (trendInsights) content.trend_insights = trendInsights
-
       const { error: updateErr } = await supabase
         .from('briefs')
         .update({ status: 'complete', content, generated_at: new Date().toISOString() })
         .eq('id', brief.id)
 
       if (updateErr) throw new Error(`Failed to persist completed brief: ${updateErr.message}`)
+
+      scheduleTrendInsights(supabase, brief.id, company.id, content, weekOf)
 
       return NextResponse.json({ briefId: brief.id, status: 'complete' })
     } catch (synthErr) {
