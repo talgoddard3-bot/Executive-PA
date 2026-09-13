@@ -97,7 +97,7 @@ export async function synthesizeBrief(
   const [coreMessage, frameworksMessage] = await Promise.all([
     anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 10000,
+      max_tokens: 13000,
       system: SYSTEM_PROMPT,
       tools: [
         {
@@ -115,7 +115,7 @@ export async function synthesizeBrief(
     }),
     anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: 6000,
       system: SYSTEM_PROMPT,
       tools: [
         {
@@ -145,6 +145,13 @@ export async function synthesizeBrief(
     ).toFixed(4),
   })
 
+  if (coreMessage.stop_reason === 'max_tokens') {
+    throw new Error(`Core content call was truncated at the max_tokens limit (${coreMessage.usage.output_tokens} tokens) — raise max_tokens in synthesize.ts`)
+  }
+  if (frameworksMessage.stop_reason === 'max_tokens') {
+    throw new Error(`Strategic frameworks call was truncated at the max_tokens limit (${frameworksMessage.usage.output_tokens} tokens) — raise max_tokens in synthesize.ts`)
+  }
+
   const coreToolBlock = coreMessage.content.find(b => b.type === 'tool_use')
   if (!coreToolBlock || coreToolBlock.type !== 'tool_use') {
     throw new Error('Claude did not return a tool_use block for core content')
@@ -154,8 +161,10 @@ export async function synthesizeBrief(
     throw new Error('Claude did not return a tool_use block for strategic frameworks')
   }
 
-  const coreBrief = (coreToolBlock.input as { brief: Omit<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
-  const frameworks = (frameworksToolBlock.input as { brief: Pick<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
+  const coreBrief = (coreToolBlock.input as { brief?: Omit<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
+  const frameworks = (frameworksToolBlock.input as { brief?: Pick<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
+  if (!coreBrief) throw new Error('Core content tool call had no brief field')
+  if (!frameworks) throw new Error('Strategic frameworks tool call had no brief field')
 
   const content: BriefContent = {
     ...coreBrief,
