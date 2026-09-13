@@ -85,11 +85,17 @@ export async function POST(request: Request) {
         .select('id, status')
         .eq('company_id', company.id)
         .eq('week_of', weekOf)
-        .eq('status', 'complete')
         .single()
 
-      if (existing) {
+      if (existing?.status === 'complete') {
         return NextResponse.json({ briefId: existing.id, status: 'complete', alreadyExists: true })
+      }
+
+      // A stale 'generating' or 'failed' row from a previous attempt this
+      // week would otherwise collide with the unique (company_id, week_of)
+      // constraint below — clear it before inserting a fresh one.
+      if (existing) {
+        await supabase.from('briefs').delete().eq('id', existing.id)
       }
 
       const { data: brief, error: briefError } = await supabase
