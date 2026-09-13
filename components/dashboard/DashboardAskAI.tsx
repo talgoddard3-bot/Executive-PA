@@ -17,10 +17,25 @@ export default function DashboardAskAI() {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ message: q }),
       })
-      const data = await res.json()
-      setAnswer(data.answer ?? data.error ?? 'No response.')
+
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}))
+        setAnswer(data.error ?? 'No response.')
+        setLoading(false)
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulated = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        accumulated += decoder.decode(value, { stream: true })
+        setAnswer(accumulated)
+      }
     } catch {
       setAnswer('Failed to connect. Please try again.')
     }
