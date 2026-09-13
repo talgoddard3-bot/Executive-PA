@@ -199,7 +199,7 @@ export default function Sidebar() {
             {briefSection === 'brief' && (
               <>
                 <SubLabel label="This Brief" />
-                <NavLink href={briefBase}           label="Overview"   icon={<SmOverviewIcon />} active={pathname === briefBase} />
+                <NavLink href={briefBase}           label="Summary"   icon={<SmOverviewIcon />} active={pathname === briefBase} />
                 <NavLink href={`${briefBase}/full`} label="Full Brief" icon={<SmDocIcon />}      active={currentSegment === 'full'} />
               </>
             )}
