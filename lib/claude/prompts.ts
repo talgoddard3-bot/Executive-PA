@@ -182,247 +182,141 @@ ${signals}
 `
 }
 
-// ── Core content call — everything except the strategic frameworks ─────────
-export function buildCoreUserPrompt(
-  company: Company,
-  profile: CompanyProfile,
-  signals: string,
-  language = 'English',
-  locations: CompanyLocation[] = [],
-  previousBriefContext = ''
+const ITEM_CAP_NOTE = 'HARD CAP: every array-type section below may contain AT MOST 3 items, ranked most-important-first — never more, even if more signals exist. Pick the most consequential items and skip the rest. A short, sharp brief is the goal, not exhaustive coverage.'
+
+// ── Split into four smaller, focused calls (plus the frameworks call below)
+// that run concurrently — see synthesize.ts. Each call only has to write a
+// few hundred to ~2000 tokens, so wall-clock time is bounded by the slowest
+// of five small calls instead of one call writing the whole brief.
+
+// A. Executive narrative — headline through weekly actions
+export function buildNarrativeUserPrompt(
+  company: Company, profile: CompanyProfile, signals: string,
+  language = 'English', locations: CompanyLocation[] = [], previousBriefContext = ''
 ): string {
   const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
   return `${context}
 ---
-Produce the core sections of a strategic intelligence brief as a single JSON object (strategic frameworks like SWOT/PESTEL/Five Forces are generated separately — do not include them here). Return ONLY the JSON — no markdown, no explanation.
+Produce ONLY the executive-narrative sections of the brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
 
-HARD CAP — every array-type section below (financial_news, geopolitical_news, competitor_intelligence, marketing_opportunities, market_segmentation, financial_signals, operational_intelligence, hr_intelligence, tech_intelligence, ma_watch, customer_intelligence, company_news, risk_summary, decision_framing, scenario_modeling, weekly_actions) may contain AT MOST 3 items, ranked most-important-first — never more, even if more signals exist. market_segmentation specifically: at most 2 items. This is a hard constraint, not a suggestion: pick the 3 most consequential items per section and skip the rest. A short, sharp brief is the goal, not exhaustive coverage.
+${ITEM_CAP_NOTE}
 
 {
-  "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Think Economist cover or Bloomberg terminal alert — not a sentence, not a question. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle' or 'Micro-Epsilon Targets Core Market as Semiconductor Boom Accelerates'. Never vague, never generic.",
-
-  "sector_tags": ["2–4 short topic tags for this brief, lowercase, from this list: macro, markets, competitive, regulatory, technology, talent, capital, geopolitical, supply-chain, consumer, ai, cybersecurity, energy, trade. Pick only the most relevant."],
-
-  "region_tags": ["2–3 geographic regions covered, from: US, EU, UK, APAC, MENA, LatAm, Global. Pick only the most relevant."],
-
-  "urgency": "One of: 'act-now' (regulatory deadline, fast-moving competitive event requiring this-week action), 'monitor' (trend developing over 30–90 days), 'awareness' (background context, no immediate action needed). Be calibrated — not every brief is act-now.",
-
-  "read_time": 8,
-
-  "tldr": "One sentence. The absolute bottom line this week — the single thing the CEO must know before any meeting. No caveats. No context. Just the verdict. Example: 'Competitor X is expanding into your core market this quarter — accelerate the APAC deal or lose first-mover advantage.'",
-
-  "executive_summary": "3–4 sentence lede. Lead with the dominant risk or opportunity, then the market context, then the company-specific implication, then the decision pressure it creates. Reference specific revenue percentages, competitor names, and market figures from the signals.",
-
-  "so_what": "The most important paragraph in the brief. 3–5 sentences. Directly address the CEO: what does all of this week's intelligence mean for their company RIGHT NOW? Be opinionated — do not hedge. Name the single most important action or decision this week. Example: 'The ASML restriction is the clearest signal yet that your semiconductor customers will cut orders in H2. The window to lock in Q3 contracts is this month, not next quarter. Move the APAC negotiation to a board-level conversation this week and price in a 15% volume buffer.'",
-
-  "financial_news": [
-    {
-      "market": "Country — Sector",
-      "headline": "Specific, factual headline",
-      "detail": "2–3 sentences with **bold** on the key figure",
-      "impact": "Direct impact on this company's revenue or costs in that market",
-      "source": "Publication name e.g. Reuters",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "geopolitical_news": [
-    {
-      "region": "Country or trade bloc",
-      "headline": "Specific, factual headline",
-      "detail": "2–3 sentences with **bold** on the key fact",
-      "relevance": "Why this matters to this company's specific exposure",
-      "source": "Publication name e.g. Financial Times",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "competitor_intelligence": [
-    {
-      "competitor": "Competitor name",
-      "type": "product_launch or pricing or partnership or expansion or other",
-      "headline": "What they did",
-      "detail": "2–3 sentences of context",
-      "threat_level": "low or medium or high",
-      "source": "Publication name e.g. Reuters",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "marketing_opportunities": [
-    {
-      "channel": "Channel type or market segment (e.g. Enterprise Sales — APAC, D2C — US, Retail — UK)",
-      "opportunity": "The specific marketing, sales, or channel opportunity this week's signals create",
-      "rationale": "Why these signals make this opportunity timely and actionable right now — reference specific data",
-      "urgency": "low or medium or high"
-    }
-  ],
-
-  "market_segmentation": [
-    {
-      "segment_type": "One of: audience | channel | lifestyle | needs | value | jobs",
-      "segment_name": "Short, vivid name",
-      "description": "1 sentence: who this segment is and what drives them.",
-      "size_signal": "growing | stable | declining",
-      "differentiation": "1 sentence: what makes THIS company specifically stronger for this segment vs. a named competitor. Be concrete, not generic.",
-      "competitive_vulnerability": "1 sentence: name the competitor who dominates this segment and their specific weakness.",
-      "signal_source": "The specific signal from THIS WEEK that makes this segment newly relevant.",
-      "channel_priority": "high | medium | low",
-      "urgency": "act-now | monitor | awareness"
-    }
-  ],
-
-  "financial_signals": [
-    {
-      "category": "FX Risk or Interest Rates or Credit Markets or Commodity Pricing or Equity Sentiment",
-      "headline": "What changed in capital markets this week",
-      "detail": "1–2 sentences of context relevant to this company",
-      "cfo_action": "Specific action or decision consideration for the CFO — hedging, refinancing, working capital timing, etc."
-    }
-  ],
-
-  "operational_intelligence": [
-    {
-      "area": "Logistics or Procurement or Vendor Risk or Production or Inventory",
-      "headline": "The operational risk or opportunity",
-      "detail": "1–2 sentences of context",
-      "mitigation": "Concrete immediate action to address or exploit this — be specific"
-    }
-  ],
-
-  "hr_intelligence": [
-    {
-      "category": "Talent Market or Competitor Hiring or Executive Move or Workforce Restructuring or Compensation Trends or Skills Gap or Labour Relations",
-      "headline": "What happened in the talent or workforce space",
-      "detail": "2–3 sentences with **bold** on the key figure, company, or number. What is materially new.",
-      "company_impact": "How this affects our company's ability to attract, retain, or develop talent — specific to this industry and our markets",
-      "action": "Specific HR or people-strategy action to consider — compensation review, headcount planning, talent pipeline, retention programme, etc.",
-      "signal_type": "competitor or market or regulatory or economic",
-      "source": "Publication name e.g. Financial Times, Bloomberg, HR Dive",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "tech_intelligence": [
-    {
-      "category": "AI / LLM or Hardware or Software or Semiconductors or Cybersecurity or Emerging Tech",
-      "headline": "What was released, announced, or changed",
-      "detail": "2–3 sentences with **bold** on the key product, model name, or capability. Focus on what is new and why it matters technically.",
-      "cto_action": "Specific technology decision or evaluation the CTO should consider — adopt, pilot, monitor, or defend against",
-      "relevance": "direct (affects our stack/operations now) or watch (worth evaluating in 6 months) or awareness (good to know)",
-      "source": "Publication name e.g. TechCrunch, Wired, MIT Technology Review",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "ma_watch": [
-    {
-      "type": "acquisition or merger or funding or ipo or divestiture or rumour",
-      "headline": "What happened — who acquired or funded whom, at what valuation",
-      "acquirer": "Buyer or lead investor (omit field if not applicable)",
-      "target": "Company being acquired, funded, or listed",
-      "deal_size": "$Xbn or undisclosed",
-      "detail": "2–3 sentences with **bold** on the key figure, valuation, or strategic rationale. What does the acquirer get? What changes in the market?",
-      "strategic_read": "What this deal signals about where capital and consolidation is flowing in this sector — name the trend explicitly",
-      "bd_action": "One concrete BD, partnership, or defensive action our company should consider given this deal — be specific and actionable",
-      "relevance": "direct (our exact market or customer base), adjacent (related space we operate in or sell to), or watch (sector signal)",
-      "source": "Publication name e.g. Bloomberg, Financial Times, TechCrunch, Reuters",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "customer_intelligence": [
-    {
-      "customer": "Customer name from the Key Customers list",
-      "headline": "What is happening with this customer that could affect our relationship or revenue",
-      "detail": "2–3 sentences with **bold** on the key figure or development. What is this customer doing that matters to us?",
-      "revenue_impact": "Concrete impact on our revenue or relationship — are they cutting spend, expanding, under financial stress, or growing into new markets we serve?",
-      "signal_type": "spending_cut or growth or financial_distress or strategic_shift or leadership_change or general",
-      "sentiment": "positive or neutral or negative (for our business relationship)",
-      "source": "Publication name e.g. Bloomberg, Reuters",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals, if the underlying line had one — otherwise omit this field",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field"
-    }
-  ],
-
-  "company_news": [
-    {
-      "headline": "Article headline — exactly as published or close to it",
-      "summary": "2–3 sentence summary of what the article says about the company. Include any quotes, figures, or analyst commentary mentioned.",
-      "sentiment": "positive or neutral or negative",
-      "category": "Product Launch or Partnership or Financial Results or Leadership or Legal / Regulatory or Brand / PR or General Coverage",
-      "exec_note": "Why leadership should care — reputational implication, investor signal, or PR action required. Be specific.",
-      "source": "Publication name e.g. Bloomberg, TechCrunch, Forbes",
-      "source_url": "Exact URL copied from a [URL: ...] token in the signals for this article, if it had one — otherwise omit this field. Never invent a homepage URL.",
-      "source_excerpt": "Short verbatim excerpt (~200 chars) from that signal line — otherwise omit this field",
-      "date": "Date if known e.g. 3 Mar 2026"
-    }
-  ],
-
-  "internal_intelligence": [
-    {
-      "category": "Financials or Sales or Marketing or Legal/Contract or Customer Intel or Risk Flag or Opportunity or General",
-      "headline": "What this internal signal says — plain statement of the fact",
-      "detail": "2–3 sentences. If the INTERNAL SIGNALS block gives you a connection to an external event covered elsewhere in this brief, say so explicitly — but do not restate the external event's own headline verbatim.",
-      "source_type": "note or document",
-      "source_title": "The note's category, or the document's title, that this came from",
-      "action": "Specific action this internal signal calls for",
-      "urgency": "high or medium or low"
-    }
-  ],
-
+  "headline": "8–12 words maximum. A punchy, specific wire-service headline that captures the single dominant theme of this week for this company. Name the actor or event and the stakes. Bad: 'Multiple risks identified across supply chain and competitive landscape'. Good: 'ASML Export Controls Squeeze VPG Sensor Demand at Peak Cycle'. Never vague, never generic.",
+  "sector_tags": ["2–4 short topic tags, lowercase, from: macro, markets, competitive, regulatory, technology, talent, capital, geopolitical, supply-chain, consumer, ai, cybersecurity, energy, trade."],
+  "region_tags": ["2–3 geographic regions, from: US, EU, UK, APAC, MENA, LatAm, Global."],
+  "urgency": "One of: 'act-now' (regulatory deadline, fast-moving competitive event requiring this-week action), 'monitor' (trend developing over 30–90 days), 'awareness' (background context). Be calibrated — not every brief is act-now.",
+  "read_time": 6,
+  "tldr": "One sentence. The absolute bottom line this week. No caveats. Just the verdict.",
+  "executive_summary": "3–4 sentence lede. Lead with the dominant risk or opportunity, then market context, then company-specific implication, then decision pressure. Reference specific figures, competitor names, and market data.",
+  "so_what": "The most important paragraph in the brief. 3–5 sentences. Directly address the CEO: what does this week's intelligence mean RIGHT NOW? Be opinionated. Name the single most important action this week.",
   "risk_summary": [
-    {
-      "title": "Short risk title",
-      "detail": "One sentence describing the risk",
-      "severity": "low or medium or high",
-      "timeframe": "immediate or near-term or long-term"
-    }
+    { "title": "Short risk title", "detail": "One sentence describing the risk", "severity": "low or medium or high", "timeframe": "immediate or near-term or long-term" }
   ],
-
   "capital_impact": {
-    "revenue_exposure": "How this week's signals affect the company's revenue outlook. Be specific about which markets and magnitudes.",
+    "revenue_exposure": "How this week's signals affect revenue outlook. Specific markets and magnitudes.",
     "margin_pressure": "Cost pressures, pricing dynamics, or currency movements affecting margins.",
-    "capex_considerations": "Whether current signals argue for accelerating, deferring, or redirecting capital investment."
+    "capex_considerations": "Whether signals argue for accelerating, deferring, or redirecting capital investment."
   },
-
   "decision_framing": [
-    {
-      "question": "The specific decision this CEO faces",
-      "context": "Why it is pressing right now based on this week's signals",
-      "options": [
-        "Option A with its trade-off",
-        "Option B with its trade-off",
-        "Option C with its trade-off"
-      ]
-    }
+    { "question": "The specific decision this CEO faces", "context": "Why it is pressing right now", "options": ["Option A with its real trade-off", "Option B with its real trade-off"] }
   ],
-
   "scenario_modeling": [
-    {
-      "title": "Scenario name",
-      "probability": "low or medium or high",
-      "trigger": "What specific event would cause this scenario to materialise",
-      "impact": "Business consequence — revenue, margin, operations",
-      "response": "Concrete preparation or response action"
-    }
+    { "title": "Scenario name", "probability": "low or medium or high", "trigger": "What specific event would cause this to materialise", "impact": "Business consequence", "response": "Concrete preparation action" }
   ],
-
   "weekly_actions": [
-    {
-      "action": "A SMART objective, not a vague intention. Specific: name the real people/teams/counterparties and the exact step. Measurable: include a number, threshold, or concrete deliverable — not just 'assess' or 'review' with nothing to check against. Time-related: a real deadline (this week, by Friday, before the board meeting) — never open-ended. Must be Achievable and Realistic given this company's actual size and resources — do not prescribe actions only a much larger company could execute. E.g. 'Call Frankfurt sales lead by Friday to quantify Q2 pipeline impact from the procurement freeze and get a revised forecast' — not 'Review European exposure'.",
-      "owner": "CEO or CFO or CMO or CTO or CBPO or VP HR or All",
-      "priority": "high or medium or low",
-      "section": "Which section triggered this action e.g. Competitor Intel, Risk Register, Geopolitical"
-    }
+    { "action": "A SMART objective — specific, measurable, time-bound, achievable for this company's actual size. E.g. 'Call Frankfurt sales lead by Friday to quantify Q2 pipeline impact' — not 'Review European exposure'.", "owner": "CEO or CFO or CMO or CTO or CBPO or VP HR or All", "priority": "high or medium or low", "section": "Which topic triggered this action" }
   ]
 }`
+}
+
+// B. Market & financial intelligence
+export function buildMarketUserPrompt(
+  company: Company, profile: CompanyProfile, signals: string,
+  language = 'English', locations: CompanyLocation[] = [], previousBriefContext = ''
+): string {
+  const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
+  return `${context}
+---
+Produce ONLY the market and financial intelligence sections of the brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
+
+${ITEM_CAP_NOTE} market_segmentation specifically: at most 2 items.
+
+{
+  "financial_news": [
+    { "market": "Country — Sector", "headline": "Specific, factual headline", "detail": "2–3 sentences with **bold** on the key figure", "impact": "Direct impact on this company's revenue or costs", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt (~200 chars), or omit" }
+  ],
+  "geopolitical_news": [
+    { "region": "Country or trade bloc", "headline": "Specific, factual headline", "detail": "2–3 sentences with **bold** on the key fact", "relevance": "Why this matters to this company's specific exposure", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "financial_signals": [
+    { "category": "FX Risk or Interest Rates or Credit Markets or Commodity Pricing or Equity Sentiment", "headline": "What changed in capital markets this week", "detail": "1–2 sentences of context relevant to this company", "cfo_action": "Specific CFO action — hedging, refinancing, working capital timing" }
+  ],
+  "operational_intelligence": [
+    { "area": "Logistics or Procurement or Vendor Risk or Production or Inventory", "headline": "The operational risk or opportunity", "detail": "1–2 sentences", "mitigation": "Concrete immediate action" }
+  ],
+  "market_segmentation": [
+    { "segment_type": "One of: audience | channel | lifestyle | needs | value | jobs", "segment_name": "Short, vivid name", "description": "1 sentence.", "size_signal": "growing | stable | declining", "differentiation": "1 sentence: what makes THIS company stronger for this segment vs. a named competitor.", "competitive_vulnerability": "1 sentence: name the competitor who dominates and their weakness.", "signal_source": "The specific signal from THIS WEEK.", "channel_priority": "high | medium | low", "urgency": "act-now | monitor | awareness" }
+  ],
+  "marketing_opportunities": [
+    { "channel": "Channel type or market segment", "opportunity": "The specific opportunity this week's signals create", "rationale": "Why this is timely — reference specific data", "urgency": "low or medium or high" }
+  ]
+}`
+}
+
+// C. Competitive & commercial intelligence
+export function buildCompetitiveUserPrompt(
+  company: Company, profile: CompanyProfile, signals: string,
+  language = 'English', locations: CompanyLocation[] = [], previousBriefContext = ''
+): string {
+  const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
+  return `${context}
+---
+Produce ONLY the competitive and commercial intelligence sections of the brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
+
+${ITEM_CAP_NOTE}
+
+{
+  "competitor_intelligence": [
+    { "competitor": "Competitor name", "type": "product_launch or pricing or partnership or expansion or other", "headline": "What they did", "detail": "2–3 sentences of context", "threat_level": "low or medium or high", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "ma_watch": [
+    { "type": "acquisition or merger or funding or ipo or divestiture or rumour", "headline": "What happened — who acquired or funded whom", "acquirer": "Buyer or lead investor (omit if n/a)", "target": "Company being acquired/funded/listed", "deal_size": "$Xbn or undisclosed", "detail": "2–3 sentences with **bold** on the key figure or rationale", "strategic_read": "What this signals about capital/consolidation flow", "bd_action": "One concrete BD or defensive action", "relevance": "direct or adjacent or watch", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "customer_intelligence": [
+    { "customer": "Customer name from the Key Customers list", "headline": "What is happening with this customer", "detail": "2–3 sentences with **bold** on the key development", "revenue_impact": "Concrete impact on revenue or relationship", "signal_type": "spending_cut or growth or financial_distress or strategic_shift or leadership_change or general", "sentiment": "positive or neutral or negative", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "company_news": [
+    { "headline": "Article headline, as published", "summary": "2–3 sentence summary including quotes/figures mentioned", "sentiment": "positive or neutral or negative", "category": "Product Launch or Partnership or Financial Results or Leadership or Legal / Regulatory or Brand / PR or General Coverage", "exec_note": "Why leadership should care — specific action (amplify, respond, monitor, escalate)", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token for THIS article, or omit — never invent one", "source_excerpt": "Short verbatim excerpt, or omit", "date": "Date if known" }
+  ]
+}`
+}
+
+// D. People, technology & internal intelligence
+export function buildPeopleTechUserPrompt(
+  company: Company, profile: CompanyProfile, signals: string,
+  language = 'English', locations: CompanyLocation[] = [], previousBriefContext = ''
+): string {
+  const context = buildContextBlock(company, profile, signals, language, locations, previousBriefContext)
+  return `${context}
+---
+Produce ONLY the people, technology, and internal intelligence sections of the brief as a single JSON object. Return ONLY the JSON — no markdown, no explanation.
+
+${ITEM_CAP_NOTE}
+
+{
+  "hr_intelligence": [
+    { "category": "Talent Market or Competitor Hiring or Executive Move or Workforce Restructuring or Compensation Trends or Skills Gap or Labour Relations", "headline": "What happened", "detail": "2–3 sentences with **bold** on the key figure or company. What is materially new.", "company_impact": "How this affects this company's ability to attract/retain/develop talent", "action": "Specific HR/people-strategy action", "signal_type": "competitor or market or regulatory or economic", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "tech_intelligence": [
+    { "category": "AI / LLM or Hardware or Software or Semiconductors or Cybersecurity or Emerging Tech", "headline": "What was released, announced, or changed", "detail": "2–3 sentences with **bold** on the key product or capability", "cto_action": "Specific tech decision — adopt, pilot, monitor, defend against", "relevance": "direct or watch or awareness", "source": "Publication name", "source_url": "Exact URL from a [URL: ...] token, or omit", "source_excerpt": "Short verbatim excerpt, or omit" }
+  ],
+  "internal_intelligence": [
+    { "category": "Financials or Sales or Marketing or Legal/Contract or Customer Intel or Risk Flag or Opportunity or General", "headline": "What this internal signal says — plain statement of fact", "detail": "2–3 sentences. If it connects to an external event, say so — but don't restate that event's headline verbatim.", "source_type": "note or document", "source_title": "The note's category, or the document's title", "action": "Specific action this calls for", "urgency": "high or medium or low" }
+  ]
+}
+
+IMPORTANT: internal_intelligence must be sourced EXCLUSIVELY from the INTERNAL SIGNALS block above (company-provided notes/documents) — never from web/news signals. If that block is empty or absent, return an empty array — do not invent internal data.`
 }
 
 // ── Strategic frameworks call — SWOT / PESTEL / Five Forces, run in

@@ -1,5 +1,12 @@
 import { anthropic } from './client'
-import { SYSTEM_PROMPT, buildCoreUserPrompt, buildFrameworksUserPrompt } from './prompts'
+import {
+  SYSTEM_PROMPT,
+  buildNarrativeUserPrompt,
+  buildMarketUserPrompt,
+  buildCompetitiveUserPrompt,
+  buildPeopleTechUserPrompt,
+  buildFrameworksUserPrompt,
+} from './prompts'
 import { buildLiveSignals } from '@/lib/live-signals'
 import { fetchLiveMarketData } from '@/lib/live-market-data'
 import { buildInternalSignals } from '@/lib/internal-signals'
@@ -7,6 +14,47 @@ import { formatIRBlock } from '@/lib/investor-relations'
 import { computeWhatChanged } from './what-changed'
 import { supabaseAdmin as supabase } from '@/lib/supabase/server'
 import type { Company, CompanyProfile, BriefContent } from '@/lib/types'
+
+interface BriefSlice {
+  name: string
+  prompt: string
+  maxTokens: number
+}
+
+async function generateSlice(slice: BriefSlice): Promise<{ name: string; brief: Record<string, unknown>; inputTokens: number; outputTokens: number }> {
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: slice.maxTokens,
+    system: SYSTEM_PROMPT,
+    tools: [
+      {
+        name: `generate_${slice.name}`,
+        description: `Output the ${slice.name} sections of the weekly intelligence brief as structured JSON.`,
+        input_schema: {
+          type: 'object' as const,
+          properties: { brief: { type: 'object', description: 'The relevant BriefContent fields for this slice' } },
+          required: ['brief'],
+        },
+      },
+    ],
+    tool_choice: { type: 'tool', name: `generate_${slice.name}` },
+    messages: [{ role: 'user', content: slice.prompt }],
+  })
+
+  if (message.stop_reason === 'max_tokens') {
+    throw new Error(`Brief slice "${slice.name}" was truncated at the max_tokens limit (${message.usage.output_tokens} tokens) — raise maxTokens for this slice in synthesize.ts`)
+  }
+
+  const toolBlock = message.content.find(b => b.type === 'tool_use')
+  if (!toolBlock || toolBlock.type !== 'tool_use') {
+    throw new Error(`Claude did not return a tool_use block for brief slice "${slice.name}"`)
+  }
+
+  const brief = (toolBlock.input as { brief?: Record<string, unknown> }).brief
+  if (!brief) throw new Error(`Brief slice "${slice.name}" tool call had no brief field`)
+
+  return { name: slice.name, brief, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens }
+}
 
 export async function synthesizeBrief(
   company: Company,
@@ -87,91 +135,33 @@ export async function synthesizeBrief(
     return {} as Record<string, import('@/lib/types').StoredSparkline>
   })
 
-  const coreUserPrompt = buildCoreUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
-  const frameworksUserPrompt = buildFrameworksUserPrompt(company, profile, signalsWithInternal, language, locations, previousBriefContext)
+  // The brief is split into five small, focused Claude calls that all run
+  // concurrently instead of one call writing the whole thing sequentially.
+  // Each call only has to write a few hundred to ~2000 tokens, so wall-clock
+  // time is bounded by the slowest of five small calls, not one huge one —
+  // this is what actually keeps generation reliably under Vercel Hobby's
+  // 300s function ceiling.
+  const argsForSlices = [company, profile, signalsWithInternal, language, locations, previousBriefContext] as const
+  const slices: BriefSlice[] = [
+    { name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 4000 },
+    { name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 3000 },
+    { name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 3000 },
+    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 2500 },
+    { name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 3000 },
+  ]
 
-  // Core content and strategic frameworks run as two parallel Claude calls
-  // instead of one sequential mega-call — same total content, but wall-clock
-  // time is bounded by the larger of the two rather than their sum. This
-  // matters on Vercel Hobby's 300s function ceiling.
-  const [coreMessage, frameworksMessage] = await Promise.all([
-    anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 13000,
-      system: SYSTEM_PROMPT,
-      tools: [
-        {
-          name: 'generate_brief_core',
-          description: 'Output the core sections of the weekly intelligence brief as structured JSON.',
-          input_schema: {
-            type: 'object' as const,
-            properties: { brief: { type: 'object', description: 'The core BriefContent fields (everything except swot/pestel/five_forces)' } },
-            required: ['brief'],
-          },
-        },
-      ],
-      tool_choice: { type: 'tool', name: 'generate_brief_core' },
-      messages: [{ role: 'user', content: coreUserPrompt }],
-    }),
-    anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 6000,
-      system: SYSTEM_PROMPT,
-      tools: [
-        {
-          name: 'generate_brief_frameworks',
-          description: 'Output the strategic framework sections (SWOT, PESTEL, Five Forces) as structured JSON.',
-          input_schema: {
-            type: 'object' as const,
-            properties: { brief: { type: 'object', description: 'An object with swot, pestel, and five_forces fields' } },
-            required: ['brief'],
-          },
-        },
-      ],
-      tool_choice: { type: 'tool', name: 'generate_brief_frameworks' },
-      messages: [{ role: 'user', content: frameworksUserPrompt }],
-    }),
-  ])
+  const results = await Promise.all(slices.map(generateSlice))
 
   console.log('[synthesize] tokens used:', {
     company: company.name,
-    core_input_tokens: coreMessage.usage.input_tokens,
-    core_output_tokens: coreMessage.usage.output_tokens,
-    frameworks_input_tokens: frameworksMessage.usage.input_tokens,
-    frameworks_output_tokens: frameworksMessage.usage.output_tokens,
-    estimated_cost_usd: (
-      ((coreMessage.usage.input_tokens + frameworksMessage.usage.input_tokens) * 0.000003) +
-      ((coreMessage.usage.output_tokens + frameworksMessage.usage.output_tokens) * 0.000015)
+    slices: results.map(r => ({ name: r.name, input_tokens: r.inputTokens, output_tokens: r.outputTokens })),
+    estimated_cost_usd: results.reduce(
+      (sum, r) => sum + (r.inputTokens * 0.000003) + (r.outputTokens * 0.000015),
+      0
     ).toFixed(4),
   })
 
-  if (coreMessage.stop_reason === 'max_tokens') {
-    throw new Error(`Core content call was truncated at the max_tokens limit (${coreMessage.usage.output_tokens} tokens) — raise max_tokens in synthesize.ts`)
-  }
-  if (frameworksMessage.stop_reason === 'max_tokens') {
-    throw new Error(`Strategic frameworks call was truncated at the max_tokens limit (${frameworksMessage.usage.output_tokens} tokens) — raise max_tokens in synthesize.ts`)
-  }
-
-  const coreToolBlock = coreMessage.content.find(b => b.type === 'tool_use')
-  if (!coreToolBlock || coreToolBlock.type !== 'tool_use') {
-    throw new Error('Claude did not return a tool_use block for core content')
-  }
-  const frameworksToolBlock = frameworksMessage.content.find(b => b.type === 'tool_use')
-  if (!frameworksToolBlock || frameworksToolBlock.type !== 'tool_use') {
-    throw new Error('Claude did not return a tool_use block for strategic frameworks')
-  }
-
-  const coreBrief = (coreToolBlock.input as { brief?: Omit<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
-  const frameworks = (frameworksToolBlock.input as { brief?: Pick<BriefContent, 'swot' | 'pestel' | 'five_forces'> }).brief
-  if (!coreBrief) throw new Error('Core content tool call had no brief field')
-  if (!frameworks) throw new Error('Strategic frameworks tool call had no brief field')
-
-  const content: BriefContent = {
-    ...coreBrief,
-    swot: frameworks.swot,
-    pestel: frameworks.pestel,
-    five_forces: frameworks.five_forces,
-  }
+  const content = Object.assign({}, ...results.map(r => r.brief)) as BriefContent
 
   if (Object.keys(marketSnapshots).length > 0) {
     content.market_snapshots = marketSnapshots
