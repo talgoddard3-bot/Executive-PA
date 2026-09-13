@@ -146,7 +146,7 @@ export async function synthesizeBrief(
     { name: 'narrative', prompt: buildNarrativeUserPrompt(...argsForSlices), maxTokens: 4000 },
     { name: 'market_intelligence', prompt: buildMarketUserPrompt(...argsForSlices), maxTokens: 3000 },
     { name: 'competitive_intelligence', prompt: buildCompetitiveUserPrompt(...argsForSlices), maxTokens: 3000 },
-    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 2500 },
+    { name: 'people_tech_internal', prompt: buildPeopleTechUserPrompt(...argsForSlices), maxTokens: 4500 },
     { name: 'strategic_frameworks', prompt: buildFrameworksUserPrompt(...argsForSlices), maxTokens: 3000 },
   ]
 
