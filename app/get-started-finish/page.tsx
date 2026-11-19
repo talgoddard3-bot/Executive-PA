@@ -26,7 +26,7 @@ export default function GetStartedFinishPage() {
           })
         }
 
-        setStatus('Redirecting to payment…')
+        setStatus('Sending your application…')
         const stripeRes = await fetch('/api/stripe/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -310,6 +310,8 @@ export interface InternalIntelItem {
 }
 
 export interface BriefContent {
+  /** How many insight items carry a verified source link (set at generation time). */
+  citation_stats?: { items: number; cited: number; removed: number }
   headline: string
   tldr?: string
   sector_tags?: string[]        // e.g. ["fintech", "regulation", "AI"]

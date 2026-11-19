@@ -41,7 +41,9 @@ type Step = 'plan' | 'details' | 'account' | 'paying'
 
 function GetStartedFlow() {
   const searchParams = useSearchParams()
-  const [step, setStep]       = useState<Step>('plan')
+  // Pilot: applicants go straight to "About you". The plan step below is kept
+  // (unreachable) so self-serve pricing can be switched back on later.
+  const [step, setStep]       = useState<Step>('details')
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly')
   const [plan,    setPlan]    = useState(searchParams.get('plan') ?? 'solo')
   const [error,   setError]   = useState('')
@@ -66,8 +68,6 @@ function GetStartedFlow() {
     if (p) setStep('details')
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const selectedPlan = PLANS.find(p => p.id === plan) ?? PLANS[0]
-  const price = billing === 'yearly' ? selectedPlan.yearlyMonthly : selectedPlan.monthlyPrice
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -159,10 +159,9 @@ function GetStartedFlow() {
   // ── Step indicators ──────────────────────────────────────────────────────────
 
   const STEPS: { id: Step; label: string }[] = [
-    { id: 'plan',    label: 'Plan' },
     { id: 'details', label: 'About you' },
     { id: 'account', label: 'Account' },
-    { id: 'paying',  label: 'Payment' },
+    { id: 'paying',  label: 'Done' },
   ]
   const stepIndex = STEPS.findIndex(s => s.id === step)
 
@@ -206,7 +205,7 @@ function GetStartedFlow() {
                       </div>
                       {s.label}
                     </div>
-                    {i < 2 && <div className="w-6 h-px bg-gray-700 mx-1" />}
+                    {i < STEPS.length - 2 && <div className="w-6 h-px bg-gray-700 mx-1" />}
                   </div>
                 )
               })}
@@ -319,7 +318,7 @@ function GetStartedFlow() {
                 {error && <p className="text-xs text-red-400 text-center">{error}</p>}
 
                 <div className="flex gap-2 pt-1">
-                  <button onClick={() => { setStep('plan'); setError('') }}
+                  <button onClick={() => { window.location.href = '/' }}
                     className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 text-sm hover:bg-white/5 transition-colors">
                     Back
                   </button>
@@ -342,7 +341,7 @@ function GetStartedFlow() {
               <div className="text-center mb-7">
                 <h1 className="text-2xl font-bold text-white mb-1">Create your account</h1>
                 <p className="text-sm text-gray-400">
-                  {selectedPlan.name} plan · ${price.toFixed(2)}/mo billed {billing}
+                  Design-partner pilot · free for 4 weeks · no credit card
                 </p>
               </div>
 
@@ -425,7 +424,7 @@ function GetStartedFlow() {
                 <span className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin block" />
               </div>
               <h2 className="text-xl font-bold text-white mb-2">Setting up your account…</h2>
-              <p className="text-sm text-gray-400">Redirecting you to secure payment.</p>
+              <p className="text-sm text-gray-400">Sending your pilot application.</p>
               {error && (
                 <div className="mt-4 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">
                   {error}

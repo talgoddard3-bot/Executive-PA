@@ -32,8 +32,11 @@ export async function POST(request: Request) {
   const body = await request.json()
   const { enabled, days, hour_utc, recipient_emails } = body
 
-  if (!Array.isArray(days) || typeof hour_utc !== 'number') {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  const validDays = Array.isArray(days) && days.length > 0 && days.every((d: unknown) => Number.isInteger(d) && (d as number) >= 0 && (d as number) <= 6)
+  const validHour = Number.isInteger(hour_utc) && hour_utc >= 0 && hour_utc <= 23
+  const validEmails = recipient_emails === undefined || (Array.isArray(recipient_emails) && recipient_emails.length <= 25 && recipient_emails.every((e: unknown) => typeof e === 'string' && /^[^s@]+@[^s@]+.[^s@]+$/.test(e)))
+  if (!validDays || !validHour || !validEmails) {
+    return NextResponse.json({ error: 'Invalid schedule: pick a day, an hour between 0 and 23, and valid email addresses.' }, { status: 400 })
   }
 
   const companyId = await getSessionCompanyId()
@@ -42,7 +45,7 @@ export async function POST(request: Request) {
   const { data, error } = await db()
     .from('brief_schedules')
     .upsert(
-      { company_id: companyId, enabled, days, hour_utc, recipient_emails: recipient_emails ?? [], updated_at: new Date().toISOString() },
+      { company_id: companyId, enabled: enabled === true, days, hour_utc, recipient_emails: recipient_emails ?? [], updated_at: new Date().toISOString() },
       { onConflict: 'company_id' }
     )
     .select()

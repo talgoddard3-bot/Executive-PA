@@ -1,16 +1,108 @@
 {
   "crons": [
     {
-      "path": "/api/briefs/cron",
-      "schedule": "0 7 * * 1"
+      "path": "/api/briefs/cron/h00",
+      "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/alerts/check",
+      "path": "/api/briefs/cron/h01",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h02",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h03",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h04",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h05",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h06",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h07",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h08",
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/investor-relations/check",
+      "path": "/api/briefs/cron/h09",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h10",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h11",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h12",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h13",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h14",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h15",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h16",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h17",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h18",
+      "schedule": "0 18 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h19",
+      "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h20",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h21",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h22",
+      "schedule": "0 22 * * *"
+    },
+    {
+      "path": "/api/briefs/cron/h23",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/alerts/check",
+      "schedule": "30 8 * * *"
+    },
+    {
+      "path": "/api/investor-relations/check",
+      "schedule": "30 20 * * *"
     }
   ]
 }

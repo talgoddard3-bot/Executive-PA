@@ -13,9 +13,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteTitle = "Intelligent Brief: weekly intelligence for leadership teams";
+const siteDescription =
+  "A weekly intelligence brief built around your company: your markets, competitors, customers and suppliers. Filtered by role and delivered on the day and time you choose.";
+
 export const metadata: Metadata = {
-  title: "Intelligent Brief",
-  description: "Weekly strategic intelligence for global executives.",
+  metadataBase: new URL("https://www.companybrief.net"),
+  title: { default: siteTitle, template: "%s · Intelligent Brief" },
+  description: siteDescription,
+  applicationName: "Intelligent Brief",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Intelligent Brief",
+    title: siteTitle,
+    description: siteDescription,
+  },
+  twitter: { card: "summary", title: siteTitle, description: siteDescription },
 };
 
 export default function RootLayout({

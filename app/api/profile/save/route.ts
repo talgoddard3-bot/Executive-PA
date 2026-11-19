@@ -11,14 +11,17 @@ export async function POST(request: Request) {
     const { userId, companyId: sessionCompanyId } = session
 
     const body = await request.json()
-    const { companyId, name, industry, company_type, stock_ticker, website, revenue_countries, supplier_countries, competitors, customers, keywords, commodities, products, company_notes, vision, mission, ir_page_url, locations } = body
+    const { name, industry, company_type, stock_ticker, website, revenue_countries, supplier_countries, competitors, customers, keywords, commodities, products, company_notes, vision, mission, ir_page_url, locations } = body
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    let cId = companyId ?? sessionCompanyId
+    // The company is always the signed-in user's own. A company id sent in the
+    // request body used to win here, which let any signed-in user overwrite
+    // another company's profile.
+    let cId = sessionCompanyId
 
     if (!cId) {
       // Upsert on user_id to avoid duplicate constraint when a company already exists
@@ -42,6 +45,22 @@ export async function POST(request: Request) {
         .from('user_profiles')
         .update({ company_id: cId })
         .eq('user_id', userId)
+
+      // Every new company gets a weekly schedule out of the box (Monday 07:00 UTC,
+      // emailed to its creator). Without this a company only received automatic
+      // briefs if someone found Settings → Schedule and switched it on.
+      const { data: creator } = await supabase
+        .from('user_profiles')
+        .select('email')
+        .eq('user_id', userId)
+        .maybeSingle()
+      const { error: schedErr } = await supabase
+        .from('brief_schedules')
+        .upsert(
+          { company_id: cId, enabled: true, days: [1], hour_utc: 7, recipient_emails: creator?.email ? [creator.email] : [] },
+          { onConflict: 'company_id', ignoreDuplicates: true }
+        )
+      if (schedErr) console.error('default brief schedule insert error:', schedErr)
     } else {
       await supabase.from('companies').update({ name, industry, company_type, stock_ticker: stock_ticker ?? null, website: website ?? null }).eq('id', cId)
     }

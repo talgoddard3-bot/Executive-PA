@@ -18,6 +18,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 503 })
   }
 
+  // Pilot mode (default): there is no payment step. Sign-ups become applications
+  // that an admin approves; the sign-up pages already fall back to /pending when
+  // this route does not return a checkout URL. Set PILOT_MODE=false to turn
+  // self-serve checkout back on. Independently of that flag, a real customer is
+  // never sent to a Stripe *test-mode* checkout in production, where a real card
+  // would simply be declined.
+  const pilotMode = process.env.PILOT_MODE !== 'false'
+  const testKeyInProduction = process.env.VERCEL_ENV === 'production' && stripeKey.startsWith('sk_test_')
+  if (pilotMode || testKeyInProduction) {
+    return NextResponse.json({ error: 'Payments are not enabled yet', pilot: true }, { status: 503 })
+  }
+
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -40,7 +40,7 @@ export async function POST(
     return NextResponse.json({ error: 'Brief not ready' }, { status: 400 })
   }
 
-  const toEmail = userProfile?.email || process.env.EMAIL_TO || 'talgoddard3@gmail.com'
+  const toEmail = userProfile?.email || process.env.EMAIL_TO
   if (!toEmail) return NextResponse.json({ error: 'No recipient email configured — set one in My Profile' }, { status: 400 })
 
   const content = brief.content as BriefContent

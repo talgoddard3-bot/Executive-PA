@@ -1,8 +1,19 @@
 import { anthropic } from '@/lib/claude/client'
+import { getSessionUser } from '@/lib/get-company'
 import { NextResponse } from 'next/server'
+
+// Up to 8 web searches + a long Claude call per request.
+export const maxDuration = 120
 
 export async function POST(request: Request) {
   try {
+  // This endpoint spends real money (Claude + web search). It used to be open to
+  // anyone on the internet; it now requires a signed-in user.
+  const session = await getSessionUser()
+  if (!session?.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { name, industry, company_type, website, custom_instructions } = await request.json()
 
   if (!name || !industry) {

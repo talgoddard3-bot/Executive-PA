@@ -77,6 +77,49 @@ async function generateSlice(slice: BriefSlice): Promise<{ name: string; brief: 
   return { name: slice.name, brief, inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens }
 }
 
+// Sections whose items may carry a source link.
+const CITED_SECTIONS = [
+  'financial_news', 'geopolitical_news', 'competitor_intelligence', 'ma_watch',
+  'customer_intelligence', 'company_news', 'hr_intelligence', 'tech_intelligence',
+] as const
+
+function normaliseUrl(url: string): string {
+  return url.trim().replace(/[)\].,;]+$/, '').replace(/\/+$/, '').toLowerCase()
+}
+
+/**
+ * Trust check on citations. The model is told to copy URLs only from the
+ * "[URL: …]" tokens in the signals it was given; this enforces it. Any
+ * source_url that does not appear in those signals is removed (the insight
+ * stays, without a link), so every link a reader can click is one we fetched.
+ * Returns coverage numbers that are stored on the brief.
+ */
+export function verifyCitations(content: BriefContent, signalsText: string): { items: number; cited: number; removed: number } {
+  const known = new Set<string>()
+  for (const match of signalsText.matchAll(/\[URL:\s*([^\]\s]+)\s*\]/g)) known.add(normaliseUrl(match[1]))
+
+  let items = 0, cited = 0, removed = 0
+  const record = content as unknown as Record<string, unknown>
+  for (const section of CITED_SECTIONS) {
+    const list = record[section]
+    if (!Array.isArray(list)) continue
+    for (const item of list as Record<string, unknown>[]) {
+      if (!item || typeof item !== 'object') continue
+      items++
+      const url = typeof item.source_url === 'string' ? item.source_url : ''
+      if (!url) continue
+      if (/^https?:\/\//i.test(url) && known.has(normaliseUrl(url))) {
+        cited++
+      } else {
+        delete item.source_url
+        delete item.source_excerpt
+        removed++
+      }
+    }
+  }
+  return { items, cited, removed }
+}
+
 export async function synthesizeBrief(
   company: Company,
   profile: CompanyProfile,
@@ -204,6 +247,13 @@ export async function synthesizeBrief(
   }
 
   content.what_changed = computeWhatChanged(content, previousBriefContent)
+
+  const citations = verifyCitations(content, signalsWithInternal)
+  content.citation_stats = citations
+  console.log('[synthesize] citations:', { company: company.name, ...citations })
+  if (citations.removed > 0) {
+    console.warn(`[synthesize] removed ${citations.removed} source link(s) that were not in the fetched signals`)
+  }
 
   return content
 }

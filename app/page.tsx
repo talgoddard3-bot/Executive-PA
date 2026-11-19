@@ -7,7 +7,7 @@ import Image from 'next/image'
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'Pilot', href: '#pilot' },
 ]
 
 const FEATURES = [
@@ -36,7 +36,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Ready before your first meeting',
-    desc: 'Every Monday morning. Synthesized overnight. In your inbox before 8am — so you walk into any room as the most prepared person there.',
+    desc: 'You pick the day and the hour. Your brief is written and emailed then, so you walk into the first meeting of the week as the most prepared person in the room.',
   },
   {
     icon: (
@@ -76,7 +76,7 @@ const STEPS = [
   {
     num: '02',
     title: 'We synthesize your intelligence',
-    desc: 'Every Monday, our AI pulls from hundreds of sources and writes your weekly brief — filtered for your company\'s specific context.',
+    desc: 'Every week, on the schedule you set, we pull from news, company filings, market data and patents and write your brief, filtered for your company\'s specific context.',
   },
   {
     num: '03',
@@ -85,48 +85,22 @@ const STEPS = [
   },
 ]
 
-const PLANS = [
-  {
-    name: 'Solo',
-    plan: 'solo',
-    desc: 'For a single executive who needs an edge.',
-    monthlyPrice: 15,
-    yearlyPrice: 150,
-    yearlyMonthly: 12.50,
-    features: [
-      'Weekly AI-synthesized intelligence brief',
-      'Role-specific content filtering',
-      'Live market data & charts',
-      'AI chat assistant per brief',
-      'Email delivery every Monday',
-      'Full brief archive',
-    ],
-    cta: 'Get started',
-    highlight: false,
-  },
-  {
-    name: 'Team',
-    plan: 'team',
-    desc: 'For C-suites that move as one unit.',
-    monthlyPrice: 50,
-    yearlyPrice: 500,
-    yearlyMonthly: 41.67,
-    features: [
-      'Everything in Solo',
-      'Up to 5 team members',
-      'Shared company intelligence profile',
-      'Role-filtered access per user (CEO, CFO, CTO…)',
-      'Internal notes & document upload',
-      'Priority support',
-    ],
-    cta: 'Get started',
-    highlight: true,
-    badge: 'Most popular',
-  },
+// The product is in a design-partner pilot: no self-serve pricing on the site yet.
+const PILOT_GET = [
+  'A weekly intelligence brief built from your markets, competitors, customers and suppliers',
+  'Role-filtered views for up to 5 people on your leadership team',
+  'Source links on insights wherever a public source exists',
+  'Ask-the-brief AI assistant and the full brief archive',
+  'Founder-led onboarding and a direct line for requests',
+]
+
+const PILOT_ASK = [
+  'A 30-minute setup call to map what your company is exposed to',
+  'Two minutes of feedback on each brief: what was useful, what you acted on',
+  'A decision at the end of week 4: continue as a paying partner, or stop',
 ]
 
 export default function LandingPage() {
-  const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly')
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -173,7 +147,7 @@ export default function LandingPage() {
               href="/get-started"
               className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-semibold text-white transition-colors"
             >
-              Request access
+              Apply for the pilot
             </Link>
           </div>
         </div>
@@ -204,7 +178,7 @@ export default function LandingPage() {
 
           {/* Sub */}
           <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed mb-10">
-            Every Monday morning, a tailored intelligence brief lands in your inbox — powered by AI, enriched with live market data, filtered by your role. Built for CEOs, CFOs, CTOs, and the teams they lead.
+            Every week, a tailored intelligence brief lands in your inbox. It is built from your markets, competitors, customers and suppliers, enriched with live market data, and filtered by role. Built for CEOs, CFOs, CTOs, and the teams they lead.
           </p>
 
           {/* CTAs */}
@@ -213,7 +187,7 @@ export default function LandingPage() {
               href="/get-started"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 hover:-translate-y-0.5"
             >
-              Request early access
+              Apply for the pilot
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
               </svg>
@@ -232,7 +206,7 @@ export default function LandingPage() {
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              Ready before your 8am meeting
+              Delivered on the day and time you choose
             </span>
             <span className="flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
@@ -244,7 +218,7 @@ export default function LandingPage() {
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              Cancel anytime
+              Free 4-week pilot
             </span>
           </div>
         </div>
@@ -309,105 +283,58 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Pricing ─────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="py-24 px-6 border-t border-white/5">
+      {/* ── Pilot ───────────────────────────────────────────────────────────── */}
+      <section id="pilot" className="py-24 px-6 border-t border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">Pricing</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-blue-400 mb-3">Design-partner pilot</p>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Invest less than a Bloomberg terminal.<br className="hidden md:block" />
-              <span className="text-gray-400">Get something more relevant.</span>
+              Four weeks. Your company.<br className="hidden md:block" />
+              <span className="text-gray-400"> No charge.</span>
             </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              We are working with a small group of leadership teams to shape the product. You get a weekly brief built around your company. We get your honest feedback.
+            </p>
+          </div>
 
-            {/* Billing toggle */}
-            <div className="inline-flex items-center gap-1 mt-6 p-1 rounded-xl border border-white/10 bg-white/5">
-              {(['monthly', 'yearly'] as const).map(b => (
-                <button
-                  key={b}
-                  onClick={() => setBilling(b)}
-                  className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                    billing === b
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {b === 'monthly' ? 'Monthly' : 'Yearly'}
-                  {b === 'yearly' && (
-                    <span className="ml-2 text-[10px] font-bold text-emerald-400">
-                      SAVE 17%
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="rounded-2xl p-8 border bg-blue-600/10 border-blue-500/40 ring-1 ring-blue-500/20">
+              <h3 className="text-lg font-bold text-white mb-5">What you get</h3>
+              <ul className="space-y-3">
+                {PILOT_GET.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                    <svg className="w-4 h-4 mt-0.5 shrink-0 text-blue-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl p-8 border bg-white/[0.03] border-white/10">
+              <h3 className="text-lg font-bold text-white mb-5">What we ask</h3>
+              <ul className="space-y-3 mb-8">
+                {PILOT_ASK.map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
+                    <span className="w-5 h-5 mt-0.5 shrink-0 rounded-full border border-white/15 bg-white/5 text-[10px] font-bold text-gray-300 flex items-center justify-center">
+                      {i + 1}
                     </span>
-                  )}
-                </button>
-              ))}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/get-started"
+                className="block w-full text-center py-3 rounded-xl text-sm font-semibold transition-all bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20"
+              >
+                Apply for the pilot
+              </Link>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                No credit card. We reply within one business day.
+              </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl p-8 border transition-all ${
-                  plan.highlight
-                    ? 'bg-blue-600/10 border-blue-500/40 ring-1 ring-blue-500/20'
-                    : 'bg-white/[0.03] border-white/10 hover:border-white/20'
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider">
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-white mb-1">{plan.name}</h3>
-                  <p className="text-sm text-gray-400">{plan.desc}</p>
-                </div>
-
-                <div className="mb-6">
-                  <div className="flex items-end gap-1">
-                    <span className="text-4xl font-bold text-white">
-                      ${billing === 'monthly' ? plan.monthlyPrice : plan.yearlyMonthly.toFixed(0)}
-                    </span>
-                    <span className="text-gray-400 text-sm pb-1.5">/month</span>
-                  </div>
-                  {billing === 'yearly' && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Billed annually · ${plan.yearlyPrice}/year
-                    </p>
-                  )}
-                </div>
-
-                <Link
-                  href={`/get-started?plan=${plan.plan}&billing=${billing}`}
-                  onClick={() => { localStorage.setItem('ib_plan', plan.plan); localStorage.setItem('ib_billing', billing) }}
-                  className={`block w-full text-center py-3 rounded-xl text-sm font-semibold transition-all mb-7 ${
-                    plan.highlight
-                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20'
-                      : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
-                  }`}
-                >
-                  {plan.cta}
-                </Link>
-
-                <ul className="space-y-3">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-300">
-                      <svg className={`w-4 h-4 mt-0.5 shrink-0 ${plan.highlight ? 'text-blue-400' : 'text-emerald-500'}`} fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-center text-xs text-gray-500 mt-8">
-            All plans include a 14-day free trial. No credit card required to start.
-          </p>
         </div>
       </section>
 
@@ -421,13 +348,13 @@ export default function LandingPage() {
                 Stop reading the news.<br />Start reading your intelligence.
               </h2>
               <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-                Join executives who walk into their Monday meetings already knowing what happened, why it matters, and what to do about it.
+                Walk into your next leadership meeting already knowing what happened, why it matters, and what to do about it.
               </p>
               <Link
                 href="/get-started"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-base font-semibold text-white transition-all shadow-xl shadow-blue-500/20 hover:-translate-y-0.5"
               >
-                Request early access
+                Apply for the pilot
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
@@ -447,7 +374,7 @@ export default function LandingPage() {
           <p className="text-xs text-gray-500">© {new Date().getFullYear()} Intelligent Brief. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link href="/login" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Sign in</Link>
-            <a href="#pricing" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Pricing</a>
+            <a href="#pilot" className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Pilot</a>
           </div>
         </div>
       </footer>

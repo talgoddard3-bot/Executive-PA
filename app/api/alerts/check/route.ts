@@ -186,7 +186,17 @@ async function sendBreakingAlert(
 }
 
 // ── Main handler ──────────────────────────────────────────────────
+// Vercel Cron calls routes with GET. This route used to export only POST, so the
+// daily cron got a 405 and breaking alerts never ran. Both verbs are accepted now.
+export async function GET(request: Request) {
+  return runAlertCheck(request)
+}
+
 export async function POST(request: Request) {
+  return runAlertCheck(request)
+}
+
+async function runAlertCheck(request: Request) {
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
@@ -236,7 +246,11 @@ export async function POST(request: Request) {
         continue
       }
 
-      const recipients = company.brief_schedules[0]?.recipient_emails ?? []
+      // brief_schedules is one-to-one with companies, so the join can come back
+      // as a single object rather than an array — accept both shapes.
+      const scheduleJoin = company.brief_schedules as unknown
+      const scheduleRow = (Array.isArray(scheduleJoin) ? scheduleJoin[0] : scheduleJoin) as { recipient_emails?: string[] } | undefined
+      const recipients = scheduleRow?.recipient_emails ?? []
       if (recipients.length > 0) {
         await sendBreakingAlert(
           recipients,
